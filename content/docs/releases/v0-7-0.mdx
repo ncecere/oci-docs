@@ -1,0 +1,30 @@
+---
+title: v0.7.0
+description: Organise and find — per-role features, full-text search, projects, Mermaid diagrams, switching retried replies, and full export and import.
+---
+
+Released 2026-10-01.
+
+## For people
+
+- **Search what was said**, not just titles, with highlighted matches; choosing a result opens the conversation at the matching message. See [Finding a conversation](/docs/using/conversations#finding-a-conversation).
+- **Projects**: conversations grouped under shared instructions (up to 8,000 characters) and files (up to 20). See [Projects](/docs/using/projects).
+- **Switch between retried replies** with **‹ 2 / 3 ›**; the reply you leave showing is the one the model, exports, share links and search use.
+- **Mermaid diagrams** render in conversations and share pages.
+- **Wrap long code lines** in Settings → Customization.
+- **Export everything** as a zip, and **import from ChatGPT or Claude**. See [Your data](/docs/using/your-data).
+
+## For administrators
+
+- **Features per role** on Roles & access: web search, attachments, share links, temporary chats, branching and projects, and the reasoning levels each role may choose. A feature is available only when both the instance and the role allow it. Defaults match the earlier fixed rules. See [Roles and access](/docs/administration/roles-and-access).
+- **Default reasoning level** on General.
+
+## Fixes
+
+A retried reply no longer leaves both answers in the model's context; counts that always read 0 in the trash, announcements and policies are fixed; `%` and `_` in searches match literally.
+
+**Removed**: the unused Canvas and MCP feature switches.
+
+## Upgrading from v0.6.x
+
+Migrations `0022` to `0025`. **`0023` builds a search index that blocks writes to messages while it builds** on a large instance; see the [v0.7.0 upgrade notes](/docs/self-hosting/upgrades#to-v070), including how to build the index beforehand. Deploy the API and web images as a pair. New optional environment variable: `IMPORT_MAX_UPLOAD_BYTES`.

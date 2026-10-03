@@ -1,0 +1,390 @@
+{
+  "sign-in": {
+    "files": [
+      "sign-in",
+      "user-sign-in"
+    ],
+    "alt": "The Open Chat Interface sign-in page in the dark theme: the instance name, \"Sign in to continue to your conversations\", email and password fields, a Sign in button, and a note that the instance is invite only."
+  },
+  "sign-in-sso": {
+    "files": [
+      "sign-in-sso"
+    ],
+    "alt": "The sign-in page of Example University's instance with a \"Continue with Example University SSO\" button above the email and password form."
+  },
+  "chat-home": {
+    "files": [
+      "chat-home",
+      "user-chat-home"
+    ],
+    "alt": "The chat home screen: the sidebar with New Chat, search, Projects and the conversation list on the left, and an empty conversation with the message box, model picker, reasoning level, Search and Attach controls."
+  },
+  "chat-reasoning-tool-step": {
+    "files": [
+      "chat-reasoning-tool-step"
+    ],
+    "alt": "A reply to \"What are the library's opening hours this week?\": a collapsed Reasoning heading, a tool step reading \"Searched the web for 'Example University library opening hours' · 5 results\", the sources above the answer, and the answer with linked sources."
+  },
+  "chat-reasoning-live": {
+    "files": [
+      "chat-reasoning-live"
+    ],
+    "alt": "A reply still being written: the heading \"Thinking…\" with a small three-line window under it showing the latest lines of the model's reasoning."
+  },
+  "chat-model-picker": {
+    "files": [
+      "chat-model-picker",
+      "user-model-picker"
+    ],
+    "alt": "The model picker open above the message box: a search box with a capability filter, and a list of models with coloured capability icons for vision, reasoning, effort control, tool calling and PDF reading."
+  },
+  "chat-model-details": {
+    "files": [
+      "chat-model-details",
+      "user-model-details"
+    ],
+    "alt": "A model's information card: its name, description, capabilities, provider and limits."
+  },
+  "chat-reply-switcher": {
+    "files": [
+      "chat-reply-switcher"
+    ],
+    "alt": "The latest reply in a conversation with the reply switcher under it reading \"‹ 2 / 3 ›\", beside Copy, Retry and Export as… buttons."
+  },
+  "chat-tool-approval": {
+    "files": [
+      "chat-tool-approval"
+    ],
+    "alt": "A reply paused on an approval card for a connector tool, \"Create ticket\" from the Service Desk connector, showing the exact inputs it will run with and Approve and Deny buttons."
+  },
+  "chat-attachment": {
+    "files": [
+      "chat-attachment"
+    ],
+    "alt": "The message box with a PDF attachment chip, \"syllabus-chem101.pdf\", above the question \"What does section 4 say about late submissions?\"."
+  },
+  "chat-long-conversation": {
+    "files": [
+      "chat-long-conversation"
+    ],
+    "alt": "A long conversation with the line \"Earlier messages are summarised for the model\" expanded to show the summary the model receives: topic, facts and decisions, preferences and open questions."
+  },
+  "sidebar-projects": {
+    "files": [
+      "sidebar-projects"
+    ],
+    "alt": "The sidebar with the Projects heading, one project expanded to its five most recent conversations and \"Show all (8)\", two collapsed projects, then Pinned, Today and Older."
+  },
+  "conversation-search": {
+    "files": [
+      "conversation-search"
+    ],
+    "alt": "Conversation search for \"migr plan\": results show each conversation's title with matching lines below and the matched words highlighted; one result is marked Archived and one shows its project's name."
+  },
+  "project-conversations": {
+    "files": [
+      "project-conversations"
+    ],
+    "alt": "A project page, \"CHEM 101 teaching\", with New chat in project and the tabs Conversations, Instructions, Files and Settings, open on Conversations."
+  },
+  "project-files": {
+    "files": [
+      "project-files"
+    ],
+    "alt": "The Files tab of a project: four files, three marked \"Searchable · n passages\" and one scanned PDF marked \"No text to search\"."
+  },
+  "artifact-writing": {
+    "files": [
+      "artifact-writing"
+    ],
+    "alt": "A model writing an artifact: the card in the reply reads \"Writing Course timeline…\" with line and character counts, and the docked panel beside the conversation shows the source as it arrives."
+  },
+  "artifact-panel-docked": {
+    "files": [
+      "artifact-panel-docked"
+    ],
+    "alt": "The artifact panel docked beside the conversation, showing the preview of an HTML page with Preview, Source and Versions tabs and Copy, Download, Full screen and Close buttons."
+  },
+  "artifact-full-screen": {
+    "files": [
+      "artifact-full-screen"
+    ],
+    "alt": "An SVG diagram artifact in full screen, covering the sidebar and top bar, with Exit full screen in the panel header."
+  },
+  "settings-connectors": {
+    "files": [
+      "settings-connectors"
+    ],
+    "alt": "Settings → Connectors: the Docs service marked Connected with a Disconnect button, and the Service Desk service with a Connect button."
+  },
+  "memory-settings": {
+    "files": [
+      "memory-settings"
+    ],
+    "alt": "Settings → Memory with Use memory on, an Add a memory field, and four notes, each marked Added by you or Saved by a model, with Edit and Delete."
+  },
+  "memory-updated": {
+    "files": [
+      "memory-updated"
+    ],
+    "alt": "A reply showing \"Memory updated\" with the saved note \"Teaches first-year chemistry\" and an Undo button."
+  },
+  "share-dialog": {
+    "files": [
+      "share-dialog"
+    ],
+    "alt": "The Share conversation dialog: Share through set to \"Latest messages (live)\", an optional expiry, Create and copy link, and one existing link with Copy and Revoke."
+  },
+  "export-menu": {
+    "files": [
+      "export-menu"
+    ],
+    "alt": "The Export as… menu open under a reply, offering Word document, PDF, Presentation and Spreadsheet."
+  },
+  "settings-account": {
+    "files": [
+      "settings-account",
+      "user-settings-account"
+    ],
+    "alt": "Settings → Account: name, email address, role and how the person signs in, with Change Password and View Devices, and the Keyboard Shortcuts and Need help? cards beside the page."
+  },
+  "settings-devices": {
+    "files": [
+      "settings-devices"
+    ],
+    "alt": "The Devices dialog: three signed-in sessions with browser and system, a shortened network address, when each signed in and was last active, the current one marked This device, and Sign out all other devices."
+  },
+  "settings-customization": {
+    "files": [
+      "settings-customization",
+      "user-settings-customization"
+    ],
+    "alt": "Settings → Customization: what to call you, what you do, traits and anything else, then Appearance, Invert Send/New Line Behavior, Wrap Long Code Lines and Open artifacts automatically."
+  },
+  "settings-history": {
+    "files": [
+      "settings-history",
+      "user-settings-history"
+    ],
+    "alt": "Settings → History: Export all conversations and Import from ChatGPT or Claude at the top, Active, Archived and Trash tabs, a title search and a list of conversations with checkboxes."
+  },
+  "settings-models": {
+    "files": [
+      "settings-models",
+      "user-settings-models"
+    ],
+    "alt": "Settings → Models: the models available to the person, each with its description and capabilities."
+  },
+  "settings-attachments": {
+    "files": [
+      "settings-attachments",
+      "user-settings-attachments"
+    ],
+    "alt": "Settings → Attachments: storage used against the role's limit, split into chat files, project files and artifacts, and the list of uploaded files."
+  },
+  "phone-chat-home": {
+    "files": [
+      "phone-chat-home",
+      "mobile-chat-home"
+    ],
+    "phone": true,
+    "alt": "The chat home screen on a phone, with the sidebar closed and the composer's controls behind one button."
+  },
+  "phone-sidebar": {
+    "files": [
+      "phone-sidebar",
+      "mobile-sidebar"
+    ],
+    "phone": true,
+    "alt": "The sidebar open as a panel on a phone, with projects and conversations."
+  },
+  "phone-artifact": {
+    "files": [
+      "phone-artifact"
+    ],
+    "phone": true,
+    "alt": "An artifact open on a phone, filling the screen, with Preview, Source and Versions and a Close button."
+  },
+  "phone-admin-overview": {
+    "files": [
+      "phone-admin-overview",
+      "mobile-admin-overview"
+    ],
+    "phone": true,
+    "alt": "The admin Overview on a phone, with the menu button that opens the admin navigation."
+  },
+  "admin-overview": {
+    "files": [
+      "admin-overview"
+    ],
+    "alt": "Admin → Overview: the setup checklist with \"5 of 6 required steps complete\", Set up email delivery marked Needs attention, optional items Not set up, and totals for users, threads, messages and storage below."
+  },
+  "admin-providers": {
+    "files": [
+      "admin-providers"
+    ],
+    "alt": "Providers & Models, Providers tab: configured providers with their kind, whether a key is set, and Discover models."
+  },
+  "admin-models": {
+    "files": [
+      "admin-models"
+    ],
+    "alt": "Providers & Models, Models tab: the default model chooser above the catalogue, and catalogue entries with display names, capabilities, visible roles and an enabled switch."
+  },
+  "admin-embeddings": {
+    "files": [
+      "admin-embeddings"
+    ],
+    "alt": "Providers & Models, Embeddings tab: pgvector shown as enabled, an embeddings model with its vector size and passages embedded, and the Reranking section with its resolved /rerank endpoint."
+  },
+  "admin-roles": {
+    "files": [
+      "admin-roles"
+    ],
+    "alt": "People → Roles & access for the user role: people with this role, models, feature switches, reasoning levels, rate limits, storage allowance and usage budgets."
+  },
+  "admin-roles-tools": {
+    "files": [
+      "admin-roles-tools"
+    ],
+    "alt": "The Tools section of a role on Roles & access: built-in tools and connector tools grouped under their connector, each marked read or write, with a switch."
+  },
+  "admin-users": {
+    "files": [
+      "admin-users"
+    ],
+    "alt": "People → Users: a searchable, filterable list of accounts with a role selector on each row."
+  },
+  "admin-user-detail": {
+    "files": [
+      "admin-user-detail"
+    ],
+    "alt": "One person's account page: totals, storage, active sessions with address and client, limits with budget progress bars, recent conversation titles and their audit trail."
+  },
+  "admin-users-bulk-actions": {
+    "files": [
+      "admin-users-bulk-actions"
+    ],
+    "alt": "Several accounts selected in the user list, with the bulk action bar offering a role, sign out and ban."
+  },
+  "admin-invitations": {
+    "files": [
+      "admin-invitations"
+    ],
+    "alt": "People → Invitations: pending invitations with their role and expiry, and a form to create one."
+  },
+  "admin-authentication": {
+    "files": [
+      "admin-authentication",
+      "admin-settings-authentication"
+    ],
+    "alt": "Sign-in & security → Authentication: registration mode, email verification, local sign-in, session length, and the Single sign-on section listing providers."
+  },
+  "admin-sso-provider-form": {
+    "files": [
+      "admin-sso-provider-form"
+    ],
+    "alt": "The form for a single sign-on provider: provider type and ID, OIDC settings, default role, allowed email domains, just-in-time provisioning, trust for account linking, role mappings and Require a matching role."
+  },
+  "admin-usage-budgets": {
+    "files": [
+      "admin-usage-budgets",
+      "admin-quotas"
+    ],
+    "alt": "Models → Usage budgets: budgets with their measure, window, model scope and the roles they apply to."
+  },
+  "admin-retention": {
+    "files": [
+      "admin-retention"
+    ],
+    "alt": "Data & storage → Retention: conversation, trash, usage history, memory and audit log retention, each showing where its value comes from."
+  },
+  "admin-acceptable-use": {
+    "files": [
+      "admin-acceptable-use",
+      "admin-policies"
+    ],
+    "alt": "Sign-in & security → Acceptable use: the published policy version and the editor for a new version."
+  },
+  "admin-announcements": {
+    "files": [
+      "admin-announcements"
+    ],
+    "alt": "Appearance & features → Announcements: a maintenance banner with its audience, whether it can be dismissed, and Re-show."
+  },
+  "admin-web-search": {
+    "files": [
+      "admin-web-search",
+      "admin-search"
+    ],
+    "alt": "Tools & integrations → Web search: the on/off switch, the provider choice, its API key field and Test search."
+  },
+  "admin-connectors": {
+    "files": [
+      "admin-connectors"
+    ],
+    "alt": "Tools & integrations → Connectors: a connector with its server URL, authentication mode, last contact and a list of its tools with read or write and an enabled switch each."
+  },
+  "admin-audit-log": {
+    "files": [
+      "admin-audit-log",
+      "admin-audit"
+    ],
+    "alt": "Insights → Audit log: search, action filter and date window, with entries showing time, actor, action, target and IP address, and Export."
+  },
+  "admin-usage": {
+    "files": [
+      "admin-usage"
+    ],
+    "alt": "Insights → Usage: totals, daily volume, a breakdown by model and the heaviest consumers."
+  },
+  "admin-reports": {
+    "files": [
+      "admin-reports"
+    ],
+    "alt": "Insights → Reports: a monthly usage summary with its recipients, last send and Send due now."
+  },
+  "admin-compliance": {
+    "files": [
+      "admin-compliance"
+    ],
+    "alt": "Data & storage → Compliance: the export schedule and destination, Include conversation content off, recent runs, and Legal holds with one person on hold."
+  },
+  "admin-backups": {
+    "files": [
+      "admin-backups"
+    ],
+    "alt": "Data & storage → Backups: Back up automatically on at 03:00 UTC to a separate S3 bucket, the pg_dump version found, retention, and a run history of verified backups."
+  },
+  "admin-webhooks": {
+    "files": [
+      "admin-webhooks"
+    ],
+    "alt": "Tools & integrations → Webhooks: an endpoint receiving backup.run and user.* events, with Send test, Rotate secret and Show deliveries."
+  },
+  "admin-health": {
+    "files": [
+      "admin-health"
+    ],
+    "alt": "Data & storage → System health: rows for the database, Redis, model providers, models, background jobs, email delivery, attachment storage, connectors, backups and webhooks, each with its status."
+  },
+  "admin-general-settings": {
+    "files": [
+      "admin-general-settings",
+      "admin-settings"
+    ],
+    "alt": "Appearance & features → General: the default system prompt, default reasoning level, tool step limit, Summarise long conversations, Editorial diagrams and the feature switches."
+  },
+  "admin-storage": {
+    "files": [
+      "admin-storage"
+    ],
+    "alt": "Data & storage → Storage: the storage driver, S3 connection and upload policy tabs."
+  },
+  "admin-branding": {
+    "files": [
+      "admin-branding"
+    ],
+    "alt": "Appearance & features → Branding: the instance name and short name, logo upload, accent colour presets, default theme and the sign-in message."
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "title": "Self-hosting",
+  "description": "Installing and operating OCI",
+  "root": true,
+  "pages": [
+    "index",
+    "requirements",
+    "configuration",
+    "docker-compose",
+    "reverse-proxy",
+    "kubernetes",
+    "---Operating---",
+    "upgrades",
+    "backups-and-restore",
+    "health-and-monitoring",
+    "security"
+  ]
+}

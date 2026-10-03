@@ -1,0 +1,32 @@
+{
+  "title": "Administration",
+  "description": "Running an instance from the admin dashboard",
+  "root": true,
+  "pages": [
+    "index",
+    "first-run",
+    "---Models---",
+    "providers-and-models",
+    "embeddings-and-reranking",
+    "---People and access---",
+    "roles-and-access",
+    "people",
+    "identity",
+    "---Governance---",
+    "budgets-and-limits",
+    "retention",
+    "acceptable-use-and-announcements",
+    "---Tools---",
+    "web-search",
+    "connectors",
+    "memory",
+    "---Records---",
+    "audit-and-reports",
+    "compliance",
+    "backups",
+    "observability-and-webhooks",
+    "---Instance---",
+    "instance-settings",
+    "branding"
+  ]
+}

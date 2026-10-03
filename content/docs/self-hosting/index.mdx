@@ -1,0 +1,37 @@
+---
+title: Self-hosting
+description: How an Open Chat Interface deployment fits together, and where to start.
+---
+
+OCI is two container images and three services you provide:
+
+<Files>
+  <Folder name="Your deployment" defaultOpen>
+    <File name="web — ghcr.io/ncecere/open-chat-interface/web (Caddy: the browser app, and /api forwarded to the API)" />
+    <File name="api — ghcr.io/ncecere/open-chat-interface/api (Node.js: everything else, including background jobs and migrations)" />
+    <File name="PostgreSQL 17 (pgvector optional)" />
+    <File name="Redis (recommended)" />
+    <File name="File storage: a local volume, or S3-compatible" />
+  </Folder>
+</Files>
+
+- **Same origin.** People reach the web container. It serves the app and forwards `/api/*` to the API, so session cookies need no CORS or cross-site settings. Put your TLS-terminating reverse proxy or load balancer in front of the web container.
+- **The API** applies database migrations on start (under a lock, so replicas can start together), runs the background jobs on every replica (each job runs on one at a time), and talks to model providers, search providers, connectors, SMTP and S3.
+- **State** lives in PostgreSQL (everything durable), file storage (uploads) and your secret manager (`AUTH_SECRET`, `ENCRYPTION_KEY`). Redis holds only rebuildable state: replies in progress, rate limits.
+- **Configuration** is almost all in the admin dashboard; environment variables cover connection strings, secrets, the first administrator, a few defaults and observability.
+
+## Start here
+
+<Cards>
+  <Card title="Requirements" href="/docs/self-hosting/requirements">What you need, and how big.</Card>
+  <Card title="Configuration" href="/docs/self-hosting/configuration">Every environment variable.</Card>
+  <Card title="Deploy with Docker Compose" href="/docs/self-hosting/docker-compose">The supported deployment.</Card>
+  <Card title="Reverse proxy" href="/docs/self-hosting/reverse-proxy">TLS, headers, and the artifact frame.</Card>
+  <Card title="Kubernetes" href="/docs/self-hosting/kubernetes">What exists today.</Card>
+  <Card title="Upgrades" href="/docs/self-hosting/upgrades">The procedure, and notes per version.</Card>
+  <Card title="Backups and restore" href="/docs/self-hosting/backups-and-restore">What to back up and how to restore it.</Card>
+  <Card title="Health and monitoring" href="/docs/self-hosting/health-and-monitoring">Probes, metrics, traces and logs.</Card>
+  <Card title="Security" href="/docs/self-hosting/security">Secrets, the network, and hardening.</Card>
+</Cards>
+
+To look around first, [try it locally](/docs/getting-started/try-it-locally).

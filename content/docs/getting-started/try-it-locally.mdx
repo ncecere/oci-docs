@@ -1,0 +1,141 @@
+---
+title: Try it locally
+description: Run Open Chat Interface on your own machine with Docker Compose, then connect a model and start chatting.
+---
+
+The quickest way to see OCI working is the Docker Compose stack in its repository. It runs the web app, the API, PostgreSQL and Redis on your machine. You bring a model: a key for OpenAI, Anthropic or Google, or a local OpenAI-compatible server such as Ollama.
+
+<Callout type="warn" title="For your machine only">
+  This setup serves plain HTTP on `http://localhost:8080` and keeps files on a local volume. It is a way to look around, not a production install. See [Self-hosting](/docs/self-hosting) for that.
+</Callout>
+
+## Start it
+
+You need Docker with Compose v2 and Git. Released images are built for `linux/amd64`; on another architecture (an Apple silicon Mac, for example), build from source or let Docker emulate.
+
+<Steps>
+<Step>
+
+### Get the Compose file
+
+```sh
+git clone https://github.com/ncecere/open-chat-interface.git
+cd open-chat-interface/docker
+```
+
+</Step>
+<Step>
+
+### Write `docker/.env`
+
+Compose reads its settings from a `.env` file next to `compose.yaml`. Generate the two secrets and choose a password for the first administrator:
+
+```sh
+cat > .env <<EOF
+POSTGRES_PASSWORD=$(openssl rand -hex 24)
+AUTH_SECRET=$(openssl rand -base64 48)
+ENCRYPTION_KEY=$(openssl rand -base64 48)
+INITIAL_ADMIN_EMAIL=admin@example.edu
+INITIAL_ADMIN_PASSWORD=change-me-at-once
+EOF
+```
+
+`AUTH_SECRET` and `ENCRYPTION_KEY` must be at least 32 characters. The administrator's password must be at least 12.
+
+<Callout type="warn" title="Set both administrator variables">
+  The bundled Compose file passes `INITIAL_ADMIN_EMAIL` and `INITIAL_ADMIN_PASSWORD` to the API even when you leave them out, as empty values, and the API refuses to start with an empty email or a password shorter than 12 characters. Keep both set in `docker/.env`.
+</Callout>
+
+</Step>
+<Step>
+
+### Start the stack
+
+<Tabs items={['Released images', 'Build from source']}>
+<Tab value="Released images">
+
+Pin both images to the same release and start without building:
+
+```sh
+export OCI_API_IMAGE=ghcr.io/ncecere/open-chat-interface/api:v0.9.1
+export OCI_WEB_IMAGE=ghcr.io/ncecere/open-chat-interface/web:v0.9.1
+docker compose pull api web
+docker compose up -d --no-build
+```
+
+</Tab>
+<Tab value="Build from source">
+
+Build the API and web images from the checkout. The first build takes a few minutes.
+
+```sh
+docker compose up -d --build
+```
+
+</Tab>
+</Tabs>
+
+The API applies its database migrations and seeds default settings on first start, then creates the administrator. Check that everything is up:
+
+```sh
+docker compose ps
+curl --fail http://localhost:8080/api/health/ready
+```
+
+</Step>
+<Step>
+
+### Sign in
+
+Open `http://localhost:8080` and sign in with the email and password from `.env`. Change the password at once under **Settings → Account**.
+
+</Step>
+<Step>
+
+### Connect a model
+
+Open **Admin dashboard** from the menu under your name. The setup checklist on **Overview** lists what is missing. At minimum:
+
+1. **Models → Providers & Models → Providers**: add a provider. For OpenAI, Anthropic or Google, paste an API key. For a local server, choose **OpenAI-compatible** and give its base URL; Ollama on the same machine is `http://host.docker.internal:11434/v1` from inside the containers (Docker Desktop).
+2. **Discover models** on the provider, and add and enable the ones you want, with their capabilities.
+3. On the **Models** tab, choose the **default model**.
+
+No model is available to anybody until you enable one. See [Providers and models](/docs/administration/providers-and-models).
+
+</Step>
+<Step>
+
+### Chat
+
+Go back to the chat, pick your model and ask something.
+
+</Step>
+</Steps>
+
+## Optional extras
+
+The Compose file has two optional profiles:
+
+| Profile | Starts | Then |
+|---|---|---|
+| `search` | A SearXNG container | Turn on web search under **Tools & integrations → Web search**, choose SearXNG and give its address, `http://searxng:8080`. SearXNG must have JSON output enabled in its settings (`search.formats: [html, json]`). |
+| `s3` | A MinIO container | Configure S3-compatible storage under **Data & storage → Storage**. |
+
+Start a profile with, for example, `docker compose --profile search up -d`.
+
+## Stop or start again
+
+| Task | Command |
+|---|---|
+| Stop, keeping the data | `docker compose down` |
+| Start again from scratch | `docker compose down -v` (deletes the database, Redis and file volumes) |
+| Use another port | Set `OCI_PORT=8081` and `APP_URL=http://localhost:8081` in `.env` |
+| Read the API's logs | `docker compose logs -f api` |
+
+`APP_URL` must match the address you open in the browser.
+
+## Next
+
+- [Quick tour](/docs/getting-started/quick-tour) of the interface.
+- [First run](/docs/administration/first-run): the full setup checklist.
+- [Deploy with Docker Compose](/docs/self-hosting/docker-compose) for a real install.

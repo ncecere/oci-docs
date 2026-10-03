@@ -1,0 +1,53 @@
+---
+title: Concepts
+description: People and roles, providers and models, conversations, projects, artifacts, tools and connectors, and budgets.
+---
+
+A short glossary of the ideas the rest of these docs use.
+
+## People and roles
+
+Everyone who signs in has an account and exactly one **role**:
+
+| Role | Can |
+|---|---|
+| `admin` | Everything, including changing any setting in the admin dashboard. |
+| `auditor` | Open every admin page and change nothing. |
+| `user` | Use the instance normally. |
+| `restricted` | Use it with tighter limits and, by default, fewer features. |
+
+A role decides which models someone sees, which features they get (web search, attachments, share links, temporary chats, branching, projects, memory, artifacts), which reasoning levels and tools they may use, their rate limits and storage allowance, and which usage budgets apply. Roles can be set by hand or mapped from your identity provider's groups. See [Roles and access](/docs/administration/roles-and-access).
+
+## Providers and models
+
+A **provider** is an upstream AI service and the key used to reach it: OpenAI, Anthropic, Google, or any server that speaks the OpenAI API (a LiteLLM gateway, vLLM, Ollama). A **model** is a catalogue entry that maps a name people see, such as "Chat model", to one of a provider's models.
+
+Adding a provider exposes nothing. Administrators choose which models appear, which roles see each one, and what each can do: its **capabilities**, such as vision, reasoning, effort control, tool calling and PDF reading, drive the icons in the model picker and what OCI offers the model. One model is the **default** for new conversations. See [Providers and models](/docs/administration/providers-and-models).
+
+## Conversations
+
+A **conversation** is a chat with one or more models: you can switch model at any point, and each reply records which model wrote it. Conversations can be **pinned**, **archived**, moved to the **trash** (recoverable for a while), **shared** as a read-only link, or started as a **temporary chat** that stays out of the sidebar and expires. Editing a question or forking from a message starts a new conversation and leaves the original untouched. See [Chatting](/docs/using/chat) and [Conversations and the sidebar](/docs/using/conversations).
+
+## Projects
+
+A **project** groups conversations under shared **instructions** and **files**. Every conversation in it gets the instructions and can read the files; when the files are too large to send whole, OCI searches them for the passages that matter. Projects are private to their owner. See [Projects](/docs/using/projects).
+
+## Artifacts
+
+An **artifact** is something from a reply worth keeping on its own: an HTML page, an SVG image, a Mermaid diagram or a long document. It opens in a panel beside the conversation, has versions, and can be copied, downloaded or exported. Pages and images run in a sealed frame with no network access. See [Artifacts](/docs/using/artifacts).
+
+## Tools and connectors
+
+Models with the tool-calling capability can use **tools** while they write a reply: built-in ones such as web search, and the tools of **connectors**, remote MCP servers your institution connects (a document store, a ticketing system). Tools that only look something up run on their own; tools that change something elsewhere ask the person to approve every call. Administrators allow tools per role. See [Tools and connectors](/docs/using/tools-and-connectors) and [Connectors](/docs/administration/connectors).
+
+## Memory
+
+**Memory** is a short list of notes about a person that OCI adds to their conversations. It is off until the instance, the role and the person all switch it on, and people can see, edit and delete every note. See [Memory](/docs/using/memory).
+
+## Budgets and limits
+
+A **usage budget** (a quota policy) caps how much a role may consume, in messages, tokens or cost, over a rolling or calendar window, for every model or only some. People see what is left as a percentage. Separately, **rate limits** stop one client overwhelming the instance and a **storage allowance** caps what each person holds in files. See [Budgets and limits](/docs/administration/budgets-and-limits) and [Limits and usage](/docs/using/limits).
+
+## Records
+
+The **audit log** records administrative actions and sign-in events, never conversation content. **Retention** removes old conversations, usage and audit entries on a schedule. **Compliance export** copies audit events (and optionally content) to S3, and a **legal hold** pauses deletion for a named person. See [Administration](/docs/administration).

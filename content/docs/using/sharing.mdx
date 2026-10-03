@@ -1,0 +1,42 @@
+---
+title: Sharing
+description: Publish a read-only link to a conversation, live or as a fixed snapshot, with an optional expiry, and revoke it.
+---
+
+Sharing publishes a read-only copy of a conversation at a link anybody can open, without an account.
+
+## Creating a link
+
+Open the conversation and select **Share** (at the top right). In the **Share conversation** dialog:
+
+- **Share through**: **Latest messages (live)** shows the conversation as it grows, including messages you add later. Choose one of the messages instead for a **fixed snapshot** that ends at that message and never changes.
+- **Expires (optional)**: a date and time, in your local time, after which the link stops working. Blank means no expiry.
+
+Select **Create and copy link**. The link is on your clipboard.
+
+<Screenshot slot="share-dialog" />
+
+You can have several links for one conversation; each is independent, and creating a new one does not revoke the others. **Existing links** in the same dialog lists them, with **Copy** and **Revoke**.
+
+## What is included
+
+- The messages, up to the point you chose, with the reply shown for each question and which model wrote it.
+- [Artifacts](/docs/using/artifacts) of the shared replies, at the version current for them, in a sealed frame.
+- Tool steps as one-line summaries.
+
+Not included:
+
+- **Reasoning**: the thinking a model did on the way to an answer.
+- **Attachments**: the shared page shows the messages without them.
+- **Project instructions and files**.
+- **Anything about your account** beyond a display name.
+
+## Revoking
+
+**Revoke** makes a link stop working at once. Anybody who opened it before keeps whatever they saved or copied.
+
+Deleting the conversation, by you or by retention, also revokes its links, and restoring it from the trash does **not** bring them back: create a new link. Links to a temporary chat stop working when it expires.
+
+## Before you share
+
+The link needs no account, so treat it as public. Your institution can turn sharing off for everyone or for your role; if **Share** is missing, that is why.

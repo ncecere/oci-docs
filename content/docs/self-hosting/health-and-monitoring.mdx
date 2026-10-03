@@ -1,0 +1,43 @@
+---
+title: Health and monitoring
+description: Liveness and readiness probes, System health, metrics, traces, logs and alerts.
+---
+
+## Probes
+
+| Endpoint | Served by | Answers |
+|---|---|---|
+| `GET /api/health/live` | API (also through the web container) | `200 {"status":"ok"}` while the process is up. Used by the API image's own health check. |
+| `GET /api/health/ready` | API (also through the web container) | `200` when the database answers; `503` with `{"status":"degraded","checks":{"database":"error"}}` when it does not. Used by the bundled Compose health check and by Caddy to pick healthy API replicas. |
+
+```sh
+curl --fail https://chat.example.edu/api/health/ready
+```
+
+## System health
+
+**Admin → Data & storage → System health** checks what probes do not: Redis, providers and models, background jobs, email, file storage, connectors, backups, webhooks, compliance export and meaning-based search. Open it first when something is reported. See [System health](/docs/administration/instance-settings#system-health).
+
+## Metrics and traces
+
+- **Prometheus metrics** at `/metrics` on each API replica's port (3000), when `METRICS_TOKEN` is set. Not forwarded by the web container: scrape the API directly.
+- **OpenTelemetry traces** over OTLP/HTTP, when `OTEL_EXPORTER_OTLP_ENDPOINT` is set.
+
+The metric list, a scrape configuration and example alerts are on [Observability and webhooks](/docs/administration/observability-and-webhooks). Suggested alerts: no successful backup in 26 hours, reply error rate above 5%, a webhook backlog, and failing background jobs (`oci_job_runs_total{outcome="error"}`).
+
+## Logs
+
+In production the API logs structured JSON (pino) to standard output; set the level with `LOG_LEVEL`. Read them with `docker compose logs -f api`.
+
+Messages worth recognising:
+
+| Log | Means |
+|---|---|
+| `Applying database migrations` | Start-up with `RUN_MIGRATIONS=true`. |
+| `Reranking project passages failed; using the previous order` | The reranker failed or timed out; replies continue. |
+| `Failed to start tracing; continuing without it` | The OpenTelemetry setup failed; nothing else is affected. |
+| `RUN_MIGRATIONS is false but the latest required database migration is not recorded` | Run the migration job first. |
+
+## Audit events outside OCI
+
+For security monitoring, send audit events to your SIEM with [webhooks](/docs/administration/observability-and-webhooks#webhooks), or collect them in bulk with the [compliance export](/docs/administration/compliance).

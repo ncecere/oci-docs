@@ -1,0 +1,100 @@
+---
+title: Chatting
+description: Choosing a model and a reasoning level, stopping and retrying replies, editing and forking, and what happens in long conversations.
+---
+
+## Sending a message
+
+Type in the message box and press Enter. Shift+Enter starts a new line instead. (You can swap these in [Settings → Customization](/docs/using/settings#customization).)
+
+The reply streams in as it is written. The stop button, where Send was, ends it early; what was written so far is kept. The conversation gets a title on its own from your first message and appears in the sidebar.
+
+## Choosing a model
+
+The model name sits at the bottom left of the message box; select it to open the picker.
+
+<Screenshot slot="chat-model-picker" />
+
+Models differ in what they can do, not only in quality. Coloured icons beside each name show its abilities:
+
+| Ability | Means |
+|---|---|
+| **Vision** | Can look at images you attach. |
+| **Reasoning** | Works through a problem before answering. |
+| **Effort control** | You can ask it to think harder or answer faster. |
+| **Tool calling** | Can use [tools](/docs/using/tools-and-connectors), such as web search, while it answers. |
+| **PDF comprehension** | Marked as able to read PDFs. |
+| **Fast** | Optimised for a quick reply. |
+
+The funnel beside the search box narrows the list to models with an ability you need. The **i** beside a model opens its card: description, abilities, provider and limits.
+
+<Screenshot slot="chat-model-details" />
+
+Which models you see is decided by your institution, and may depend on your role. A new conversation starts with the instance's default model.
+
+### Switching model mid-conversation
+
+You can change model at any point. The new model receives the recent conversation that fits what it can take in, including earlier attachments it can read. Starting with a fast, inexpensive model and moving to a more capable one when the question gets hard is a good way to work. Each reply records which model wrote it.
+
+## Reasoning
+
+Some models think before they answer. While they do, the reply shows **Thinking…** and a small window under it with the latest few lines, so you can follow along. Once the model moves on (to a tool step or the answer), the heading becomes **Reasoning**, collapsed; select it to read everything. A reply that uses tools can think more than once, and each piece of reasoning sits before the step it led to. Screen readers get the heading and, when expanded, the full text.
+
+<Screenshot slot="chat-reasoning-live" />
+
+### Reasoning level
+
+Models with **effort control** have a reasoning level beside the model name: **Instant**, **Low**, **Medium** or **High**. Higher means a slower, more considered answer; Instant answers straight away. A new conversation starts at the level your administrator chose (Instant unless they changed it), and the control lists only the levels both the model and your role allow.
+
+## What you can do to a message
+
+Point at a message (on a phone, the buttons are always shown) to see its controls:
+
+| Control | On | Does |
+|---|---|---|
+| **Copy message** | Any message | Copies its text. |
+| **Export as…** | A reply | Saves it as a Word document, PDF, presentation or spreadsheet. See [Exporting as files](/docs/using/exporting-files). |
+| **Fork conversation here** | Any message | Starts a new conversation with everything up to this point. |
+| **Edit message** | Your messages | Starts a new conversation with your question rewritten, and answers it. |
+| **Retry** | The latest reply | Answers your latest question again and keeps the earlier reply. |
+
+Editing and forking always leave the original conversation untouched, so you end up with both versions in the sidebar. A forked or edited conversation links back to the one it came from. Both need **branching**, which your institution can turn off for your role.
+
+### Retrying and switching replies
+
+**Retry** answers your latest question again. The earlier reply is kept: under the latest reply, **‹ 2 / 3 ›** shows which reply you are reading, and **Previous reply** and **Next reply** switch between them (screen readers announce "Reply 2 of 3").
+
+<Screenshot slot="chat-reply-switcher" />
+
+The reply left showing is the one that counts: the model sees it as context for your next question, and exports, share links and search include it. The others stay stored but are left out of all of those. Every reply generated still counts towards your usage.
+
+You can retry and switch only on the latest reply, and not while a reply is being written. To take an earlier question somewhere else, edit it or fork from it.
+
+## When a reply is interrupted
+
+A reply keeps being written on the server even if you reload, lose your connection or move to another conversation, and it reconnects when you come back. If it cannot (the live copy is limited in size and expires), OCI loads what was saved instead; **Reload saved messages** does the same by hand. A draft you were typing stays in the message box.
+
+## Long conversations
+
+When a conversation grows long, OCI summarises its earlier messages in the background and from then on sends the model that summary followed by your most recent exchanges, word for word, instead of dropping the oldest part. A quiet line, **Earlier messages are summarised for the model**, appears above the first message the model still sees in full; select it to read the summary.
+
+<Screenshot slot="chat-long-conversation" />
+
+- **It never makes you wait.** Summaries are made after a reply has finished. You can keep writing, retrying and answering approvals meanwhile.
+- **Nothing is deleted.** Every message stays in the conversation, in search, exports and share links. Only what is sent to the model changes. Your full export includes the summaries.
+- **What it keeps:** the topic and your goal, facts, figures and decisions, your preferences, open questions and next steps, and details to keep exactly, such as names, numbers, code and quotations. Reasoning is left out and long tool results are shortened.
+- **When it happens:** once the conversation fills about three quarters of what the model can take in. The most recent exchanges, up to about half of it, are always kept in full, and a question is never separated from its answer.
+- **It counts towards your usage**, because the conversation's own model writes it. When your allowance is spent, no summary is made until it returns.
+- **Summarise it yourself**: **Summarise earlier messages now**, at the top right of a conversation, asks for a summary straight away. You can say what it should keep ("keep every figure in the budget"). The dialog closes at once and you can keep writing.
+
+If a reply is needed before a summary is ready and the conversation no longer fits, the reply gets the most recent exchanges that fit and a notice says earlier context was left out. Your administrator can turn automatic summaries off; you can still ask for one.
+
+### What the model can see
+
+Your latest message, the instance's instructions, your [customization](/docs/using/settings#customization), any project instructions and [memory](/docs/using/memory) notes, selected attachments and search results must fit together. If they cannot, the message is refused before it is saved: shorten it, remove a file, or choose a model that can take more. Choosing a larger model does not remove every limit; OCI has fixed safety ceilings of its own.
+
+## Temporary chats
+
+**Temporary chat** (the clock button at the top right) starts a conversation that stays out of the sidebar, cannot be added to a project, never uses memory, and expires. The instance still stores it while it is active.
+
+Temporary does not mean trace-free: usage and audit records remain, and the model provider's own retention policy still applies. Your institution can turn temporary chats off for your role.

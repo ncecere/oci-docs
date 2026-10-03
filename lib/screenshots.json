@@ -1,0 +1,172 @@
+{
+  "admin-acceptable-use": {
+    "src": "/images/admin-acceptable-use.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-announcements": {
+    "src": "/images/admin-announcements.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-audit-log": {
+    "src": "/images/admin-audit-log.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-authentication": {
+    "src": "/images/admin-authentication.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-branding": {
+    "src": "/images/admin-branding.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-general-settings": {
+    "src": "/images/admin-general-settings.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-health": {
+    "src": "/images/admin-health.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-invitations": {
+    "src": "/images/admin-invitations.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-models": {
+    "src": "/images/admin-models.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-overview": {
+    "src": "/images/admin-overview.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-providers": {
+    "src": "/images/admin-providers.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-reports": {
+    "src": "/images/admin-reports.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-retention": {
+    "src": "/images/admin-retention.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-roles": {
+    "src": "/images/admin-roles.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-sso-provider-form": {
+    "src": "/images/admin-sso-provider-form.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-storage": {
+    "src": "/images/admin-storage.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-usage": {
+    "src": "/images/admin-usage.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-usage-budgets": {
+    "src": "/images/admin-usage-budgets.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-user-detail": {
+    "src": "/images/admin-user-detail.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-users": {
+    "src": "/images/admin-users.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-users-bulk-actions": {
+    "src": "/images/admin-users-bulk-actions.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-web-search": {
+    "src": "/images/admin-web-search.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "chat-home": {
+    "src": "/images/chat-home.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "chat-model-details": {
+    "src": "/images/chat-model-details.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "chat-model-picker": {
+    "src": "/images/chat-model-picker.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "phone-admin-overview": {
+    "src": "/images/phone-admin-overview.webp",
+    "width": 1082,
+    "height": 2202
+  },
+  "phone-chat-home": {
+    "src": "/images/phone-chat-home.webp",
+    "width": 1082,
+    "height": 2202
+  },
+  "phone-sidebar": {
+    "src": "/images/phone-sidebar.webp",
+    "width": 1082,
+    "height": 2202
+  },
+  "settings-account": {
+    "src": "/images/settings-account.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "settings-attachments": {
+    "src": "/images/settings-attachments.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "settings-customization": {
+    "src": "/images/settings-customization.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "settings-history": {
+    "src": "/images/settings-history.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "settings-models": {
+    "src": "/images/settings-models.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "sign-in": {
+    "src": "/images/sign-in.webp",
+    "width": 1440,
+    "height": 900
+  }
+}

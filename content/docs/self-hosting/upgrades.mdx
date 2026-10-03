@@ -1,0 +1,148 @@
+---
+title: Upgrades
+description: The upgrade procedure, migrations with several replicas, rollback, and what each version needs.
+---
+
+## The procedure
+
+<Steps>
+<Step>
+
+### Read the release notes
+
+Read every [release](/docs/releases) between the version you run and the target, especially their upgrade notes. Some releases have migrations that take time on a large instance, and some cannot be applied as a rolling upgrade.
+
+</Step>
+<Step>
+
+### Back up
+
+PostgreSQL, the file storage, and your secrets (`AUTH_SECRET`, `ENCRYPTION_KEY`). See [Backups and restore](/docs/self-hosting/backups-and-restore).
+
+</Step>
+<Step>
+
+### Pull the new images
+
+Set both `OCI_API_IMAGE` and `OCI_WEB_IMAGE` to the target version and pull them. Always deploy the API and web images as a pair from the same release.
+
+</Step>
+<Step>
+
+### Migrate
+
+With **one API replica**, leave `RUN_MIGRATIONS=true`: the API applies migrations on start, under a PostgreSQL advisory lock.
+
+With **several replicas**, run migrations once before replacing them:
+
+```sh
+docker compose --profile tools run --rm migrate
+RUN_MIGRATIONS=false docker compose up -d --no-build
+```
+
+With `RUN_MIGRATIONS=false`, a replica refuses to start unless the latest migration it ships with is recorded.
+
+</Step>
+<Step>
+
+### Verify
+
+Wait for `/api/health/ready`, then check sign-in, a conversation, web search and a file download, and open **System health**.
+
+</Step>
+</Steps>
+
+Releases keep the previous minor version working against the new schema where they can, so replicas can usually be replaced one at a time. The per-version notes below say when not.
+
+## Rollback
+
+Images can be rolled back by setting `OCI_API_IMAGE` and `OCI_WEB_IMAGE` to the previous versions. **Migrations are forward-only**: if a release's migration is incompatible with the previous version, restore the pre-upgrade database backup and the matching file snapshot before starting the old images. Never rotate `ENCRYPTION_KEY` as part of a rollback.
+
+## Per-version notes
+
+### To v0.9.1
+
+**No migrations and no new environment variables.** Replace the API and web images as a pair; a rolling upgrade from v0.9.0 is fine, and rolling back to v0.9.0 works. See [v0.9.1](/docs/releases/v0-9-1).
+
+### To v0.9.0
+
+Migrations `0028` to `0034`. Most only create new, empty tables and apply instantly; v0.8 replicas never read them. Two need care:
+
+- **`0034_compliance`** numbers every existing audit entry while holding an exclusive lock on `audit_log`, so its time (and how long audit writes wait) grows with the size of the audit log. On a very large log, shorten audit retention first or migrate in a quiet period. It also adds an index to `message`, which scans the table once and blocks message writes while it builds.
+- **`0031_drop_boring_mode`** drops a column v0.7 still reads. From v0.8, a rolling upgrade is fine. **From v0.7 directly, stop the old replicas before migrating** rather than replacing them one by one.
+
+Also in v0.9.0: the API image includes the PostgreSQL 17 client tools; file exports need up to two CPU cores and about 1.2 GB extra memory per API replica at peak; artifacts need the [artifact frame headers](/docs/self-hosting/reverse-proxy#the-artifact-frame) if you run your own proxy; backups, compliance export, webhooks, connectors and reranking need outbound access to their endpoints. Meaning-based search needs pgvector (below). See [v0.9.0](/docs/releases/v0-9-0).
+
+### To v0.8.0
+
+Migrations `0026` and `0027` only create new tables and apply instantly. Project files uploaded earlier are split into searchable passages afterwards by a background job, 50 files every five minutes; until then they are used whole. Connector OAuth needs `APP_URL` to be the address people use. See [v0.8.0](/docs/releases/v0-8-0).
+
+### To v0.7.0
+
+Migrations `0022` to `0025`. **`0023_message_text_search` builds a full-text index over every message**, inside the migration's transaction: on a large `message` table it takes time and **blocks writes to `message`** until it finishes (reads continue). Allow for it in your maintenance window and in any start-up timeout, and check free disk space first. To avoid the write block, build the index beforehand from a direct connection:
+
+```sql
+CREATE INDEX CONCURRENTLY IF NOT EXISTS "message_text_search_idx" ON "message"
+  USING gin (to_tsvector('simple'::regconfig, jsonb_path_query_array("parts", '$[*] ? (@.type == "text").text'::jsonpath)));
+```
+
+The migration then finds it and does nothing. If a concurrent build fails, drop the `INVALID` index (`DROP INDEX CONCURRENTLY message_text_search_idx;`) and try again. See [v0.7.0](/docs/releases/v0-7-0).
+
+### To v0.5.0
+
+Migrations `0020` and `0021` are required, and **old API replicas must be drained and stopped before migrating**: older versions do not honour the new upload reservations or the new reply admission. Do not run old and new API versions together. See [Earlier releases](/docs/releases/earlier).
+
+## pgvector for meaning-based search
+
+[Meaning-based search](/docs/administration/embeddings-and-reranking) needs the pgvector extension. OCI never creates it. If your PostgreSQL has the package (managed services usually offer it; the `pgvector/pgvector:pg17` image includes it), enable it once as a superuser or the role allowed to create extensions:
+
+```sh
+docker compose exec -T postgres psql --username=oci --dbname=oci \
+  -c 'CREATE EXTENSION IF NOT EXISTS vector;'
+```
+
+**The bundled Compose stack uses `postgres:17-alpine`, which does not include pgvector.** Two ways to get it:
+
+<Tabs items={['Build pgvector into Alpine', 'Move to pgvector/pgvector:pg17']}>
+<Tab value="Build pgvector into Alpine">
+
+The data directory stays as it is; no dump and restore.
+
+```dockerfile
+FROM postgres:17-alpine
+ARG PGVECTOR_VERSION=0.8.6
+RUN apk add --no-cache --virtual .build-deps build-base git \
+ && git clone --depth 1 --branch "v${PGVECTOR_VERSION}" \
+      https://github.com/pgvector/pgvector.git /tmp/pgvector \
+ && cd /tmp/pgvector \
+ && make OPTFLAGS="" with_llvm=no \
+ && make install with_llvm=no \
+ && cd / && rm -rf /tmp/pgvector \
+ && apk del .build-deps
+```
+
+Build it, point the `postgres` service at it, recreate the container on the same volume, and run the `CREATE EXTENSION` command above.
+
+</Tab>
+<Tab value="Move to pgvector/pgvector:pg17">
+
+A dump and restore into a **new, empty volume**. Do not point the Debian-based image at the existing Alpine data volume: they sort text differently, which can silently corrupt text indexes.
+
+1. `docker compose stop api`
+2. Dump: `docker compose exec -T postgres pg_dump --format=custom --no-owner --username=oci oci > oci-before-pgvector.dump`
+3. Change the `postgres` service to `image: pgvector/pgvector:pg17` **and** a new volume, keeping the same `POSTGRES_*` settings and the old volume until you have verified the new one.
+4. `docker compose up -d postgres`, then restore and enable the extension:
+
+   ```sh
+   docker compose exec -T postgres \
+     pg_restore --no-owner --role=oci --username=oci --dbname=oci < oci-before-pgvector.dump
+   docker compose exec -T postgres psql --username=oci --dbname=oci \
+     -c 'CREATE EXTENSION IF NOT EXISTS vector;'
+   ```
+
+5. `docker compose up -d`, then check conversations, search and files before removing the old volume.
+
+</Tab>
+</Tabs>
+
+OCI compares vectors with an exact scan of one project's passages; no vector index is needed.

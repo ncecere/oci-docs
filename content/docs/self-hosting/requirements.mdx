@@ -1,0 +1,44 @@
+---
+title: Requirements
+description: PostgreSQL 17, optional pgvector, Redis, S3-compatible storage, the container images, and what to plan for.
+---
+
+## Services
+
+| Service | Required | Notes |
+|---|---|---|
+| **PostgreSQL 17** | Yes | Everything durable. `DATABASE_URL` must be a **direct connection or a session-mode pooler**: background jobs use session-level advisory locks, which transaction-mode pooling breaks. |
+| **pgvector** | No | Only for [meaning-based search](/docs/administration/embeddings-and-reranking) of project files. OCI detects it but never creates it. The bundled `postgres:17-alpine` image does not include it; see [Upgrades → pgvector](/docs/self-hosting/upgrades#pgvector-for-meaning-based-search). |
+| **Redis** | Recommended; needed for several replicas | Resumable replies, shared rate limits, cancellation. The bundled stack uses `redis:7-alpine`. Without it, live replies still work but cannot be resumed after a disconnect, and rate limits are per replica. |
+| **File storage** | Yes | A local volume for one API replica, or **S3-compatible** storage (AWS S3, MinIO and similar) for more than one. Configured in the dashboard. |
+| **SMTP** | For invitations, password resets, verification and reports | Configured in the dashboard. |
+| **A TLS reverse proxy** | For production | In front of the web container. See [Reverse proxy](/docs/self-hosting/reverse-proxy). |
+
+## Images
+
+| Image | Runs | Port |
+|---|---|---|
+| `ghcr.io/ncecere/open-chat-interface/web:<version>` | Caddy with the browser app; forwards `/api/*` to the API | 8080 |
+| `ghcr.io/ncecere/open-chat-interface/api:<version>` | Node.js 22 API, as the non-root `oci` user; includes the PostgreSQL 17 client tools for backups | 3000 |
+
+Each release is tagged `vX.Y.Z` (such as `v0.9.1`), and `latest` follows the newest stable release. Pin both images to the same version; `latest` is for evaluation only. Published images are **`linux/amd64` only**.
+
+## Database connections
+
+Budget, per API replica, the application pool (ten connections by default) plus one private connection per background job running at once. Include that headroom in PostgreSQL's connection limit.
+
+## Sizing
+
+OCI has not been measured at large scale yet; test your own install. Points to plan for:
+
+- **File exports** (Word, PDF, PowerPoint, Excel) run in a worker thread with a 512 MB heap limit and a 60-second time limit. A replica runs at most two at once. Budget up to two CPU cores and about 1.2 GB of extra memory per API replica for exports at peak.
+- **Imports** of ChatGPT and Claude exports accept uploads up to 512 MB by default (`IMPORT_MAX_UPLOAD_BYTES`), processed in the background.
+- **The search index** on message text takes disk space, a sizeable fraction of the stored message text. Project-file passages take about as much space as the files' extracted text.
+
+## Outbound network
+
+The API makes outbound requests to: your model providers, your web search provider, connector MCP servers and their authorization servers, rerank and embedding endpoints, SMTP, S3 (files, backups and compliance export), webhook endpoints, your OIDC/SAML identity provider, and your OpenTelemetry collector. Allow that egress where it is filtered.
+
+## Browsers
+
+The app is a single-page application for current versions of the major browsers, on desktop and phone. It targets WCAG 2.2 AA.

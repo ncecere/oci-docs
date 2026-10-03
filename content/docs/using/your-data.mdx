@@ -1,0 +1,78 @@
+---
+title: Your data
+description: Download everything you have stored, and bring your history in from ChatGPT or Claude.
+---
+
+Both actions are buttons at the top of [Settings → History](/docs/using/settings#history), and each opens in its own window. To save a single reply or document as a file, see [Exporting as files](/docs/using/exporting-files).
+
+## Exporting everything
+
+**Export all conversations**, then **Download export**, downloads a `.zip`. It is put together while it downloads, so there is nothing to wait for first, though a large history takes a while.
+
+<Files>
+  <Folder name="your-export.zip" defaultOpen>
+    <Folder name="conversations">
+      <File name="<title> <date>.md — readable" />
+      <File name="<title> <date>.json — the complete record" />
+    </Folder>
+    <Folder name="attachments">
+      <Folder name="<conversation>" />
+      <Folder name="unsent" />
+    </Folder>
+    <Folder name="projects">
+      <Folder name="<project name>" />
+    </Folder>
+    <File name="memory.json" />
+    <File name="manifest.json" />
+    <File name="README.txt" />
+  </Folder>
+</Files>
+
+- `conversations/`: two files per conversation. The `.md` file is the readable version, the same as downloading one conversation. The `.json` file is everything as stored: every message including model reasoning, artifacts with all their versions, conversation summaries and the list of attached files.
+- `attachments/`: your files, a folder per conversation; uploaded but never sent ones are in `unsent/`.
+- `projects/`: each project's files. `manifest.json` lists each project's name, instructions, files and conversations.
+- `memory.json`: every [memory](/docs/using/memory) note, whether memory is on or not.
+- `manifest.json`: when the export was made, the OCI version, counts, and an index of every conversation.
+
+Active and archived conversations are included; the trash, temporary chats and deleted files are not. You can run one export at a time, and a few an hour. Past 2 GB of attached files, further files are listed in `manifest.json` but left out, and the manifest says the export was truncated.
+
+## Importing from ChatGPT or Claude
+
+<Steps>
+<Step>
+
+### Request an export from the other service
+
+- **ChatGPT**: Settings → Data controls → Export data.
+- **Claude**: Settings → Privacy → Export data. Choose all dates.
+
+You get an email with a link to a `.zip` file.
+
+</Step>
+<Step>
+
+### Upload it
+
+In Settings → History, choose **Import from ChatGPT or Claude**, then **Choose export file**, and pick the `.zip`. You can also upload the `conversations.json` file from inside it.
+
+</Step>
+<Step>
+
+### Let it run
+
+Once the upload finishes, the import runs in the background. You can close the window or leave the page. The list in the import window shows when it is done and how many conversations were imported, skipped or could not be read.
+
+</Step>
+</Steps>
+
+
+Imported conversations appear in your sidebar with their original titles and dates. Only what you saw on screen comes across: your messages and the replies you kept (where the other service kept several versions of a reply, the one you were last looking at). Model reasoning is kept where the export includes it. Tool calls, search steps and custom instructions are left out. Neither service includes your files in its export, so attachments are named in the message instead ("Attached in ChatGPT: diagram.png (file not imported)").
+
+- **One import at a time.** A queued import can be cancelled; removing a finished one from the list does not remove what it imported.
+- **Up to 512 MB** unless your institution changed it. Until processed, the upload counts against your storage allowance.
+- **Importing again is safe.** Conversations already imported are skipped, so you can import a newer export to pick up new ones. To import one afresh, delete it here permanently first, including from the trash.
+- **Imported messages do not count towards your usage.**
+- **Retention applies.** Imported conversations keep their original dates, so if your institution removes inactive conversations, old imports move to the trash at the next cleanup.
+- **Damaged or unsafe archives are refused** with an explanation, and nothing from them is imported. Content the importer does not recognise is left out and counted in the import's details.
+
+If an import fails, the list says why. Most failures are the wrong file: upload the export `.zip` itself.

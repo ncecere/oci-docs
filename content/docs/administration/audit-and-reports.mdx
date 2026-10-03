@@ -1,0 +1,64 @@
+---
+title: Audit log and reports
+description: Who did what and from where, what has been consumed, and usage summaries by email.
+---
+
+## The audit log
+
+**Insights → Audit log** (`/admin/audit`). Who did what, when, and from where.
+
+<Screenshot slot="admin-audit-log" />
+
+### What is recorded
+
+- **Administrative actions**: settings, models, providers, budgets, invitations, policies, announcements, connectors, webhooks, backups, compliance, bulk operations.
+- **Authentication**: sign-in, sign-up, sign-out, password reset and change, verification and single sign-on, **including failures** and attempts for accounts that do not exist, which is what makes a brute-force attempt visible. People's own changes in Settings → Account are recorded too: their name (`auth.profile.updated`) and signing devices out (`auth.session.revoked`, `auth.sessions.revoked_others`).
+- **Activity metadata**: tool calls (`tool.call`), file exports (`message.export`, `artifact.export`), full exports and imports (`user.export`, `user.import`), connector connections, memory changes.
+
+Only outcomes and metadata are recorded. **No credentials, no tokens, no request bodies and no conversation content.** Creating and changing projects, conversations and share links is personal content and is not written to the log.
+
+### Searching it
+
+Search, action family and date window are applied **in the query**, across everything retained, not just the page in front of you. Typing `auth.` in the action filter finds every authentication event. Searching an IP address finds everything that came from it, which is usually where an investigation starts. Entries link to the accounts they name.
+
+### Configuration changes
+
+A settings entry records what a value **was** as well as what it became, so "who turned off single sign-on last Tuesday, and what was it before" has an answer. Secrets record only whether they were set, cleared or replaced.
+
+### Export
+
+**Export** downloads CSV of everything matching the current filters, up to 50,000 rows. Filter first. For a continuous, complete copy, use the [compliance export](/docs/administration/compliance); for events as they happen, [webhooks](/docs/administration/observability-and-webhooks#webhooks).
+
+How long entries are kept, and which are kept regardless, is on [Retention](/docs/administration/retention#always-kept).
+
+## Usage
+
+**Insights → Usage** (`/admin/usage`). Totals, daily volume, a breakdown by model and the heaviest consumers.
+
+<Screenshot slot="admin-usage" />
+
+- Token totals contain **reported** usage; cost is calculated from the prices copied onto each request when it was made. Neither includes amounts held by budget enforcement, and neither is a provider invoice.
+- Missing or incomplete reports are stored as unknown, not as zero.
+- Usage records carry no reference to a conversation.
+- Embeddings, reranking and summaries show under model names starting with `embedding:` and `rerank:`, and the conversation's model.
+- The reporting time zone is set on [Retention](/docs/administration/retention).
+
+Use this page before setting a budget: a limit chosen from observed use lands better than one chosen from an assumption.
+
+## Scheduled reports
+
+**Insights → Reports** (`/admin/reports`). A usage summary by email, daily, weekly or monthly. Send the monthly summary to whoever asks about spend and the questions stop.
+
+<Screenshot slot="admin-reports" />
+
+- **Due-ness is decided from the last send**, not a calendar expression: a replica that was down over a boundary sends once when it returns rather than skipping the period.
+- **Send due now** lets you check recipients and content without waiting a month.
+- **A failure is recorded on the report**, not only in the logs.
+- Reports need [email delivery](/docs/administration/instance-settings#email-delivery). Without it none arrive: the page warns, enabling a report makes email a required step on the setup checklist, and System health reports email as not configured.
+
+## When someone reports a problem
+
+1. **System health**: is something actually broken?
+2. **The audit log**, filtered to their address: what did they do, and what happened?
+3. **Their account page**: are they at a limit? Do their sessions look right?
+4. **Usage**: has something changed instance-wide, or only for them?

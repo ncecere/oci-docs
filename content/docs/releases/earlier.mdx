@@ -1,0 +1,54 @@
+---
+title: v0.6.1 and earlier
+description: The releases from the first one to guided setup — governance, administration at scale, chat reliability and the Roles & access page.
+---
+
+## v0.6.1 (2026-10-01)
+
+**Providers & Models** has a Providers tab and a Models tab, kept in the address (`?tab=models`). No migrations.
+
+## v0.6.0 (2026-10-01)
+
+Administration organised around tasks.
+
+- **Setup checklist** on the admin Overview, worked out from stored configuration.
+- **Roles & access** (`/admin/roles`): everything that shapes a role on one page.
+- **Account actions** on a person's page: role, ban and unban, sign out everywhere, and limits.
+- The dashboard is grouped as People, Models, Sign-in & security, Data & storage, Insights, and Appearance & features; merged pages keep their old addresses as redirects. Auditors can open every page read-only. The admin dashboard works on phones.
+- Branding's **Accent color** became the instance accent preset (neutral, blue, violet, emerald); **Default theme** applies to people who have not chosen one.
+- Conversations scroll with a streaming reply, with **Jump to latest**.
+- Fixed: saving one admin field no longer resets others; audit-log retention now runs.
+
+**Upgrade note**: no migrations. Before v0.6.0, saving one administrative field could reset others, so check session length, each model's visible roles, capabilities and default flag, and report windows after upgrading.
+
+## v0.5.0 (2026-10-01)
+
+Chat reliability, privacy and accounting under concurrency: a durable claim before each reply, atomic upload reservations, transactional usage settlement, shared conversations kept private after deletion and restore, and required email verification no longer waived when SMTP fails. GitHub became the primary repository, with images on GHCR.
+
+**Upgrade note**: migrations `0020` and `0021` are required. Back up, **drain and stop old API replicas**, migrate once, then start the new API and web pair. Do not run old and new versions together.
+
+## v0.4.1 (2026-09-16)
+
+Reliability and dependency security fixes, and complete user, administrator and developer guides. No migrations.
+
+## v0.4.0 (2026-08-09)
+
+Administration at scale: the **auditor** role, authentication events in the audit log, a person's account page, the System health page, **Require a matching role** for single sign-on, profile claim mapping and **Skip the sign-in form**, configurable session length, bulk user actions, saved views, scheduled usage reports, audit filtering and CSV export, and settings change history.
+
+## v0.3.0 (2026-08-08)
+
+The acceptable use policy, a short introduction for new accounts, announcements, logo upload, model information cards, and sorting and filtering on the user list. Single sign-on roles: the most privileged matching mapping wins, matching ignores case, and nested claims are supported.
+
+## v0.2.1 (2026-08-07)
+
+The screen no longer goes blank while a reasoning model thinks.
+
+## v0.2.0 (2026-08-07)
+
+Governance and lifecycle: budgets scoped to models, per-person overrides, per-role storage allowances, the trash, retention, per-role rate limits, the Usage page, single-conversation Markdown download, usage warnings, background jobs, and storage reconciliation. Deleting a conversation moves it to a 30-day trash.
+
+## v0.1.0 (2026-08-07)
+
+The first release: multi-model streaming chat with reasoning, local, OIDC and SAML sign-in, branching, forks, pinning, archiving, temporary chats and share links, attachments, web search, administration, budgets, resumable replies and Docker Compose deployment.
+
+The full detail of every release is in the [changelog](https://github.com/ncecere/open-chat-interface/blob/main/CHANGELOG.md).

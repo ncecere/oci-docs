@@ -1,0 +1,64 @@
+---
+title: Backups
+description: Scheduled, verified database backups to S3 with a checksummed manifest of every file, and daily and weekly retention.
+---
+
+**Data & storage → Backups** (`/admin/backups`). OCI can back itself up once a day: a `pg_dump` of the whole database and a manifest of every file object, written to S3-compatible storage, then read back and verified. Deployments that already back up PostgreSQL and their file storage another way can leave it off. An `auditor` sees everything here and changes nothing.
+
+<Screenshot slot="admin-backups" />
+
+## What a backup contains
+
+Each run writes one folder, named after its start time and run ID:
+
+| Object | What it is |
+|---|---|
+| `database.dump` | `pg_dump --format=custom` of the whole database: accounts, settings, conversations, file metadata, the audit log, everything in PostgreSQL. |
+| `attachments.jsonl` | One line per file object (file and thumbnail): its storage key, size and SHA-256. Not names, not contents. |
+| `manifest.json` | The OCI version, the newest applied migration, and the size and SHA-256 of the two files above. |
+
+The dump streams from `pg_dump` straight into a multipart upload, so a large database never has to fit in memory or on disk. If `pg_dump` fails, the upload is aborted.
+
+<Callout type="warn" title="Files are listed, not copied">
+  The manifest records which file objects existed and their checksums; it does not copy them. **A backup alone cannot restore files.** Protect them where they live: turn on bucket versioning (and ideally replication) for S3, or snapshot the volume for local storage. Copying files into backups is planned for v0.10.
+</Callout>
+
+The first backup reads every file object once to compute its checksum; later backups read only new objects. A file whose object cannot be read is listed as missing; the run still succeeds, and System health warns.
+
+## Destination
+
+| Destination | Where | When |
+|---|---|---|
+| Attachment storage bucket | The bucket files use, under `.oci-backups/`. Storage reconciliation never treats these objects as orphans. | Quick to set up when files are already on S3. |
+| **Separate S3 bucket (recommended)** | Its own bucket, region, endpoint, access key and prefix. The secret is encrypted with `ENCRYPTION_KEY` and never shown again. | Losing or leaking the file bucket's credentials does not also lose the backups, and the backup bucket can have its own lifecycle, versioning or object lock. Required when files are on local disk. |
+
+**Test destination** writes, reads back and deletes a small object. The credential needs `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject` and the multipart upload actions on the prefix.
+
+## Schedule
+
+With **Back up automatically** on, a backup starts within ten minutes of the chosen hour (UTC) each day, or as soon as the API is back if it was down then. A failed scheduled backup is not retried until the next day: fix the cause and use **Back up now**. Only one backup runs at a time across all replicas.
+
+Turning backups on is refused while the destination is incomplete or `pg_dump` is missing. The API image includes the PostgreSQL 17 client tools, and the page shows the version found. A PostgreSQL 18 server needs newer tools; see [Backups and restore](/docs/self-hosting/backups-and-restore#postgresql-client-tools).
+
+The database password is never put on a command line or in the environment of `pg_dump`: it goes into a private, temporary `.pgpass` file, and error output is scrubbed of it.
+
+## Verification
+
+After writing, every run reads its objects back: the dump's size and SHA-256 must match and `pg_restore --list` must read its table of contents; the manifest's size, SHA-256 and line count must match. A run that fails is recorded as failed and its objects are deleted. **System health** shows the latest result in its *Backups* row: an error if it failed, a warning if nothing completed in over a day or objects were missing.
+
+## Retention
+
+After each successful backup, older ones are deleted, keeping:
+
+- **Daily backups kept** (default 7): the newest backup of each of the last *n* days that have one;
+- **Weekly backups kept** (default 4): the newest of each of the last *n* ISO weeks that have one.
+
+Only days and weeks with a backup count, so a pause never deletes the last good ones. Expired runs stay in the history. Backups made before a change of destination are left where they are.
+
+## Restoring
+
+Restoring is a deliberate, manual operator step. See [Backups and restore](/docs/self-hosting/backups-and-restore#restoring-an-automated-backup), and practise it on a scratch database: that is the only proof a backup works.
+
+## Audit and metrics
+
+Settings changes are audited as `backup.settings.update` (never a credential) and kept regardless of retention. Every run is audited as `backup.run` with its outcome, so a [webhook](/docs/administration/observability-and-webhooks#webhooks) can alert on a failure. [Metrics](/docs/administration/observability-and-webhooks#metrics) include `oci_backup_runs_total`, `oci_backup_duration_seconds` and `oci_backup_last_success_timestamp_seconds`.

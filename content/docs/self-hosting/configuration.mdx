@@ -1,0 +1,86 @@
+---
+title: Configuration
+description: Every environment variable the API reads, grouped, with defaults. Everything else is configured in the admin dashboard.
+---
+
+Almost nothing is configured through the environment. Providers, models, budgets, single sign-on, storage, search, SMTP, branding, backups and compliance export are all set in the [admin dashboard](/docs/administration) and stored in PostgreSQL. Environment variables cover what must exist before the database can be read, a few defaults, and observability.
+
+The API checks its environment at start and refuses to run, listing every problem, if a value is missing or invalid. Keep secrets in your secret manager, not in committed files.
+
+## Required
+
+| Variable | What it is |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection string, such as `postgres://oci:…@postgres:5432/oci`. Direct or session-mode pooling only. `sslmode` is honoured. |
+| `AUTH_SECRET` | Signs sessions. At least 32 characters: `openssl rand -base64 48`. Changing it signs everyone out. |
+| `ENCRYPTION_KEY` | Encrypts provider keys, SMTP and S3 credentials, connector secrets and tokens, and webhook secrets at rest. At least 32 characters, different from `AUTH_SECRET`. **Changing it makes every stored credential unreadable.** |
+| `APP_URL` | The public address people use, such as `https://chat.example.edu`. Used for sign-in callbacks, connector OAuth and links in email. Must match your reverse proxy's origin. |
+
+<Callout type="warn" title="Back up the two secrets">
+  Losing `ENCRYPTION_KEY` means re-entering every provider key and credential and asking everyone to reconnect their connectors. A restored database needs the same `ENCRYPTION_KEY` and `AUTH_SECRET`.
+</Callout>
+
+## Server
+
+| Variable | Default | What it is |
+|---|---|---|
+| `NODE_ENV` | `development` | `production` in deployments (the images set it). |
+| `API_PORT` | `3000` | The API's port. |
+| `AUTH_TRUSTED_ORIGINS` | none | Comma-separated origins of identity providers on private networks, such as `https://idp.internal.example.edu`. Without it, OIDC and SAML discovery to private addresses is refused. |
+| `RUN_MIGRATIONS` | `true` | Apply migrations and seed defaults on start. Set `false` when a separate job runs migrations; the API then refuses to start unless the latest migration is recorded. |
+| `REDIS_URL` | none | Redis, for resumable replies and shared rate limits. |
+| `CHAT_STREAM_TTL_SECONDS` | `900` | How long a reply in progress can be resumed from Redis, 60 to 3600 seconds. |
+| `STORAGE_LOCAL_PATH` | `./data/storage` | Where files go with the local storage driver (`/data/storage` in the bundled stack). |
+| `LOG_LEVEL` | `info` | `fatal`, `error`, `warn`, `info`, `debug` or `trace`. |
+| `IMPORT_MAX_UPLOAD_BYTES` | `536870912` (512 MB) | Largest ChatGPT or Claude export a person may upload. |
+| `BACKUP_PG_BIN_DIR` | `PATH` | Directory holding `pg_dump` and `pg_restore`, if not on `PATH`. |
+
+## First administrator
+
+| Variable | What it is |
+|---|---|
+| `INITIAL_ADMIN_EMAIL` | Creates the first administrator when the database has no users. |
+| `INITIAL_ADMIN_PASSWORD` | Its password, at least 12 characters. If the variable is absent, a one-time password is printed to the API's log instead. |
+
+Both are validated whenever they are present: an empty `INITIAL_ADMIN_EMAIL`, or a password under 12 characters, stops the API from starting. The bundled Compose file passes both through even when unset (as empty values), so with it, keep both set.
+
+## Limits and retention defaults
+
+These only seed the values administrators see. A value saved in the dashboard wins, and the dashboard shows where each value came from.
+
+| Variable | Default | Dashboard |
+|---|---|---|
+| `RETENTION_TRASH_DAYS` | `30` | Retention → Trash retention |
+| `RETENTION_THREAD_DAYS` | unset (keep forever) | Retention → Conversation retention |
+| `RETENTION_USAGE_EVENT_DAYS` | `90` | Retention → Usage history |
+| `RETENTION_AUDIT_LOG_DAYS` | `365` | Retention → Audit log |
+| `DISPLAY_TIMEZONE` | `UTC` | Retention → Reporting timezone |
+| `RATE_LIMIT_MAX_CONCURRENT_STREAMS` | per role (admin 10, others 3, restricted 1) | Roles & access |
+| `RATE_LIMIT_CHAT_PER_MINUTE` | per role (admin 120, others 30, restricted 10) | Roles & access |
+| `RATE_LIMIT_UPLOAD_PER_MINUTE` | per role (admin 120, others 20, restricted 5) | Roles & access |
+| `RATE_LIMIT_AUTH_PER_MINUTE` | `10` | Roles & access → Instance-wide |
+| `QUOTA_RESERVE_COST_MICROS` | `250000` ($0.25) | Roles & access → Budget held per response |
+| `QUOTA_RESERVE_TOKENS` | `4000` | Roles & access → Tokens held per response |
+
+A rate-limit variable sets the value for every role.
+
+## Observability
+
+| Variable | Default | What it is |
+|---|---|---|
+| `METRICS_TOKEN` | unset (off) | Serves Prometheus metrics at `/metrics` on the API port, requiring this Bearer token. At least 16 characters. |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | unset (off) | OTLP/HTTP collector base URL; traces are exported when set. |
+| `OTEL_SERVICE_NAME` | `oci-api` | The traces' service name. |
+
+See [Observability and webhooks](/docs/administration/observability-and-webhooks).
+
+## Bundled Compose stack only
+
+| Variable | Default | What it is |
+|---|---|---|
+| `POSTGRES_PASSWORD` | required | Password for the bundled PostgreSQL; used to build `DATABASE_URL`. |
+| `OCI_PORT` | `8080` | Host port for the web container. |
+| `OCI_API_IMAGE`, `OCI_WEB_IMAGE` | local builds | Released images to run, such as `ghcr.io/ncecere/open-chat-interface/api:v0.9.1`. Pin both to one release and start with `--no-build`. |
+| `MINIO_USER`, `MINIO_PASSWORD` | `oci`, `oci_dev_password` | The optional MinIO container (`--profile s3`). Change them if you use it. |
+
+In the bundled stack `APP_URL` defaults to `http://localhost:8080`, `REDIS_URL` points at the bundled Redis, and the web container reaches the API through `API_UPSTREAM` (`api:3000`).

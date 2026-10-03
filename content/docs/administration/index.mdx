@@ -1,0 +1,56 @@
+---
+title: The admin dashboard
+description: Where administrators run an Open Chat Interface instance, what each page is for, and what auditors can see.
+---
+
+The admin dashboard is at `/admin`, for accounts with the `admin` role: **Admin dashboard** in the menu under your name. An `auditor` can open every page and change nothing: each page shows a read-only banner, and controls that would save something are hidden or disabled. Both can reach every admin page from the command palette (`Cmd/Ctrl + K`).
+
+<Screenshot slot="admin-overview" />
+
+**Overview** opens with the setup checklist, then activity, totals and system status. On a new instance, start with [First run](/docs/administration/first-run).
+
+## The pages
+
+Pages are grouped by task.
+
+| Group | Page | For | Docs |
+|---|---|---|---|
+| | Overview | The setup checklist, activity, totals | [First run](/docs/administration/first-run) |
+| **People** | Users | Accounts, roles, bans, sessions, limits, bulk actions | [People](/docs/administration/people) |
+| | Invitations | Invitation links when registration is closed | [People](/docs/administration/people#invitations) |
+| | Roles & access | Everything that shapes one role | [Roles and access](/docs/administration/roles-and-access) |
+| **Models** | Providers & Models | Credentials, the catalogue, the default model, embeddings and reranking | [Providers and models](/docs/administration/providers-and-models) |
+| | Usage budgets | Consumption caps per role, with per-person overrides | [Budgets and limits](/docs/administration/budgets-and-limits) |
+| **Tools & integrations** | Web search | The switch, the provider, a test search | [Web search](/docs/administration/web-search) |
+| | Connectors | MCP servers whose tools models can call | [Connectors](/docs/administration/connectors) |
+| | Webhooks | Audit events posted to your endpoints | [Observability and webhooks](/docs/administration/observability-and-webhooks#webhooks) |
+| **Sign-in & security** | Authentication | Registration, local sign-in, sessions, single sign-on | [Identity and sign-in](/docs/administration/identity) |
+| | Email delivery | SMTP for invitations, resets, verification and reports | [Instance settings](/docs/administration/instance-settings#email-delivery) |
+| | Acceptable use | A policy people accept before using OCI | [Acceptable use and announcements](/docs/administration/acceptable-use-and-announcements) |
+| **Data & storage** | Storage | Where files live, and the upload policy | [Instance settings](/docs/administration/instance-settings#storage) |
+| | Retention | How long things are kept | [Retention](/docs/administration/retention) |
+| | Backups | Verified daily database backups to S3 | [Backups](/docs/administration/backups) |
+| | Compliance | Audit and content export to S3, legal holds | [Compliance](/docs/administration/compliance) |
+| | System health | Dependencies, background jobs, storage reconciliation | [Instance settings](/docs/administration/instance-settings#system-health) |
+| **Insights** | Usage | What has been consumed, by whom, on what | [Audit log and reports](/docs/administration/audit-and-reports#usage) |
+| | Reports | Usage summaries by email | [Audit log and reports](/docs/administration/audit-and-reports#scheduled-reports) |
+| | Audit log | Who did what, with export | [Audit log and reports](/docs/administration/audit-and-reports) |
+| **Appearance & features** | General | System prompt, defaults and instance-wide features | [Instance settings](/docs/administration/instance-settings#general) |
+| | Branding | Name, logo, accent colour, default theme | [Branding](/docs/administration/branding) |
+| | Announcements | A banner shown to everybody | [Acceptable use and announcements](/docs/administration/acceptable-use-and-announcements#announcements) |
+
+Lists that can grow, such as users and audit entries, filter and sort on the server, so a search covers everything rather than the page in front of you. Anything with a consequence that is not obvious from its label says so on the page.
+
+### Old addresses
+
+Pages that were merged keep their old addresses as redirects: `/admin/providers` → `/admin/models`, `/admin/sso` → the single sign-on section of `/admin/settings/authentication`, `/admin/rate-limits` and `/admin/storage-limits` → `/admin/roles`, `/admin/maintenance` → `/admin/health`, and `/admin/settings` → `/admin/settings/general`.
+
+## On a phone
+
+The dashboard works on a narrow screen. A menu button at the top opens the same grouped navigation in a drawer. Reading a figure is comfortable; configuring a provider is better done at a desk.
+
+<Screenshot slot="phone-admin-overview" />
+
+## Configuration lives in the database
+
+Almost nothing is configured with environment variables: providers, models, budgets, single sign-on, storage, search, SMTP and branding are all set here and stored in PostgreSQL. Environment variables cover what must exist before the database can be read (connection strings, secrets, the first administrator) plus a few defaults and observability switches. See [Configuration](/docs/self-hosting/configuration).

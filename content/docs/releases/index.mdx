@@ -1,0 +1,37 @@
+---
+title: Releases
+description: Open Chat Interface's releases, what to expect before 1.0, and how releases are published.
+---
+
+| Release | Date | In short |
+|---|---|---|
+| [v0.9.1](/docs/releases/v0-9-1) | 2026-10-03 | Project conversations under their project in the sidebar; Settings → Account works (password, devices, name); a settings review. No migrations. |
+| [v0.9.0](/docs/releases/v0-9-0) | 2026-10-03 | Make and operate: artifacts, export as Word, PDF, PowerPoint and Excel, user memory, long conversations summarised, meaning-based project search and reranking, compliance export and legal hold, automated backups, metrics, traces and webhooks. |
+| [v0.8.0](/docs/releases/v0-8-0) | 2026-10-02 | Tools and connected knowledge: tool calling with approvals, web search as a tool, search over large project files, MCP connectors with per-person OAuth. |
+| [v0.7.0](/docs/releases/v0-7-0) | 2026-10-01 | Organise and find: per-role features, full-text conversation search, projects, Mermaid diagrams, switching between retried replies, export everything and import from ChatGPT or Claude. |
+| [v0.6.1 and earlier](/docs/releases/earlier) | 2026-08-07 to 2026-10-01 | From the first release to guided setup and the Roles & access page. |
+
+The full list of changes is in the [changelog](https://github.com/ncecere/open-chat-interface/blob/main/CHANGELOG.md).
+
+## Before 1.0
+
+OCI follows semantic versioning, but before 1.0 a minor release may change behaviour; its notes say how to adapt.
+
+- **Upgrades** are forward-only. Migrations cannot be undone by reverting images; downgrading past a migration means restoring a backup. Read every release's upgrade notes between your version and the target. See [Upgrades](/docs/self-hosting/upgrades).
+- **The API and web images are a pair.** Deploy both from the same release.
+- **There is no public API.** The HTTP API serves OCI's own web app and may change in any release. A personal-key API is not planned.
+
+## What's next
+
+The [roadmap](https://github.com/ncecere/open-chat-interface/blob/main/ROADMAP.md) is a plan, not a promise:
+
+- **v0.10, finish and harden**: legal hold covering project files and usage records, deletions in the compliance export, backups that copy files, PDF export in every script, a resizable artifact panel, reporting failed summaries, a page listing your share links, a default model per person, optional self-service account deletion, and branding applied everywhere.
+- **v0.11, always on**: upgrades without downtime on large deployments (two-phase migrations, failover-safe jobs, rolling-upgrade tests), a Kubernetes Helm chart, connection pooling and a separate worker role.
+- **Later**: assistants, code execution, deep research, image generation, voice, groups and finer roles, multi-factor authentication and interface translations.
+
+## How releases are published
+
+- The container images are the release artifacts: `ghcr.io/ncecere/open-chat-interface/api` and `ghcr.io/ncecere/open-chat-interface/web`, for `linux/amd64`.
+- Each stable release is tagged `vX.Y.Z`. `latest` moves to the newest stable release once both images are published; use it only for evaluation.
+- Images are built and published by CI from the release tag, after checks.
+- Releases before v0.5.0 were first published to an earlier registry and may not be on GHCR.

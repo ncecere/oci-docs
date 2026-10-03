@@ -1,0 +1,32 @@
+---
+title: Memory
+description: The three switches for user memory, what models can do with it, its share of the context, retention and audit.
+---
+
+[Memory](/docs/using/memory) is a list of short notes about a person (at most 200, each up to 500 characters) that OCI adds to their conversations. It is designed to be private unless chosen: three switches, all off on a new instance, must be on before a note is read or written.
+
+| Switch | Where | Default |
+|---|---|---|
+| **User memory**, instance-wide | **Appearance & features → General** | Off |
+| **User memory**, per role | **People → Roles & access** | On for every role except `restricted`, effective only while the instance switch is on |
+| **Use memory**, per person | Settings → Memory | Off |
+
+Memory is never used in temporary chats.
+
+## How notes are made
+
+People write notes in Settings → Memory. With a model tagged **Tool calling**, the built-in `remember` and `forget` tools let the model save and remove notes. They are not listed under a role's tools: the role's **User memory** switch governs them. They need no approval, although they write data, because they change only the person's own notes inside OCI, the person opted in, and every change shows in the reply with **Undo** and is listed in Settings.
+
+## Context
+
+Notes are added to the system prompt after the instance prompt, the person's customization and any project instructions, newest first, in a section marked as notes about the person, not instructions. They take at most 5% of the model's input budget and never more than 8 KiB; older notes that do not fit are left out.
+
+## Switching it off
+
+Turning memory off for the instance or a role stops notes being read or written at once. People keep their notes and can still list, delete and export them; adding and editing are refused.
+
+## Retention and audit
+
+- **Memory retention** on [Retention](/docs/administration/retention) deletes notes not updated for that many days. Off by default. People on legal hold keep their notes.
+- `memory.add`, `memory.update` and `memory.delete` record counts, the source (`tool` or `person`), how the change was made (`tool`, `settings`, `undo` or `retention`) and IDs, never the text. `memory.settings.update` records a person switching memory on or off.
+- A person's full export includes their notes as `memory.json`. Deleting an account deletes its notes.

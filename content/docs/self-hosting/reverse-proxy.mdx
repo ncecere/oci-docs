@@ -1,0 +1,61 @@
+---
+title: Reverse proxy
+description: TLS in front of the web container, the security headers OCI sends, and the one path that needs a policy of its own — the artifact frame.
+---
+
+Put a TLS-terminating reverse proxy or load balancer in front of the **web** container (port 8080). The web container's Caddy does the rest: it serves the app, forwards `/api/*` to the API, and sets security headers. `APP_URL` must be the public `https://` address.
+
+Requirements for your proxy:
+
+- **Do not buffer responses.** Replies stream; a buffering proxy holds them back until they finish. Disable response buffering for `/api/*` (in nginx, `proxy_buffering off;`).
+- **Allow long requests.** A reply can stream for minutes. Raise read timeouts accordingly.
+- **Allow large uploads**: files up to your upload limit (20 MB by default) and imports up to `IMPORT_MAX_UPLOAD_BYTES` (512 MB by default).
+- **Know which address is recorded.** The API records the left-most `X-Forwarded-For` address it receives, for the audit log and sign-in rate limits. The web container's Caddy has no trusted proxies configured, so it replaces an incoming `X-Forwarded-For` with the address it sees: behind your own proxy, that is the proxy's address. Check what your audit log shows after deploying.
+- **Do not forward `/metrics`.** It is served by the API, not the web container, and should be scraped from inside your network.
+
+## The headers OCI sends
+
+Every response from the web container, except one path, carries:
+
+```text
+Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'
+X-Frame-Options: DENY
+X-Content-Type-Options: nosniff
+Referrer-Policy: strict-origin-when-cross-origin
+Cross-Origin-Opener-Policy: same-origin
+Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+```
+
+Add `Strict-Transport-Security` at your TLS proxy.
+
+## The artifact frame
+
+HTML and SVG [artifacts](/docs/using/artifacts) run in a sandboxed frame loaded from **`/artifact-frame.html`**, a static file of the web image, with `sandbox="allow-scripts"` and no `allow-same-origin`, so it has an opaque origin. It is the one page OCI frames itself, so it gets its own policy instead of the one above:
+
+```text
+Content-Security-Policy: sandbox allow-scripts; default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'self'
+Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), display-capture=()
+X-Content-Type-Options: nosniff
+Referrer-Policy: no-referrer
+Cache-Control: no-cache
+```
+
+and **no** `X-Frame-Options: DENY`.
+
+<Callout type="warn" title="If your proxy adds headers to every response">
+  A proxy that adds its own `Content-Security-Policy` or `X-Frame-Options` to every response must exempt `/artifact-frame.html`, and send the policy above for it, including `sandbox allow-scripts` and `frame-ancestors 'self'`. Otherwise artifact previews stay blank (the rest of OCI is unaffected). The page also protects itself: it writes nothing unless it is framed with an opaque origin, so a proxy that sends no policy for it cannot make it run code on OCI's origin.
+</Callout>
+
+For example, in nginx, where your server block adds headers:
+
+```nginx
+location = /artifact-frame.html {
+    proxy_pass http://oci_web;
+    # Let the web container's own headers for this path through unchanged:
+    # do not add X-Frame-Options or a Content-Security-Policy here.
+}
+```
+
+## Identity providers on private networks
+
+If your OIDC or SAML identity provider is on a private network, list its origin in `AUTH_TRUSTED_ORIGINS`, or discovery is refused. See [Configuration](/docs/self-hosting/configuration#server).

@@ -1,0 +1,89 @@
+---
+title: Compliance export and legal hold
+description: Audit events and, optionally, conversation content exported as verified JSON Lines to S3, exactly once; and legal holds that pause deletion for named people.
+---
+
+**Data & storage → Compliance** (`/admin/compliance`). Two tools for eDiscovery, records requests and security monitoring:
+
+- **Compliance export**: every audit event and, if you turn it on, conversation content, written as [JSON Lines](https://jsonlines.org/) to S3-compatible storage every hour or every day. Each run continues exactly where the last one ended.
+- **Legal hold**: named people whose data retention, the trash, temporary-chat expiry and account deletion must leave alone until the hold is lifted.
+
+An `auditor` sees everything here and changes nothing.
+
+<Screenshot slot="admin-compliance" />
+
+## The export
+
+| Stream | When | Each line |
+|---|---|---|
+| **Audit events** | Always, while the export is on | One audit entry: `seq`, `id`, `createdAt`, `action`, `actorUserId`, `actorEmail`, `targetType`, `targetId`, `metadata`, `ipAddress`. |
+| **Conversation content** | Only with **Include conversation content** on | One message: `seq`, `id`, `threadId`, `userId`, `userEmail`, `role`, `status`, `model`, `parentMessageId`, `createdAt`, `updatedAt`, `supersededAt`, `error`, `thread` (`title`, `temporary`, `projectId`), `text`, `toolSteps`, `files`, `sources`. |
+
+The first export includes the whole audit log as retention has kept it. For messages:
+
+- `text` is what people read; reasoning is not exported.
+- `toolSteps` has one line per tool call, such as *Searched the web for "opening hours" · 5 results*; raw tool results are not exported.
+- `files` names attachments (`attachmentId`, `filename`, `mediaType`). **Attachment contents are never exported.**
+- A message is exported when created and again whenever its text, tool steps, status or error change, or a retry replaces it (`supersededAt`). A reply still being written is exported once, when it finishes.
+- Temporary chats are included, marked `"temporary": true`. Deletions are not exported as messages; administrative actions appear in the audit stream.
+
+<Callout type="warn" title="Content is off by default">
+  **Include conversation content** copies everyone's messages to the destination, where OCI's retention, deletion and access controls no longer apply. The page warns before you save it. Turn it on only where your policy requires it, and say so in your [acceptable use policy](/docs/administration/acceptable-use-and-announcements). Content is exported from the moment you save the setting; earlier messages, and messages written while it was off, are never exported.
+</Callout>
+
+### Objects
+
+Each run that has something to export writes one folder; a run with nothing new writes none and shows as *Nothing new to export*.
+
+<Files>
+  <Folder name="<prefix>YYYY/MM/DD/<start time>-<run id>" defaultOpen>
+    <File name="audit.jsonl" />
+    <File name="messages.jsonl (only with content on)" />
+    <File name="manifest.json (written last)" />
+  </Folder>
+</Files>
+
+`<prefix>` is `.oci-compliance/` in the attachment bucket, or your own prefix in a separate bucket. `manifest.json` names the format (`oci-compliance/1`), the OCI version, the run, whether content was included, and for each stream its object key, `afterSeq`, `throughSeq`, count, first and last sequence numbers, size and SHA-256. Only folders with a `manifest.json` are complete.
+
+### Exactly once
+
+Every audit event, and every message change, appears in exactly one object:
+
+- Each stream has a cursor. A run writes everything between the cursor and a safe upper bound, reads every object back to check its size, SHA-256 and line count, writes and checks the manifest, and only then moves the cursor, in the same transaction that marks the run succeeded.
+- **A failed run moves nothing on.** Its objects are deleted and the next run writes the same events again. A run interrupted by a restart is marked failed by the next one, which deletes what it wrote.
+- **Transactions still in progress cannot be skipped**: the upper bound is read under a brief lock that waits for writers already under way. If the table stays busy, the run fails with *stayed busy* and the next run retries; nothing is skipped.
+- Sequence numbers can skip (a rolled-back transaction uses one and writes nothing), so check continuity by each manifest's `afterSeq` equalling the previous one's `throughSeq`, per stream. `seq` with the stream is a unique key to deduplicate on.
+
+```sh
+sha256sum audit.jsonl              # equals streams.audit.sha256
+wc -l < audit.jsonl                # equals streams.audit.count
+jq -s 'map(.seq) | (. == sort)' audit.jsonl
+```
+
+### Destination and schedule
+
+- **Destination**: the attachment bucket under `.oci-compliance/` (storage reconciliation never treats these as orphans), or a **separate S3 bucket (recommended)** with its own region, endpoint, access key and prefix. Records meant to be tamper-evident belong in a bucket with versioning or object lock. **Test destination** writes, reads back and deletes a small object. The credential needs `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject` and the multipart upload actions. Turning the export on is refused while the destination is incomplete.
+- **Schedule**: **every hour**, or **once a day** at an hour (UTC). A check every five minutes runs an export when the current period has none yet; a failed scheduled run is retried after an hour. **Export now** runs one in the background.
+- **Retention of exported objects**: kept by default. **Delete exported objects after (days)** removes older successful runs' objects at the current destination.
+
+Changing settings is audited as `compliance.settings.update` and kept regardless of retention. Manual runs and every failed run are audited as `compliance.export.run`, so a [webhook](/docs/administration/observability-and-webhooks#webhooks) can alert on failures. **System health** has a *Compliance export* row: a failed latest run is an error; no success for two periods is a warning.
+
+## Legal hold
+
+Under **Legal holds**, enter a person's email and a reason (a matter or case reference) and choose **Place hold**. **Lift** ends it, with an optional reason. Both are audited (`compliance.hold.place`, `compliance.hold.lift`) and kept regardless of retention; lifted holds stay listed as history. Held people are marked **Legal hold** in the user list and on their account page.
+
+| Normally | Under hold |
+|---|---|
+| [Conversation retention](/docs/administration/retention) moves inactive conversations to the trash | Skipped for this person |
+| The trash is purged after its window | Their trash (conversations and files) is kept |
+| Expired temporary chats are deleted | Kept (still invisible to them) |
+| Audit retention prunes old entries | Entries by or about them are kept |
+| Memory retention deletes old notes | Their notes are kept |
+| They empty their trash or delete a conversation forever | Refused: *Permanent deletion is paused for this account by your organization.* Moving to the trash still works. |
+| The account is deleted | Refused, by the server and by a database trigger on any path |
+
+Lifting the hold restores normal behaviour: anything past its window is removed at the next run. A hold applies to work that starts after it is placed.
+
+<Callout title="What a hold does not cover in v0.9.1">
+  A hold does not stop the person using OCI (ban them for that), does not change what the export includes, and does not cover data outside OCI's database and file storage. Removing a project still deletes its files at once, and usage records are still pruned. Covering both, and exporting deletions as events, is planned for v0.10.
+</Callout>

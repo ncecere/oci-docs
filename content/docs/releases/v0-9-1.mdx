@@ -1,0 +1,42 @@
+---
+title: v0.9.1
+description: Project conversations live under their project in the sidebar, Settings → Account works, and a review of every settings page. No migrations.
+---
+
+Released 2026-10-03. A patch release after [v0.9.0](/docs/releases/v0-9-0) that reorganises the sidebar around projects and makes every settings page do what it says.
+
+## Highlights
+
+- **Project conversations live under their project.** In the sidebar, **Projects** is a plain heading and each project expands to its five most recent conversations, with **Show all (*n*)** opening the project's Conversations tab. Projects start collapsed, your choice is remembered in this browser, and the project you are working in opens by itself. **Today**, **Yesterday** and **Older** now list only conversations outside projects; pinned ones stay in **Pinned**. See [Conversations and the sidebar](/docs/using/conversations).
+- **Settings → Account works.** **Change password** appears when you can use a password (email sign-in is on, or you are a verified administrator). **Devices** lists where you are signed in and signs out one device or all others. Password accounts can edit their name; single sign-on accounts show that their name, email and password come from the organisation. Password changes, name changes and device sign-outs are audited. See [Settings → Account](/docs/using/settings#account).
+- **Settings in seven sections on one row**: Account, Customization, Memory, History, Models, Connectors and Attachments. Shortcuts and Contact Us are no longer tabs: every settings page shows a Keyboard Shortcuts card and a Need help? card, and their old addresses redirect to Settings. Where the tabs do not fit, a **Settings section** menu replaces them. Memory and Connectors are hidden when there is nothing in them; their addresses still work.
+- **Customization**: **Invert Send/New Line Behavior** now works (Enter adds a line, `Cmd/Ctrl + Enter` sends) and is kept in this browser; **Appearance** chooses Light, Dark or System; **Save Preferences** is available only when something changed.
+- **History** (renamed from History & Sync): search by title, **Load more**, titles that open the conversation, **Select all**, project labels, and **Export** and **Import** as buttons at the top.
+- **Attachments** lists project files, with a link to their project, and splits storage into chat files, project files and artifacts, so the totals match.
+
+<Screenshot slot="sidebar-projects" />
+
+## Removed
+
+- **Change Email** and **Delete Account** in Settings, which never worked. Email addresses come from sign-in. Self-service deletion, behind an administrator setting, is planned for v0.10.
+- **Hide Personal Information** in Customization, which was never saved or applied.
+
+## Fixes
+
+- Settings on a phone no longer squeeze the page beside a desktop-width column.
+- Settings no longer marks Account as current on every settings page.
+- The password-change audit entry now records who made the change.
+- The message editor ignores keys pressed while an input method (IME) is composing text, as the message box already did.
+
+## Upgrading from v0.9.0
+
+**No migrations and no new environment variables.** Replace the API and web images as a pair (`v0.9.1`); a rolling upgrade works, and so does rolling back to v0.9.0. See [Upgrades](/docs/self-hosting/upgrades).
+
+Things people will notice: project conversations move out of the date groups into their projects, and the Settings tabs change.
+
+## Known limitations
+
+- The Keyboard Shortcuts card lists `Cmd/Ctrl + Shift + O`, `Cmd/Ctrl + B` and `Cmd/Ctrl + /`, which do nothing yet. See [Keyboard shortcuts](/docs/using/keyboard-shortcuts).
+- The dashboard has no button to delete an account.
+- The remembered open projects in the sidebar do not sync between open tabs.
+- The limitations of [v0.9.0](/docs/releases/v0-9-0#known-limitations) still apply.

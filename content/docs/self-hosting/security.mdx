@@ -1,0 +1,50 @@
+---
+title: Security
+description: Secrets, encryption at rest, the network, access control and hardening for an OCI deployment.
+---
+
+## Secrets
+
+- `AUTH_SECRET` signs sessions; `ENCRYPTION_KEY` encrypts stored credentials. Both at least 32 characters, different from each other, generated randomly (`openssl rand -base64 48`), and kept in a secret manager.
+- **Credentials are write-only.** Provider keys, SMTP passwords, S3 keys, search keys, single sign-on secrets and certificates, connector credentials, people's connector tokens and webhook secrets are encrypted with `ENCRYPTION_KEY` and never returned by the dashboard or the API.
+- The audit log records whether a secret was set, cleared or replaced, never its value.
+- Rotating `ENCRYPTION_KEY` invalidates every stored credential. Do not rotate it casually, and never as part of a rollback.
+
+## Network
+
+- Serve OCI over HTTPS only, behind a TLS proxy, and set `APP_URL` to the `https://` address. Add `Strict-Transport-Security` at the proxy.
+- The web container sends a strict Content Security Policy, `X-Frame-Options: DENY` and other headers; see [Reverse proxy](/docs/self-hosting/reverse-proxy). Keep the artifact frame's separate policy intact.
+- Keep PostgreSQL, Redis, the API port and `/metrics` off the public network. Only the web container needs to be reachable.
+- **Outbound requests are guarded.** Connectors and webhooks refuse private, loopback, link-local and other reserved addresses unless an administrator allows a private network for that one connector or endpoint, always refuse cloud metadata addresses, never follow redirects, and are size- and time-limited. Identity providers on private networks must be listed in `AUTH_TRUSTED_ORIGINS`.
+- Model provider and search addresses are set by administrators and are not restricted to public addresses.
+
+## Access
+
+- **Make group mapping an access boundary**: turn on **Require a matching role** for your identity provider, or everybody it authenticates gets in. See [Identity](/docs/administration/identity#require-a-matching-role).
+- **Trust for account linking** only for a provider that really verifies email ownership.
+- Keep one verified local administrator with a known password for [break-glass access](/docs/administration/identity#break-glass-access), and test `/auth/login?local=1`.
+- Use the `auditor` role for compliance reviewers instead of `admin`.
+- Sessions are cached for up to five minutes per API replica, so revoking a session, banning or changing a role can take that long to reach every replica.
+- There is no multi-factor authentication for local accounts in v0.9.1; rely on your identity provider's MFA, and keep local accounts to break-glass administrators.
+
+## Content
+
+- Model replies are rendered as sanitised Markdown; following a link to another site asks for confirmation first.
+- HTML and SVG artifacts run in a sandboxed frame with an opaque origin and no network access.
+- Uploads are checked by content, not file name, and logos refuse SVG.
+- Share links never include reasoning, attachments or project content, and deleting a conversation revokes them for good.
+
+## Data
+
+- Conversation content never enters the audit log, metrics, traces or webhooks.
+- The compliance export copies content only if an administrator turns that on.
+- Retention, legal hold and the trash are described under [Retention](/docs/administration/retention) and [Compliance](/docs/administration/compliance).
+
+## Images
+
+- The API image runs as the non-root `oci` user.
+- Pin images to a version, or better a digest. Read [Releases](/docs/releases) before upgrading.
+
+## Reporting a vulnerability
+
+Follow the security policy in the [OCI repository](https://github.com/ncecere/open-chat-interface/blob/main/SECURITY.md).

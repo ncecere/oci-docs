@@ -1,0 +1,121 @@
+---
+title: Deploy with Docker Compose
+description: Run a released version of OCI with the bundled Compose file, behind your own TLS proxy, with one or several API replicas.
+---
+
+The repository's `docker/compose.yaml` is the supported deployment. It runs:
+
+| Service | Image | Notes |
+|---|---|---|
+| `web` | `OCI_WEB_IMAGE` | Published on `OCI_PORT` (8080). Forwards `/api/*` to the API. |
+| `api` | `OCI_API_IMAGE` | Applies migrations on start unless `RUN_MIGRATIONS=false`. Files on the `storage_data` volume. |
+| `migrate` | `OCI_API_IMAGE` | Profile `tools`. A one-shot migration job for multi-replica rollouts. |
+| `postgres` | `postgres:17-alpine` | Volume `postgres_data`. |
+| `redis` | `redis:7-alpine` | Volume `redis_data`. |
+| `minio` | `minio/minio` | Profile `s3`. Optional S3-compatible storage. |
+| `searxng` | `searxng/searxng` | Profile `search`. Optional web search. |
+
+## Install
+
+<Steps>
+<Step>
+
+### Get the Compose file
+
+```sh
+git clone https://github.com/ncecere/open-chat-interface.git
+cd open-chat-interface
+git checkout v0.9.1
+cd docker
+```
+
+</Step>
+<Step>
+
+### Configure
+
+Create `docker/.env` (or supply the variables from your secret manager):
+
+```sh
+APP_URL=https://chat.example.edu
+POSTGRES_PASSWORD=<openssl rand -hex 24>
+AUTH_SECRET=<openssl rand -base64 48>
+ENCRYPTION_KEY=<openssl rand -base64 48>
+INITIAL_ADMIN_EMAIL=morgan.lee@example.edu
+INITIAL_ADMIN_PASSWORD=<at least 12 characters; change it after signing in>
+OCI_API_IMAGE=ghcr.io/ncecere/open-chat-interface/api:v0.9.1
+OCI_WEB_IMAGE=ghcr.io/ncecere/open-chat-interface/web:v0.9.1
+```
+
+`APP_URL` must be the address people use, through your proxy. See [Configuration](/docs/self-hosting/configuration) for everything else. Keep `INITIAL_ADMIN_EMAIL` and `INITIAL_ADMIN_PASSWORD` set: this Compose file passes them through as empty values when unset, and the API refuses to start with them empty.
+
+</Step>
+<Step>
+
+### Start
+
+```sh
+docker compose pull api web
+docker compose up -d --no-build
+docker compose ps
+curl --fail "http://localhost:${OCI_PORT:-8080}/api/health/ready"
+```
+
+Without `OCI_API_IMAGE` and `OCI_WEB_IMAGE`, Compose builds the images from the checkout instead. For a released deployment, keep both set and always start with `--no-build`.
+
+</Step>
+<Step>
+
+### Put a TLS proxy in front
+
+Point your reverse proxy or load balancer at the web container's port. See [Reverse proxy](/docs/self-hosting/reverse-proxy).
+
+</Step>
+<Step>
+
+### Set it up
+
+Sign in as the first administrator and follow the setup checklist: [First run](/docs/administration/first-run).
+
+</Step>
+</Steps>
+
+<Callout title="Pin versions">
+  Pin both images to the same `vX.Y.Z`. Use `latest` only for evaluation: it moves with each release, and its two images are updated one after the other, not together. For content identity independent of tags, pin by digest. Released images are `linux/amd64` only.
+</Callout>
+
+If the images are private to you, `docker login ghcr.io` first with a token that has `read:packages`, from your secret manager.
+
+## More than one API replica
+
+Startup migrations are guarded by a PostgreSQL advisory lock, so replicas can start together. For a predictable rollout, run migrations as their own step:
+
+```sh
+docker compose --profile tools run --rm migrate
+RUN_MIGRATIONS=false docker compose up -d --no-build --scale api=3
+```
+
+A replica started with `RUN_MIGRATIONS=false` against a database missing the latest migration refuses to start. The web container's Caddy re-resolves the `api` service name every ten seconds, so new replicas are found as you scale, and it retries a failed replica. No sticky sessions are needed: sessions are cookies and replies are resumed through Redis.
+
+Before scaling:
+
+- **Use S3-compatible storage.** The local driver writes to a per-container volume, so a file uploaded through one replica is invisible to the others.
+- **Use Redis.** Without it, rate limits and reply recovery are per replica.
+- **Role and ban changes lag.** Sessions are cached for up to five minutes per replica.
+- **Database connections**: each replica needs its pool plus one connection per running background job.
+
+## Optional services
+
+- `docker compose --profile search up -d` adds SearXNG, reachable from the API at `http://searxng:8080`. Enable JSON output in its settings, then configure it under [Web search](/docs/administration/web-search).
+- `docker compose --profile s3 up -d` adds MinIO. Set `MINIO_USER` and `MINIO_PASSWORD`, create a bucket, then configure [Storage](/docs/administration/instance-settings#storage). For production, prefer a managed or properly operated S3 service.
+
+## Day to day
+
+| Task | Command |
+|---|---|
+| Logs | `docker compose logs -f api` |
+| Status | `docker compose ps` |
+| Promote an account to admin | `docker compose exec api node dist/scripts/promote-admin.js someone@example.edu` |
+| Database shell | `docker compose exec postgres psql --username=oci --dbname=oci` |
+
+Upgrades: [Upgrades](/docs/self-hosting/upgrades). Backups: [Backups and restore](/docs/self-hosting/backups-and-restore).

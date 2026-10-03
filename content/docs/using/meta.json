@@ -1,0 +1,25 @@
+{
+  "title": "Using OCI",
+  "description": "Chatting, organising and your own data",
+  "root": true,
+  "pages": [
+    "index",
+    "---In a conversation---",
+    "chat",
+    "attachments-and-web-search",
+    "tools-and-connectors",
+    "artifacts",
+    "---Organising---",
+    "conversations",
+    "projects",
+    "memory",
+    "---Your data---",
+    "sharing",
+    "exporting-files",
+    "your-data",
+    "limits",
+    "---Settings---",
+    "settings",
+    "keyboard-shortcuts"
+  ]
+}

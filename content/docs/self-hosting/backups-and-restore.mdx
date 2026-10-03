@@ -1,0 +1,89 @@
+---
+title: Backups and restore
+description: What to back up, how, and how to restore — with OCI's automated backups or your own.
+---
+
+## What to back up
+
+| State | Where | Notes |
+|---|---|---|
+| **PostgreSQL** | The database | Accounts, sign-in state, settings, providers and models, conversations, budgets, file metadata, the audit log, embeddings. |
+| **Files** | The local storage volume or the S3 bucket | Uploads, project files, logos. Copying only the database's file metadata is not enough. |
+| **Secrets** | Your secret manager | `AUTH_SECRET`, `ENCRYPTION_KEY`, database credentials and deployment configuration. Without the same `ENCRYPTION_KEY`, stored credentials cannot be decrypted. |
+
+Redis holds nothing that needs a backup.
+
+## Option 1: OCI's automated backups
+
+**Admin → Data & storage → Backups** runs a verified `pg_dump` to S3 every day, with a checksummed manifest of every file object and daily and weekly retention. See [Backups](/docs/administration/backups). The manifest lists files but does not copy them, so you still need bucket versioning (and ideally replication) or volume snapshots for files.
+
+## Option 2: your own
+
+For the bundled Compose stack:
+
+```sh
+cd docker
+docker compose exec -T postgres \
+  pg_dump --format=custom --no-owner --username=oci oci > "oci-$(date +%F).dump"
+```
+
+For local file storage, stop API writes and archive the `storage_data` volume. For S3, use versioning or your provider's replication or export.
+
+Periodically restore both the database and the files into an isolated environment and check that files download. That is the only proof a backup works.
+
+## PostgreSQL client tools
+
+The API image includes the PostgreSQL 17 client tools. A newer `pg_dump` can dump an older server, never the reverse, so a PostgreSQL 18 server needs newer tools. Outside the image, install the client tools for your server version and, if they are not on `PATH`, set `BACKUP_PG_BIN_DIR` (such as `/usr/lib/postgresql/17/bin`). The Backups page shows the version it found.
+
+## Restoring an automated backup
+
+<Steps>
+<Step>
+
+### Download and check
+
+```sh
+aws s3 cp --recursive s3://oci-backups/oci-backups/2026-10-02T03-00-04-123Z-ab12cd34/ ./restore/
+jq -r .database.sha256 restore/manifest.json
+sha256sum restore/database.dump
+```
+
+</Step>
+<Step>
+
+### Restore into a new, empty database
+
+pgvector must be available if meaning-based search was on.
+
+```sh
+createdb oci_restore
+pg_restore --no-owner --role=oci --dbname=oci_restore restore/database.dump
+```
+
+The dump was written to a stream, so restore it serially (no `--jobs`).
+
+</Step>
+<Step>
+
+### Check the files
+
+Every key in `attachments.jsonl` should exist in file storage with the listed size and SHA-256. With S3 versioning, recover a missing key from its previous version.
+
+</Step>
+<Step>
+
+### Start a test deployment
+
+Point it at the restored database with the **same `ENCRYPTION_KEY` and `AUTH_SECRET`** and the same file storage. Run the same or a newer OCI version: startup applies any newer migrations.
+
+</Step>
+<Step>
+
+### Verify, then switch
+
+Check sign-in, a conversation, a file download and System health, run **Check for orphans** under storage reconciliation, then switch production over.
+
+</Step>
+</Steps>
+
+Restoring your own `pg_dump` works the same way from step 2.

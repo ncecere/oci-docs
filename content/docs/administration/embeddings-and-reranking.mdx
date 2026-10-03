@@ -1,0 +1,52 @@
+---
+title: Embeddings and reranking
+description: Optional meaning-based search and reranking for large project files, what they need, what they cost, and how they fail safely.
+---
+
+When a [project's files](/docs/using/projects#large-projects) are too large to give a model whole, OCI searches them for the passages that matter, by keyword. Two optional stages improve that search. Both are on the **Embeddings** tab of **Models → Providers & Models** (`/admin/models?tab=embeddings`).
+
+<Screenshot slot="admin-embeddings" />
+
+| Stage | What it adds | Needs |
+|---|---|---|
+| Keyword search | Always on | Nothing |
+| **Meaning-based search** (embeddings) | Finds passages that answer a question in other words, merged with the keyword results | pgvector in PostgreSQL, and an embeddings model |
+| **Reranking** | A reranking model reads the question with the 40 best candidates and puts the ones that answer it first | A Cohere-compatible `/rerank` endpoint; works with or without pgvector |
+
+## Meaning-based search
+
+Each passage is turned into a vector (an *embedding*) once, and each question as it is asked. The passages closest in meaning are merged with the keyword results (reciprocal rank fusion), so exact names and codes still rank first.
+
+It needs two things:
+
+- **pgvector in the database.** The tab shows whether the extension is not installed on the server, installed but not enabled, or enabled. OCI never enables it itself: an operator runs `CREATE EXTENSION IF NOT EXISTS vector;` once. See [Upgrades → pgvector](/docs/self-hosting/upgrades#pgvector-for-meaning-based-search).
+- **An embeddings model.** Choose an existing provider (OpenAI, Google or OpenAI-compatible; Anthropic has no embeddings) and enter the model ID, such as `text-embedding-3-small` or, on a local server, `nomic-embed-text`. **Test model** embeds a sample and reports the vector size. A model that cannot embed the sample cannot be switched on.
+
+Once both are in place, OCI creates its embeddings table and a background job (`projects.embed-passages`) embeds existing passages, a batch every five minutes; new uploads embed their opening passages straight away. The tab shows how many passages are embedded and any files waiting to be retried. **System health** has a *Meaning-based search* row with the same.
+
+- **Relevance floor.** Passages with a cosine similarity below 0.2 to the question are left out. With OpenAI's `text-embedding-3` or Cohere's embed-v3, unrelated text scores below that; with models such as `nomic-embed-text` or `bge-m3` it scores above 0.3, so the floor removes little and keyword search and reranking do the filtering.
+- **Changing the model** re-embeds everything in the background; until a project is done, its searches are keyword-only. Switching it off keeps the stored embeddings.
+- **Cost.** Calls are usage under `embedding:<model id>`: passages are charged to the file's owner, questions to the person asking. They count tokens (and cost, if you set a **price** per million tokens), no messages, and count towards budgets that cover every model.
+- **Failures.** A failed or slow embeddings call never fails a reply: it is searched by keyword instead, and the failure is logged.
+
+## Reranking
+
+Choose an existing provider and the reranking model ID, such as `bge-reranker-v2-m3`, `jina-reranker-v2-base-multilingual` or `rerank-v3.5`. **Test reranking** reranks a three-sentence sample and reports how long it took; a model that cannot rerank it cannot be switched on.
+
+OCI calls the Cohere-compatible API at the provider's base URL with `/rerank` appended (`https://host/v1` becomes `https://host/v1/rerank`); the section shows the resolved URL. Only OpenAI-compatible providers, and OpenAI providers with a base URL, are offered.
+
+| Server | Base URL | Notes |
+|---|---|---|
+| LiteLLM | `https://litellm.example.edu/v1` | Its `/rerank` route forwards to Cohere, Jina, Hugging Face TEI, vLLM and others. |
+| vLLM | `http://vllm:8000/v1` | Serve a cross-encoder, such as `vllm serve BAAI/bge-reranker-v2-m3`. |
+| Hugging Face TEI | Through LiteLLM | TEI's own `/rerank` expects `texts` rather than `documents`. |
+| Jina | `https://api.jina.ai/v1` | `jina-reranker-v2-base-multilingual`. |
+| Cohere | `https://api.cohere.com/v2` | `rerank-v3.5`, added as an OpenAI-compatible provider. |
+
+- **Relevance floor.** Passages scored below 0.05 (on a 0–1 scale) are left out with everything after them; if none passes, no project passages are used. Servers that return raw scores outside 0–1 only reorder.
+- **Time limit.** A reply waits at most five seconds. A timeout or error keeps the previous order, is logged, and never fails the reply.
+- **Cost.** Each reranked message is one usage event under `rerank:<model id>`, with no message counted. It costs nothing unless you set a **price** per 1,000 searches.
+
+## Audit
+
+Changes are audited as `embeddings.update` and `reranking.update` (with the previous and new setting), and tests as `embeddings.test` and `reranking.test`. Auditors can see the tab, including the resolved endpoint, but not change it.

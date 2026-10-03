@@ -1,0 +1,40 @@
+---
+title: Limits and usage
+description: What a usage warning means, when limits reset, storage, rate limits, and what to do if a limit is wrong for your work.
+---
+
+Your institution may cap how much you can use, so one person's activity does not consume a shared budget.
+
+## What you see
+
+Usage appears as **a percentage remaining**, on every Settings page. Never a number of messages, tokens or money: what a token costs is not something you can act on, and a percentage answers the question you have, which is how much is left.
+
+Two notices exist:
+
+- **Approaching**: you are near a limit (warnings start at 80% used, and again at 95%). Nothing has stopped.
+- **Reached**: sending is blocked until the window resets.
+
+## When a limit resets
+
+- **A rolling window**, such as the last 24 hours or 7 days, moves continuously: usage falls away as it ages, and capacity returns gradually.
+- **A calendar window** (a day, week or month) resets on a boundary, all at once.
+
+Settings shows which applies and when the next reset is.
+
+A reply in progress reserves some allowance. If a model does not report its usage, that estimate stays held until the real figures arrive or the request leaves your window. Stopping a reply does not make it free; summaries, searching project files by meaning and reranking count too.
+
+## Different limits for different models
+
+A limit may cover only some models. Instances often allow generous use of an inexpensive model and restrict an expensive one. If you are blocked on one model, another may still work; the picker does not grey them out, so trying is the quickest way to find out.
+
+## Storage
+
+Files count against a separate allowance, also shown as a percentage. It measures what you hold now, not what you have ever uploaded: deleting files frees space, and so does moving a conversation to the trash. Restoring it needs the space again. Uploads in progress reserve space too, so with several uploads at once a later one may be refused even if the meter showed room. Artifact versions and project files count as well. See [Settings → Attachments](/docs/using/settings#attachments).
+
+## Rate limits
+
+Separately, an instance limits how fast requests can be made and how many replies can stream at once. You are unlikely to meet these working normally. If you do, wait a moment.
+
+## If a limit is wrong for your work
+
+Budgets are set per role, and an administrator can give one person more without changing it for everyone. Features are set per role too. Ask, and say what you are doing: "I am running a literature review across 300 papers" is something an administrator can act on.

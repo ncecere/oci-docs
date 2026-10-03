@@ -1,0 +1,84 @@
+---
+title: Budgets and limits
+description: Usage budgets in messages, tokens or cost, per-person overrides, rate limits, storage allowances, and how reservations keep concurrent use honest.
+---
+
+Three kinds of limit, for three different jobs:
+
+| Limit | Job | Where |
+|---|---|---|
+| **Usage budgets** | How much someone may consume | **Models → Usage budgets** |
+| **Rate limits** | Stop one client overwhelming the instance | **People → Roles & access** |
+| **Storage allowance** | How much someone may hold in files | **People → Roles & access** |
+
+People see their remaining budget and storage as a percentage, never as figures ([Limits and usage](/docs/using/limits)).
+
+## Usage budgets
+
+**Models → Usage budgets** (`/admin/quotas`). A budget (a quota policy) caps consumption and applies to one or more roles. A role can carry several and every one is enforced; each person gets the full amount on their own.
+
+<Screenshot slot="admin-usage-budgets" />
+
+### What to measure
+
+| Measure | Suits |
+|---|---|
+| **Messages** | Simplest to explain: "500 messages a month". |
+| **Tokens** | Closer to real cost, harder to explain to someone who hits it. |
+| **Cost** | Exact, and the only one that means anything across models of different prices. Needs [prices](/docs/administration/providers-and-models#the-model-catalogue) on the models; unpriced models cost nothing. |
+
+Measure cost when models differ in price, messages when they do not.
+
+### Which window
+
+- **Rolling**: the last *n* hours, moving continuously. Capacity returns gradually.
+- **Calendar**: daily, weekly or monthly, resetting at midnight in a time zone you choose. Easier to explain; produces a rush at the start of each period.
+
+### Which models
+
+A budget can cover every model or specific ones. Scoping lets you be generous with an inexpensive model and strict with an expensive one. A model in no budget is unlimited.
+
+People are warned as they approach a limit, at 80% and again at 95%. The thresholds are fixed.
+
+### A worked example
+
+A department wants staff using a costly model without an open-ended bill:
+
+- Measure: **cost**. Window: **calendar month**. Scope: **the expensive model only**.
+- Limit: look at [Usage](/docs/administration/audit-and-reports#usage) for a fortnight first rather than guessing.
+
+### Per-person overrides
+
+Give one person more without changing the policy, from **Limits** beside them in [the user list](/docs/administration/people) or **Adjust limits** on their page, with an optional expiry and reason.
+
+### How enforcement works
+
+A reply **reserves** an amount before it starts and **settles** to the actual usage when it ends, so concurrent requests see each other and cannot together overshoot a limit. Stopped and failed replies still settle. The amounts held are **Budget held per response** (default $0.25) and **Tokens held per response** (default 4,000) under **Instance-wide** on Roles & access.
+
+If a provider does not report usage, the estimate stays held within the budget's window rather than counting as free; it is released when complete usage arrives or the request ages out of the window. A reservation left by a crashed process is swept after 15 minutes and marked as unknown usage, not forgiven. These are estimates: use provider-side spending controls where a hard financial cap is required.
+
+Besides replies, conversation summaries, embeddings and reranking are usage too (summaries and embeddings count tokens; none counts messages). Imported conversations do not count.
+
+## Rate limits
+
+Per role, on **People → Roles & access**:
+
+| Limit | `admin` | `auditor` | `user` | `restricted` |
+|---|---|---|---|---|
+| Replies streaming at once | 10 | 3 | 3 | 1 |
+| Messages per minute | 120 | 30 | 30 | 10 |
+| Uploads per minute | 120 | 20 | 20 | 5 |
+
+These are the built-in defaults. An [environment variable](/docs/self-hosting/configuration#limits-and-retention-defaults) such as `RATE_LIMIT_CHAT_PER_MINUTE` replaces the default for every role; a value saved here wins over both. Each value shows where it came from. Under **Instance-wide**, sign-in attempts per minute (default 10) are counted per IP address and per account.
+
+A person working normally should never meet these. The concurrency cap also bounds how far a budget can be overshot by simultaneous requests. Without Redis, rate limits are enforced per API replica.
+
+## Storage allowance
+
+Per role, on **People → Roles & access**: total storage, number of stored files, and the largest single file. A blank total or file count means no limit; a blank per-file size falls back to the instance's upload limit on [Storage](/docs/administration/instance-settings#storage). **Enforce allowance** switches it off without losing the values. A role with nothing saved is unlimited.
+
+Storage is a **gauge, not a flow**: it measures what someone holds now. Uploads in progress reserve space. Deleting files, or moving their conversation to the trash, frees allowance at once; restoring needs it again. Artifact versions count towards total storage (not the file count), and so do project files.
+
+## Audit
+
+Budget changes, overrides and role settings are audited. Role changes, including bulk ones, are kept regardless of audit retention.

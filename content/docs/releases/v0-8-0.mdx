@@ -1,0 +1,31 @@
+---
+title: v0.8.0
+description: Tools and connected knowledge — tool calling with approvals, web search as a tool, search over large project files, and MCP connectors.
+---
+
+Released 2026-10-02.
+
+## For people
+
+- **Tools.** Models tagged for tool calling can use tools while they reply. Each call shows as a collapsible step; tools that change something ask for **Approve** or **Deny**, and sending a new message instead denies open approvals as "not answered". See [Tools and connectors](/docs/using/tools-and-connectors).
+- **Web search as a tool.** With a tool-capable model and **Search** on, the model decides when and what to search, may search more than once, and cites results. Other models keep the single search before the reply.
+- **Large project files are searched** instead of left out: the passages that best match each message are included, and the reply says the files were searched. The project page shows whether each file is searchable and uses tabs (Conversations, Instructions, Files, Settings).
+- **Connectors**: connect your own accounts under Settings → Connectors so models can use a service's tools with your permissions.
+- A failed web search no longer fails the reply; it shows **Web search failed** with the reason.
+
+## For administrators
+
+- **Tools** on Roles & access, with a switch per tool and role, and **Tool step limit** on General (default 8).
+- **MCP connectors** under Tools & integrations: no sign-in, a shared credential or per-person OAuth; tools enabled as read or write; guarded outbound requests. See [Connectors](/docs/administration/connectors).
+- **SerpApi and SearchApi** join the web search providers, and **Test search** checks a provider and key before saving. The Web search page asks for exactly what the chosen provider needs.
+- Every tool call is audited as `tool.call`, with metadata only.
+
+## Fixes
+
+The audit log no longer records a cleared secret as set; chat errors show as text, not raw JSON; switching web search provider no longer keeps the previous provider's key; a reply stopped part-way records the usage of its finished steps.
+
+**Removed**: boring mode (theme menu and Customization).
+
+## Upgrading from v0.7.0
+
+Migrations `0026` and `0027` only add new tables. Existing project files are indexed by a background job afterwards. Deploy the API and web images as a pair. Connectors need `APP_URL` to be the address people use, and outbound access to their servers. See [Upgrades](/docs/self-hosting/upgrades#to-v080).

@@ -1,0 +1,56 @@
+---
+title: v0.9.0
+description: Make and operate — artifacts, file export, user memory, long conversations, meaning-based project search, compliance export and legal hold, automated backups, metrics, traces and webhooks.
+---
+
+Released 2026-10-03. Two themes: things people make (artifacts, files, memory, long conversations) and things operators need (compliance, backups, observability).
+
+## For people
+
+- **Artifacts.** HTML pages, SVG images, Mermaid diagrams and long documents from replies are kept as versioned artifacts. Tool-capable models create and revise them; you watch them being written in a panel that opens beside the conversation on wide screens, take them full screen (also on phones and share links), browse versions, copy, download, and edit documents directly. Pages run in a sandboxed frame with no network access. See [Artifacts](/docs/using/artifacts).
+- **Export as Word, PDF, PowerPoint or Excel** from replies and document artifacts. See [Exporting as files](/docs/using/exporting-files).
+- **User memory**, opt-in for the instance, the role and each person, with `remember` and `forget` for tool-capable models, **Memory updated** with **Undo**, and never in temporary chats. See [Memory](/docs/using/memory).
+- **Long conversations are summarised** in the background instead of losing their oldest turns, without making anyone wait; **Summarise earlier messages now** asks for one. See [Long conversations](/docs/using/chat#long-conversations).
+- **Meaning-based search for project files**, and optional reranking, when your institution sets them up.
+- **A live reasoning preview**: three lines under **Thinking…** while a model thinks.
+- **A hint to connect a connector** above the message box.
+- Replies show their parts in the order they were written (reasoning, tool steps, text), also in share links and Markdown exports.
+
+<Screenshot slot="artifact-panel-docked" />
+
+## For administrators
+
+- **Compliance export and legal hold**: audit events, and optionally content, exported as verified JSON Lines to S3 exactly once; holds that pause retention and deletion for named people. See [Compliance](/docs/administration/compliance).
+- **Automated backups**: a daily, verified `pg_dump` to S3 with a manifest of file objects and daily and weekly retention. See [Backups](/docs/administration/backups).
+- **Webhooks** for audit events, signed with HMAC-SHA256 and retried. See [Observability and webhooks](/docs/administration/observability-and-webhooks).
+- **Embeddings and reranking** on Providers & Models. See [Embeddings and reranking](/docs/administration/embeddings-and-reranking).
+- New switches: **Artifacts** per role, **User memory** for the instance and per role, **Summarise long conversations** and **Editorial diagrams** on General.
+- Web searches that time out are retried once; connector token refresh is coordinated across replicas.
+- Project search adds only relevant passages, so an unrelated question adds none.
+
+## For operators
+
+- **Metrics** at `/metrics` when `METRICS_TOKEN` is set, and **OpenTelemetry traces** when `OTEL_EXPORTER_OTLP_ENDPOINT` is set.
+- The API image includes the **PostgreSQL 17 client tools** for backups.
+- **Artifact frame headers**: if you run your own proxy, see [Reverse proxy](/docs/self-hosting/reverse-proxy#the-artifact-frame).
+- File exports need up to two CPU cores and about 1.2 GB extra memory per API replica at peak.
+
+## Fixes
+
+Scrolling past the end of a conversation no longer carries the message box off screen; Stop and Send icons are visible on the neutral theme; highlighted code follows OCI's theme rather than the system's; the cursor stays in the message box when starting from the home page; the first message no longer sits under the top bar on phones.
+
+## Upgrading from v0.8.0
+
+Migrations `0028` to `0034`. Read the [v0.9.0 upgrade notes](/docs/self-hosting/upgrades#to-v090) first: `0034` locks the audit log while it numbers existing entries, and upgrading straight from v0.7 needs the old replicas stopped before migrating. New optional environment variables: `METRICS_TOKEN`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `BACKUP_PG_BIN_DIR`. Meaning-based search needs [pgvector](/docs/self-hosting/upgrades#pgvector-for-meaning-based-search).
+
+Removed: the unused `user_preference.boring_mode` column (migration `0031`).
+
+## Known limitations
+
+Planned for v0.10:
+
+- Legal hold does not yet pause project file deletion or usage-record pruning, and deletions are not exported as compliance events.
+- Backups list file objects rather than copying them; protect files with bucket versioning or volume snapshots.
+- Exported PDFs cover Western European characters only.
+- The artifact panel cannot be resized, and reloading during a very long artifact may not resume its stream.
+- A summary someone asked for that fails in the background is not reported.

@@ -1,0 +1,30 @@
+---
+title: Kubernetes
+description: What exists for Kubernetes today, and how to map the Compose deployment onto it yourself.
+---
+
+<Callout title="No Helm chart yet">
+  OCI v0.9.1 ships no Helm chart, Kustomize base or Kubernetes manifests. The supported deployment is [Docker Compose](/docs/self-hosting/docker-compose). A first-party Helm chart, with a migration job before each rollout, rolling updates, disruption budgets and autoscaling on OCI's metrics, is on the roadmap for v0.11.
+</Callout>
+
+The two images run on Kubernetes without changes. If you build your own manifests, map the Compose services like this:
+
+| Compose | Kubernetes |
+|---|---|
+| `web` | A Deployment (port 8080) behind a Service and your Ingress or Gateway. Point it at the API Service with `API_UPSTREAM_HOST` (such as `oci-api`) and `API_UPSTREAM_PORT` (`3000`); the bundled Caddyfile also reads `API_UPSTREAM` (`oci-api:3000`). |
+| `api` | A Deployment (port 3000) and a Service. Environment from a Secret (`DATABASE_URL`, `AUTH_SECRET`, `ENCRYPTION_KEY`) and a ConfigMap (`APP_URL`, `REDIS_URL`, `NODE_ENV=production`, `RUN_MIGRATIONS=false`). |
+| `migrate` | A Job running `node dist/migrate.js` with the API image, before each rollout. |
+| `postgres`, `redis` | Your managed or operator-run PostgreSQL 17 and Redis. |
+| `storage_data` volume | Not needed: use S3-compatible storage, so every replica sees every file. |
+
+Points that matter on Kubernetes:
+
+- **Probes.** API readiness: `GET /api/health/ready` (checks the database; 503 when it cannot reach it). Liveness: `GET /api/health/live`. The web container serves the app on 8080; probe `/` there.
+- **Migrations.** Run the migration Job to completion before rolling out a new API version, and start the API with `RUN_MIGRATIONS=false`. Several replicas starting with `RUN_MIGRATIONS=true` are safe too (an advisory lock serialises them), but the Job makes rollouts predictable.
+- **Database connections.** Point `DATABASE_URL` at PostgreSQL directly or through a session-mode pooler, never transaction-mode PgBouncer. Budget the pool plus one connection per running background job, per replica.
+- **The web proxy finds API pods** by re-resolving `API_UPSTREAM_HOST` every ten seconds; a headless Service lets it balance across pods itself, while a normal ClusterIP Service balances for it.
+- **Metrics** are served on each API pod's port 3000 at `/metrics` when `METRICS_TOKEN` is set; scrape pods directly.
+- **The API image runs as a non-root user** (`oci`) and writes files under `/data/storage` only with the local driver.
+- **Ingress**: disable response buffering and raise timeouts for `/api`, and keep the [artifact frame](/docs/self-hosting/reverse-proxy#the-artifact-frame) headers intact.
+- **Images are `linux/amd64` only.**
+- **Upgrades** follow the same procedure as Compose: [Upgrades](/docs/self-hosting/upgrades).

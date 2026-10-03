@@ -1,0 +1,35 @@
+---
+title: Retention
+description: How long conversations, the trash, usage history, memory notes and audit entries are kept, and what is always kept.
+---
+
+**Data & storage → Retention** (`/admin/retention`). Each value shows whether it was saved here, came from an [environment variable](/docs/self-hosting/configuration#limits-and-retention-defaults), or is the built-in default.
+
+<Screenshot slot="admin-retention" />
+
+| Setting | Default | What it does |
+|---|---|---|
+| **Conversation retention** | Off (keep forever) | Conversations inactive this long move to the trash. **Keep pinned conversations** exempts anything a person pinned. Shared conversations are not exempt; moving one to the trash revokes its links. |
+| **Trash retention** | 30 days (1–365) | The recovery window before a deletion becomes permanent. |
+| **Usage history** | 90 days | Per-message usage records. Daily totals are kept regardless. Records with unresolved usage are kept until resolved. |
+| **Memory retention** | Off | [Memory](/docs/administration/memory) notes not updated this long are deleted by a daily job. |
+| **Audit log** | 365 days | How long audit entries are kept. Check what your institution requires before shortening it. |
+| **Reporting timezone** | UTC | Where a day starts and ends on the Usage page. Budgets reset on their own time zone. |
+
+Retention runs as background jobs; **System health** lists their last runs, and **Run** starts one now after you change a setting.
+
+## Always kept
+
+Access-control and security entries in the audit log are kept regardless of audit retention: account creation, edits and deletion; role changes, including bulk role, ban and unban; provider, connector and single sign-on changes; sign-in policy changes; webhook endpoint changes; backup and compliance export settings; and legal holds.
+
+While the [compliance export](/docs/administration/compliance) is on, audit entries it has not exported yet are kept too, so a short audit retention never opens a gap.
+
+## Legal hold
+
+People on [legal hold](/docs/administration/compliance#legal-hold) are skipped by conversation, trash, memory and audit retention, and their expired temporary chats are kept, until the hold is lifted.
+
+## Advice
+
+- State your retention period in your [acceptable use policy](/docs/administration/acceptable-use-and-announcements). Nobody thanks you for a short period they were not told about.
+- Retention is easier to introduce early and shorten later than to impose on an instance where people have two years of work.
+- Projects themselves are not subject to retention, but their conversations are. Imported conversations keep their original dates, so old imports can move to the trash at the next run.

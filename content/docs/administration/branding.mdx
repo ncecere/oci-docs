@@ -1,0 +1,29 @@
+---
+title: Branding
+description: The instance name, logo, accent colour, default theme and sign-in message.
+---
+
+**Appearance & features → Branding** (`/admin/branding`). The instance name, a short name, a logo, the appearance, and a message on the sign-in page.
+
+<Screenshot slot="admin-branding" />
+
+## Name and logo
+
+- **App name** (up to 80 characters) is shown on the sign-in page and in the app's navigation.
+- **Short name** is a compact mark for the sidebar; when blank, the initials of the app name are used.
+- **Logo file** or **Logo URL**. A **Live preview** beside the form shows the sign-in page as it will look.
+
+**Upload the logo rather than linking it.** The logo URL field accepts an external `http(s)` address, but a linked image disappears if its host does, on the one page people see before they can sign in. Uploading stores it with the instance and fills in the field.
+
+**SVG uploads are refused**: the logo renders before sign-in, and SVG can carry script. PNG, JPEG and WebP are accepted, checked by content rather than extension, up to 1 MB.
+
+The wordmark falls back in order: logo, then short name, then initials.
+
+## Appearance
+
+- **Accent color**: **neutral** (the default), **blue**, **violet** or **emerald**, applied to buttons, links and highlights across the instance, including the sign-in and share pages. Surfaces stay neutral, so no choice here can make text unreadable.
+- **Default theme**: **light**, **dark** or **system**, for anybody who has not chosen a theme themselves. People who chose one keep it.
+
+## What does not follow branding yet
+
+In v0.9.1 some surfaces do not use your branding: the browser tab title always says "Open Chat Interface", there is no favicon from your logo, verification and password-reset emails do not name the instance, and diagrams in artifacts do not take their colours from the accent. Making every surface follow branding is planned for v0.10.
