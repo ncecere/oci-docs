@@ -15,7 +15,9 @@ Redis holds nothing that needs a backup.
 
 ## Option 1: OCI's automated backups
 
-**Admin → Data & storage → Backups** runs a verified `pg_dump` to S3 every day, with a checksummed manifest of every file object and daily and weekly retention. See [Backups](/docs/administration/backups). The manifest lists files but does not copy them, so you still need bucket versioning (and ideally replication) or volume snapshots for files.
+**Admin → Data & storage → Backups** runs a verified `pg_dump` to S3 every day, with a checksummed manifest of every file object and daily and weekly retention. With **Copy attachment files** on, each backup also copies the files themselves (attachments, thumbnails and the uploaded logo), incrementally and by content, so a backup restores everything except your secrets. See [Backups](/docs/administration/backups).
+
+Copying is on for a new backup configuration. An instance that saved backup settings before v0.10 only lists files until an administrator turns copying on; while it is off, you still need bucket versioning (and ideally replication) or volume snapshots for files.
 
 ## Option 2: your own
 
@@ -65,16 +67,42 @@ The dump was written to a stream, so restore it serially (no `--jobs`).
 </Step>
 <Step>
 
-### Check the files
+### Restore the files
 
-Every key in `attachments.jsonl` should exist in file storage with the listed size and SHA-256. With S3 versioning, recover a missing key from its previous version.
+If the backup copied files (`jq .files.copied restore/manifest.json` prints `true`), use the `restore-backup-files` script in the API image. It reads the folder's `attachments.jsonl`, streams each `objects/<sha256>` copy back to its original storage key, checks every file's SHA-256 on the way, and leaves objects already present alone (`--overwrite` replaces them). It needs no database. Credentials come from the environment only:
+
+```sh
+export BACKUP_S3_BUCKET=oci-backups BACKUP_S3_REGION=us-east-1 \
+  BACKUP_S3_ACCESS_KEY_ID=... BACKUP_S3_SECRET_ACCESS_KEY=...
+# BACKUP_S3_ENDPOINT and BACKUP_S3_FORCE_PATH_STYLE=true for MinIO and similar.
+FOLDER=oci-backups/2026-10-02T03-00-04-123Z-ab12cd34/
+
+# Local file storage (the directory STORAGE_LOCAL_PATH names), in the bundled stack.
+# -e NAME passes the variable from your shell into the container.
+docker compose exec -e BACKUP_S3_BUCKET -e BACKUP_S3_REGION \
+  -e BACKUP_S3_ACCESS_KEY_ID -e BACKUP_S3_SECRET_ACCESS_KEY \
+  api node dist/scripts/restore-backup-files.js "$FOLDER" --to-local /data/storage
+
+# S3 file storage, named by TARGET_S3_BUCKET, TARGET_S3_REGION,
+# TARGET_S3_ENDPOINT, TARGET_S3_ACCESS_KEY_ID and TARGET_S3_SECRET_ACCESS_KEY
+# (run wherever the API image runs, with those variables set):
+node dist/scripts/restore-backup-files.js "$FOLDER" --to-s3
+```
+
+`--help` lists every option and variable.
+
+Run it with `--dry-run` first to see what would be restored. It reports how many files were restored, already present, listed as missing when the backup was made, and failed (naming each failed key), and exits with status 1 if any failed.
+
+The layout is simple enough for any other tool too: for each line of `attachments.jsonl` without `"missing"`, copy `objects/<sha256>` (beside the backup folders, under the same prefix) to `<key>` in file storage, then check its SHA-256.
+
+If the backup did not copy files, check them instead: every key in `attachments.jsonl` should exist in file storage with the listed size and SHA-256. With S3 versioning, recover a missing key from its previous version.
 
 </Step>
 <Step>
 
 ### Start a test deployment
 
-Point it at the restored database with the **same `ENCRYPTION_KEY` and `AUTH_SECRET`** and the same file storage. Run the same or a newer OCI version: startup applies any newer migrations.
+Point it at the restored database with the **same `ENCRYPTION_KEY` and `AUTH_SECRET`** and the restored file storage. Run the same or a newer OCI version: startup applies any newer migrations.
 
 </Step>
 <Step>

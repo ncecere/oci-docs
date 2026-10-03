@@ -60,9 +60,36 @@ Images can be rolled back by setting `OCI_API_IMAGE` and `OCI_WEB_IMAGE` to the 
 
 ## Per-version notes
 
+### To v0.10.0
+
+Migrations `0035` to `0038`. **All four are safe to apply before the new images are deployed**: none scans or rewrites a large table, and every lock they take is brief. v0.9 replicas keep working against the new schema while you replace them one at a time.
+
+| Migration | What it does |
+|---|---|
+| `0035_backup_files` | Six nullable columns on `backup_run` (a small table only the backup job writes) for what each run copied, read back and swept. |
+| `0036_personal_defaults` | One nullable column for each person's default reasoning level. |
+| `0037_compaction_failure` | A new table for summaries people asked for that failed. |
+| `0038_usage_kept_after_deletion` | `user_id` becomes nullable on `usage_event`, `usage_record` and `quota_denial`, and their keys to accounts set it to null instead of deleting the rows. The new keys are added `NOT VALID`, so nothing scans or rewrites a table, whatever its size. |
+
+What else changes:
+
+- **Backups keep their old behaviour until you choose.** An instance that saved backup settings before v0.10 goes on listing files without copying them until an administrator turns on **Copy attachment files**. The first copy reads and copies every file once, so it takes longer and uses as much storage again as your files do now; later backups copy only new files. The backup credential now also needs `s3:ListBucket` on its prefix. See [Backups](/docs/administration/backups#attachment-files).
+- **Delete own account is off for every role.** Nobody can delete their own account until you turn it on for a role on Roles & access.
+- **`RATE_LIMIT_AUTH_PER_MINUTE` now applies** (it had no effect before): sign-in, sign-up, password reset and verification are limited to 10 a minute per client address and per email by default. Set `TRUSTED_PROXIES` behind a proxy (below) before many people share one address. See [Sign-in attempts](/docs/administration/budgets-and-limits#sign-in-attempts).
+- **`TRUSTED_PROXIES`** (from v0.9.2): behind a load balancer, another proxy or an ingress, set it on the web container. See [Reverse proxy](/docs/self-hosting/reverse-proxy#behind-another-proxy-or-an-ingress).
+- **Usage is kept after an account is deleted**, without the person, and shown as **Deleted accounts**. Usage of accounts deleted before the upgrade is already gone.
+- **The API image is about 10 MB larger**: it carries Noto fonts for PDF export in every script.
+- New conversations start from each person's saved default model, then the instance's. The model last picked in a browser is no longer remembered there.
+
+No new required environment variables. See [v0.10.0](/docs/releases/v0-10-0).
+
+### To v0.9.2
+
+**No migrations.** A security fix to how client addresses are recorded, and the new optional `TRUSTED_PROXIES` for the web container. Replace the API and web images as a pair. **v0.9.1 has no published images**: upgrade from v0.9.0 straight to v0.9.2 or later. See [v0.9.2](/docs/releases/v0-9-2).
+
 ### To v0.9.1
 
-**No migrations and no new environment variables.** Replace the API and web images as a pair; a rolling upgrade from v0.9.0 is fine, and rolling back to v0.9.0 works. See [v0.9.1](/docs/releases/v0-9-1).
+**No migrations and no new environment variables.** v0.9.1 was never published as images; its changes are in v0.9.2. See [v0.9.1](/docs/releases/v0-9-1).
 
 ### To v0.9.0
 

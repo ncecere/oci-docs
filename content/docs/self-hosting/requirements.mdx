@@ -19,9 +19,9 @@ description: PostgreSQL 17, optional pgvector, Redis, S3-compatible storage, the
 | Image | Runs | Port |
 |---|---|---|
 | `ghcr.io/ncecere/open-chat-interface/web:<version>` | Caddy with the browser app; forwards `/api/*` to the API | 8080 |
-| `ghcr.io/ncecere/open-chat-interface/api:<version>` | Node.js 22 API, as the non-root `oci` user; includes the PostgreSQL 17 client tools for backups | 3000 |
+| `ghcr.io/ncecere/open-chat-interface/api:<version>` | Node.js 22 API, as the non-root `oci` user; includes the PostgreSQL 17 client tools for backups and about 10 MB of Noto fonts for PDF export | 3000 |
 
-Each release is tagged `vX.Y.Z` (such as `v0.9.1`), and `latest` follows the newest stable release. Pin both images to the same version; `latest` is for evaluation only. Published images are **`linux/amd64` only**.
+Each release is tagged `vX.Y.Z` (such as `v0.10.0`), and `latest` follows the newest stable release. Pin both images to the same version; `latest` is for evaluation only. Published images are **`linux/amd64` only**.
 
 ## Database connections
 

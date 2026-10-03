@@ -7,7 +7,7 @@ What to do between installing an instance and letting anybody in. The steps foll
 
 ## Sign in as the first administrator
 
-The API creates one administrator the first time it starts against an empty database, from `INITIAL_ADMIN_EMAIL` and `INITIAL_ADMIN_PASSWORD`. If the password variable is absent altogether (not merely empty), it prints a one-time password to its log instead: `docker compose logs api`.
+The API creates one administrator the first time it starts against an empty database, from `INITIAL_ADMIN_EMAIL` and `INITIAL_ADMIN_PASSWORD`. If the password variable is unset or empty, it prints a one-time password to its log instead: `docker compose logs api`.
 
 **Change that password at once** under Settings → Account if it came from an environment file. Keep the account: it is your way back in if single sign-on breaks ([Break-glass access](/docs/administration/identity#break-glass-access)).
 

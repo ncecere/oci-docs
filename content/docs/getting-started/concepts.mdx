@@ -22,7 +22,7 @@ A role decides which models someone sees, which features they get (web search, a
 
 A **provider** is an upstream AI service and the key used to reach it: OpenAI, Anthropic, Google, or any server that speaks the OpenAI API (a LiteLLM gateway, vLLM, Ollama). A **model** is a catalogue entry that maps a name people see, such as "Chat model", to one of a provider's models.
 
-Adding a provider exposes nothing. Administrators choose which models appear, which roles see each one, and what each can do: its **capabilities**, such as vision, reasoning, effort control, tool calling and PDF reading, drive the icons in the model picker and what OCI offers the model. One model is the **default** for new conversations. See [Providers and models](/docs/administration/providers-and-models).
+Adding a provider exposes nothing. Administrators choose which models appear, which roles see each one, and what each can do: its **capabilities**, such as vision, reasoning, effort control, tool calling and PDF reading, drive the icons in the model picker and what OCI offers the model. One model is the instance's **default** for new conversations; each person can choose their own default instead. See [Providers and models](/docs/administration/providers-and-models).
 
 ## Conversations
 

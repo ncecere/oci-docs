@@ -1,0 +1,29 @@
+---
+title: v0.9.2
+description: A security release — the API trusts one client address, set by the web container, and TRUSTED_PROXIES tells it which proxies to believe. No migrations.
+---
+
+Released 2026-10-03. A security release after [v0.9.1](/docs/releases/v0-9-1). Everyone running v0.9.0 should upgrade.
+
+<Callout type="warn" title="v0.9.1 has no published images">
+  The v0.9.1 release could not be published, so there are no v0.9.1 images. Upgrade from v0.9.0 to v0.9.2 or later; v0.9.2 includes everything in v0.9.1.
+</Callout>
+
+## Security
+
+**Client addresses could be spoofed.** The web container's Caddy passed the `CF-Connecting-IP` and `X-Real-IP` headers from the browser through to the API, and the API trusted `CF-Connecting-IP` first. Any client could therefore choose the address recorded in the audit log and on its sessions, and the address its sign-in attempts were counted against.
+
+Now the web container sends the API **exactly one client address**, as `X-Forwarded-For`, and drops `X-Real-IP`, `CF-Connecting-IP`, `True-Client-IP` and `Forwarded`. The API trusts only that one address, checked to be a valid IP address.
+
+- **Exposed directly**, the address is whoever connected to the web container. Nothing to do.
+- **Behind a load balancer, another proxy or a Kubernetes ingress**, set the new **`TRUSTED_PROXIES`** on the web container to that proxy's addresses (space-separated IP addresses or CIDR ranges, or `private_ranges`). The real client address is then read from the `X-Forwarded-For` the proxy sends, and a value the client added itself is never reached. Without it, everybody appears to come from the proxy's address. See [Behind another proxy or an ingress](/docs/self-hosting/reverse-proxy#behind-another-proxy-or-an-ingress).
+- **With your own reverse proxy in front of the API**, make sure it sets `X-Forwarded-For` itself rather than passing on what the client sent. Better, send everything through the web container.
+
+## Fixes
+
+- The bundled Compose file passed unset optional variables, such as `INITIAL_ADMIN_PASSWORD`, to the API as empty strings; it now leaves them out.
+- Release checks were given more time, so the release could be published.
+
+## Upgrading
+
+**No migrations.** Replace the API and web images as a pair (`v0.9.2`), from v0.9.0 directly. New optional variable for the web container: `TRUSTED_PROXIES`. After upgrading, sign in and check that your own session under **People** shows your address rather than your proxy's. See [Upgrades](/docs/self-hosting/upgrades#to-v092).

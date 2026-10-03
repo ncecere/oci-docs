@@ -63,19 +63,35 @@ When the files are too large to give the model in full, it gets the passages tha
 
 A reply that used searched passages says so above its text, for example "Searched project files by meaning and keywords. Used passages from handbook.pdf (2 passages)".
 
+### Which passages a reply used
+
+Select **Show passages used** under that note to see which passages they were: for each file, the passage numbers, the heading of the section a passage comes from when the file has Markdown-style headings (`# Title`), and the first 200 or so characters of the passage. Up to 24 passages are listed. Replies from before v0.10 show only the file names and counts.
+
+<Screenshot slot="project-passages-used" />
+
 
 Keyword search cannot tell what a shared word means, so "plan a trip" can still bring up passages about "data management plans". Ask about specific topics rather than for a summary of everything. Searching by meaning and reranking each count towards your usage, under model names starting with `embedding:` and `rerank:`.
 
 Search covers only this project's files, never anyone else's. A file that does not fit is left out rather than cut off, and the reply is marked as having limited context.
 
+## Leaving a file out of a question
+
+In a conversation whose project has at least one searchable file, the message box has a **Files** button (a folder; screen readers call it **Project files**). It lists the project's files, all ticked. Untick a file to leave it out of your next message: the model gets neither the file nor any passage from it, whether the project is given whole or searched. The reply's note then says so, for example "Left out of this message: draft-2023.pdf."
+
+<Screenshot slot="project-files-control" />
+
+Only that message is affected; the next one uses every file again. While a file is left out, the button shows, say, **Files 2/3**. The button appears once a conversation has started, so the first message of a new conversation uses every file. Regenerating a reply, or a reply that continues after you approve a tool step, uses every file.
+
 ## Privacy and sharing
 
-Nothing from the project is written into the conversation. A shared conversation never includes the project's instructions or files, and the note on a searched reply names files and counts passages but never contains their text. Like any attachment, a project file's contents go to the provider of the model you chose.
+Nothing from the project is written into the conversation. A shared conversation never includes the project's instructions or files, or the note on a searched reply. That note names the files, counts the passages and keeps only the first 200 or so characters of each passage used (at most 24), never the whole passage; it is kept with the reply in your own data export. Like any attachment, a project file's contents go to the provider of the model you chose.
 
 ## Deleting
 
 - **Removing a file** deletes it at once, with its passages, and frees its storage. It does not go to the trash.
 - **Deleting a project** keeps its conversations (they leave the project) and deletes its files. This cannot be undone.
+
+While your institution has paused deletion for your account (a legal hold), deleting a project or a project file is refused.
 
 Your institution's retention applies to conversations, not projects: an inactive project conversation can still move to the trash, and restoring it puts it back in the project if the project still exists.
 

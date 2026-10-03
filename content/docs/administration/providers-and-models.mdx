@@ -46,6 +46,7 @@ Each catalogue entry maps a name people see to a provider's model.
 | **Capabilities** | See below. |
 | **Reasoning efforts** | For a model with effort control: which of Low, Medium and High it offers. |
 | **Visible to roles** | Which roles see it. This is how an expensive model is kept to the people who need it. |
+| **Context window** and **Max output** | How many tokens the model accepts, and the most one reply may use. See [Context and output size](#context-and-output-size). |
 | **Enabled in catalog** | Whether it is offered at all. |
 
 Prices are copied onto each usage record when it is made, so later price changes never rewrite past spend.
@@ -65,7 +66,16 @@ Capabilities drive the icons and filter in the model picker, and three of them c
 
 ### Context and output size
 
-The dashboard does not edit a model's context window or output limit. Without stored values, OCI plans each request for an input budget of 32,768 units and an output of 4,096 tokens (or a quarter of a smaller context window). It estimates text from its size rather than with a provider's tokenizer, keeps the most recent whole turns that fit, and says on a reply when earlier context was left out (or summarises it; see [General settings](/docs/administration/instance-settings#general)).
+Set both in **Add model** or **Edit model**:
+
+- **Context window**: the tokens the model accepts, input and output together, used to budget what OCI sends. Whole tokens, up to 10,000,000; thousands separators are fine. Blank means unknown, and OCI then assumes 32,768, far less than most current models, so long conversations are cut short or summarised early. **Discover models** does not fill it in: copy it from the provider's model documentation.
+- **Max output**: the most tokens one reply may use, reserved before the input is chosen and passed on every request. Up to 1,000,000. Blank reserves 4,096, or a quarter of a smaller context window.
+
+<Screenshot slot="admin-model-limits" />
+
+An output limit that leaves no room for input (it must stay below the context window, or the assumed 32,768, less 512) is refused when you save. A model's row shows the values in use when expanded. Changes to either are audited as `model.update`, naming the fields changed.
+
+OCI estimates text from its size rather than with a provider's tokenizer, keeps the most recent whole turns that fit, and says on a reply when earlier context was left out (or summarises it; see [General settings](/docs/administration/instance-settings#general)).
 
 Fixed safety ceilings apply whatever the model: at most 128,000 estimated input units, 128 earlier messages, 512 KiB of stored message content, 32 files and 20 MiB of image data per request. Required content (the latest message, instructions and current search results) is never shortened silently: a request that does not fit is refused before the new message is saved.
 

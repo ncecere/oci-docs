@@ -1,0 +1,75 @@
+---
+title: v0.10.0
+description: Finish and harden — your shared links, personal defaults, optional self-service deletion, backups that copy files, legal hold over every deletion, deletions in the compliance export, PDF export in every script and branding everywhere.
+---
+
+Released 2026-10-03. v0.10 closes the gaps v0.9 left open rather than adding new areas: what people can see and control about their own account, what records and backups cover, and the places branding did not reach. It includes the security fix from [v0.9.2](/docs/releases/v0-9-2).
+
+## For people
+
+- **Settings → Sharing** lists every link you have made, with **Revoke** and **Revoke all**, also after sharing has been turned off for your role. See [Sharing](/docs/using/sharing#all-your-links).
+- **A default model and reasoning level**, under Settings → Models, kept with your account so they follow you to every device. A conversation's own choice still comes first. See [Settings → Models](/docs/using/settings#models).
+- **Delete your own account**, when your administrator allows it for your role (off by default). See [Deleting your account](/docs/using/settings#deleting-your-account).
+- **Rename a conversation** from the sidebar or the top of the conversation. See [Renaming a conversation](/docs/using/conversations#renaming-a-conversation).
+- **The keyboard shortcuts work**: `Cmd/Ctrl + Shift + O` (new chat), `Cmd/Ctrl + B` (sidebar) and `Cmd/Ctrl + /` (model picker), also while you type. See [Keyboard shortcuts](/docs/using/keyboard-shortcuts).
+- **Which passages a reply used** in a project, under **Show passages used**, and a **Files** control in the message box that leaves chosen project files out of the next message. See [Projects](/docs/using/projects#which-passages-a-reply-used).
+- **Resize the artifact panel** by dragging its edge or with the keyboard; the width is kept in this browser. See [Artifacts](/docs/using/artifacts#making-the-panel-wider-or-narrower).
+- **A summary you asked for that fails is reported**, with the reason and **Retry**. See [Long conversations](/docs/using/chat#long-conversations).
+- **PDF export in every script**: Greek, Cyrillic, Chinese, Japanese, Korean, Arabic and Hebrew (right to left, letters joined), with the fonts embedded. Emoji print as a replacement character. See [Characters in PDFs](/docs/using/exporting-files#characters-in-pdfs).
+- **Reloading during a very long reply**, such as a long artifact, picks up where it was instead of saying live replay is no longer available.
+- The [sharing guide](/docs/using/sharing) describes live and snapshot links and expiry.
+
+<Screenshot slot="settings-sharing" />
+
+## For administrators
+
+- **Delete user** in People → a person: type their email to confirm. Refused for yourself, the last administrator and anyone on legal hold. See [Deleting an account](/docs/administration/people#deleting-an-account).
+- **Delete own account**, a new per-role switch on Roles & access, off for every role. See [Self-service account deletion](/docs/administration/roles-and-access#self-service-account-deletion).
+- **Usage is kept after an account is deleted**, without anything that identifies the person, so reports and budget history stay accurate. Usage shows it as **Deleted accounts**. See [Usage](/docs/administration/audit-and-reports#deleted-accounts).
+- **Context window and output limit per model** in Providers & Models. See [Context and output size](/docs/administration/providers-and-models#context-and-output-size).
+- **A fallback web search provider**, used after a timeout, network error or server error. See [Web search](/docs/administration/web-search#fallback-provider).
+- **Backups copy files**: attachments, thumbnails and the uploaded logo, once per distinct content, checked and read back, swept after retention, with a script to restore them. See [Backups](/docs/administration/backups#attachment-files).
+- **Legal hold covers every deletion**: project and project-file deletion, memory deletion, usage-event and share-link pruning, and expired temporary chats. See [Legal hold](/docs/administration/compliance#legal-hold).
+- **Deletions in the compliance export**: every deletion, by a person, an administrator or a retention job, writes an audit entry (never the content), which the exactly-once export carries. See [Deletion events](/docs/administration/compliance#deletion-events).
+- **The sign-in limit works.** `RATE_LIMIT_AUTH_PER_MINUTE` had no effect; sign-in, sign-up, password reset and verification are now limited per client address and per email. See [Sign-in attempts](/docs/administration/budgets-and-limits#sign-in-attempts).
+- **Branding applies everywhere**: the Open Chat Interface mark beside your name by default, browser tab titles and icon, share pages, verification and password-reset emails, diagram colours and exported files. See [What follows branding](/docs/administration/branding#what-follows-branding).
+- Revoking share links is audited, and Backups and Compliance share their destination, schedule and history controls.
+
+<Screenshot slot="admin-backups" />
+
+## For operators
+
+- **Migrations `0035` to `0038`**, all safe to apply before the new images are deployed.
+- **`TRUSTED_PROXIES`** on the web container, from v0.9.2: set it behind a load balancer, another proxy or an ingress. See [Reverse proxy](/docs/self-hosting/reverse-proxy#behind-another-proxy-or-an-ingress).
+- **`restore-backup-files`** in the API image puts copied files back. See [Backups and restore](/docs/self-hosting/backups-and-restore#restoring-an-automated-backup).
+- The backup credential also needs `s3:ListBucket`.
+- **The API image carries Noto fonts** for PDF export, about 10 MB.
+- An empty optional environment variable counts as unset, so an empty `INITIAL_ADMIN_PASSWORD` prints a one-time password. `DATABASE_URL`, `AUTH_SECRET` and `ENCRYPTION_KEY` still refuse empty values.
+- New metrics `oci_web_searches_total` and `oci_web_search_duration_seconds`, by provider and by primary or fallback.
+
+## Fixes
+
+- Expanded projects in the sidebar stay in step across open tabs.
+- Revoking a single share link was not audited.
+
+## Upgrading from v0.9
+
+Read the [v0.10.0 upgrade notes](/docs/self-hosting/upgrades#to-v0100) first. In short:
+
+- **Migrations `0035` to `0038`** are pre-deploy safe: none scans or rewrites a large table, and v0.9 replicas keep working while you replace them.
+- **Backups**: an instance that configured backups before v0.10 keeps listing files without copying them until an administrator turns on **Copy attachment files**. The first copy can be as large as all your file storage.
+- **Delete own account** is off for every role until you turn it on.
+- **`RATE_LIMIT_AUTH_PER_MINUTE` now applies** (10 a minute by default). Behind a proxy, set **`TRUSTED_PROXIES`** first, or everyone shares one address and one limit.
+- **Usage is kept after an account is deleted.** Usage of accounts deleted before the upgrade is already gone.
+- **The API image is about 10 MB larger** for the Noto fonts.
+
+From v0.9.0, go straight to v0.10.0: v0.9.1 has no published images.
+
+## Known limitations
+
+- Colour emoji do not print in PDFs; Chinese, Japanese, Korean, Arabic and Hebrew have no italic.
+- The artifact panel's width is kept per browser, not per account.
+- The first message of a new project conversation always uses every project file.
+- Backup retention still deletes old backups for people on legal hold, and a hold does not pause edits such as renaming.
+- Link previews of share pages show *Open Chat Interface*, not your instance's name.
+- There is no Helm chart, no multi-factor authentication for local accounts, and images are `linux/amd64` only.

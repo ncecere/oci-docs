@@ -10,8 +10,35 @@ Requirements for your proxy:
 - **Do not buffer responses.** Replies stream; a buffering proxy holds them back until they finish. Disable response buffering for `/api/*` (in nginx, `proxy_buffering off;`).
 - **Allow long requests.** A reply can stream for minutes. Raise read timeouts accordingly.
 - **Allow large uploads**: files up to your upload limit (20 MB by default) and imports up to `IMPORT_MAX_UPLOAD_BYTES` (512 MB by default).
-- **Know which address is recorded.** The API records the left-most `X-Forwarded-For` address it receives, for the audit log and sign-in rate limits. The web container's Caddy has no trusted proxies configured, so it replaces an incoming `X-Forwarded-For` with the address it sees: behind your own proxy, that is the proxy's address. Check what your audit log shows after deploying.
+- **Set `TRUSTED_PROXIES`** on the web container to your proxy's addresses, so OCI records each person's own address rather than the proxy's. See [below](#behind-another-proxy-or-an-ingress).
+- **Send everything through the web container.** Do not route `/api` straight to the API service around it: the API then has no trustworthy client address to record.
 - **Do not forward `/metrics`.** It is served by the API, not the web container, and should be scraped from inside your network.
+
+## Behind another proxy or an ingress
+
+OCI records a client address on sessions (a person's active sessions under **People**) and in the audit log, and the [sign-in limit](/docs/administration/budgets-and-limits#sign-in-attempts) counts attempts per address. The web container's Caddy decides that address and passes exactly one to the API, as `X-Forwarded-For`; the API believes nothing else. Caddy also drops `X-Real-IP`, `CF-Connecting-IP`, `True-Client-IP` and `Forwarded`, so a client cannot choose its own address by sending them.
+
+By default Caddy trusts nothing in front of it, so the address is whatever connected to the web container. Exposed directly, that is the client. Behind a load balancer, another reverse proxy or a Kubernetes ingress, it is that proxy, so everybody appears to come from one address and shares one sign-in limit.
+
+Set `TRUSTED_PROXIES` on the **web** container to the addresses of the proxies in front of it, separated by spaces (not commas). Each entry is an IP address or a CIDR range; `private_ranges` stands for all private and loopback ranges:
+
+```sh
+# docker/.env
+TRUSTED_PROXIES=10.0.0.0/8 192.168.10.5
+```
+
+Caddy then reads `X-Forwarded-For` from those proxies right to left, skipping trusted hops, and the first address that is not trusted is the client. A value a client put at the left of the header is never reached. Requests from any other address ignore the header.
+
+- Trust only addresses that really are your proxies, and make sure each one sets or appends `X-Forwarded-For`. Most do by default; nginx needs `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`.
+- In Kubernetes, use the ingress controller pods' range, or the cluster's pod CIDR.
+- A proxy that replaces the client address entirely (a TCP load balancer without the PROXY protocol) cannot be recovered from; use the load balancer's HTTP mode.
+- The bundled Compose file passes `TRUSTED_PROXIES` through to the web container. Elsewhere, set it as an environment variable of the web image. The API has no such setting.
+
+After deploying, sign in and check the address on your own session under **People**, or in the audit log.
+
+<Callout title="Changed in v0.9.2">
+  Before v0.9.2 the web container passed `CF-Connecting-IP` and `X-Real-IP` from the browser through to the API, which trusted them, so any client could choose the address it was recorded and rate-limited under. Upgrade to v0.9.2 or later. See [v0.9.2](/docs/releases/v0-9-2).
+</Callout>
 
 ## The headers OCI sends
 

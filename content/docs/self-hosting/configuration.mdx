@@ -40,9 +40,9 @@ The API checks its environment at start and refuses to run, listing every proble
 | Variable | What it is |
 |---|---|
 | `INITIAL_ADMIN_EMAIL` | Creates the first administrator when the database has no users. |
-| `INITIAL_ADMIN_PASSWORD` | Its password, at least 12 characters. If the variable is absent, a one-time password is printed to the API's log instead. |
+| `INITIAL_ADMIN_PASSWORD` | Its password, at least 12 characters. If the variable is unset or empty, a one-time password is printed to the API's log instead. |
 
-Both are validated whenever they are present: an empty `INITIAL_ADMIN_EMAIL`, or a password under 12 characters, stops the API from starting. The bundled Compose file passes both through even when unset (as empty values), so with it, keep both set.
+An optional variable that is set but empty counts as unset, so its default applies; an empty `INITIAL_ADMIN_EMAIL` creates no administrator, and the API logs a warning. A password under 12 characters stops the API from starting. `DATABASE_URL`, `AUTH_SECRET` and `ENCRYPTION_KEY` still refuse empty values. The bundled Compose file leaves unset variables out of the containers rather than passing them as empty strings.
 
 ## Limits and retention defaults
 
@@ -74,13 +74,22 @@ A rate-limit variable sets the value for every role.
 
 See [Observability and webhooks](/docs/administration/observability-and-webhooks).
 
+## Web container
+
+The web image (Caddy) reads a few variables of its own; the API reads none of them.
+
+| Variable | Default | What it is |
+|---|---|---|
+| `API_UPSTREAM`, `API_UPSTREAM_HOST`, `API_UPSTREAM_PORT` | `api:3000`, `api`, `3000` | Where Caddy forwards `/api/*`; the host name is re-resolved every ten seconds to find API replicas. On Kubernetes, see [Kubernetes](/docs/self-hosting/kubernetes). |
+| `TRUSTED_PROXIES` | unset (trust nothing) | The addresses of a load balancer, reverse proxy or ingress in front of the web container, separated by spaces (not commas): IP addresses, CIDR ranges, or `private_ranges`. The real client address is then read from the `X-Forwarded-For` they send. See [Behind another proxy or an ingress](/docs/self-hosting/reverse-proxy#behind-another-proxy-or-an-ingress). The bundled Compose file passes it through from `docker/.env`. |
+
 ## Bundled Compose stack only
 
 | Variable | Default | What it is |
 |---|---|---|
 | `POSTGRES_PASSWORD` | required | Password for the bundled PostgreSQL; used to build `DATABASE_URL`. |
 | `OCI_PORT` | `8080` | Host port for the web container. |
-| `OCI_API_IMAGE`, `OCI_WEB_IMAGE` | local builds | Released images to run, such as `ghcr.io/ncecere/open-chat-interface/api:v0.9.1`. Pin both to one release and start with `--no-build`. |
+| `OCI_API_IMAGE`, `OCI_WEB_IMAGE` | local builds | Released images to run, such as `ghcr.io/ncecere/open-chat-interface/api:v0.10.0`. Pin both to one release and start with `--no-build`. |
 | `MINIO_USER`, `MINIO_PASSWORD` | `oci`, `oci_dev_password` | The optional MinIO container (`--profile s3`). Change them if you use it. |
 
 In the bundled stack `APP_URL` defaults to `http://localhost:8080`, `REDIS_URL` points at the bundled Redis, and the web container reaches the API through `API_UPSTREAM` (`api:3000`).

@@ -15,6 +15,8 @@ description: Secrets, encryption at rest, the network, access control and harden
 - Serve OCI over HTTPS only, behind a TLS proxy, and set `APP_URL` to the `https://` address. Add `Strict-Transport-Security` at the proxy.
 - The web container sends a strict Content Security Policy, `X-Frame-Options: DENY` and other headers; see [Reverse proxy](/docs/self-hosting/reverse-proxy). Keep the artifact frame's separate policy intact.
 - Keep PostgreSQL, Redis, the API port and `/metrics` off the public network. Only the web container needs to be reachable.
+- **Client addresses** in the audit log, on sessions and in the sign-in limit come from the web container, which trusts nothing in front of it unless you list your proxies in `TRUSTED_PROXIES`. Set it behind a load balancer or ingress, and never route `/api` around the web container. See [Reverse proxy](/docs/self-hosting/reverse-proxy#behind-another-proxy-or-an-ingress).
+- **Sign-in attempts are limited** per client address and per account (`RATE_LIMIT_AUTH_PER_MINUTE`, 10 a minute by default). See [Budgets and limits](/docs/administration/budgets-and-limits#sign-in-attempts).
 - **Outbound requests are guarded.** Connectors and webhooks refuse private, loopback, link-local and other reserved addresses unless an administrator allows a private network for that one connector or endpoint, always refuse cloud metadata addresses, never follow redirects, and are size- and time-limited. Identity providers on private networks must be listed in `AUTH_TRUSTED_ORIGINS`.
 - Model provider and search addresses are set by administrators and are not restricted to public addresses.
 
@@ -25,20 +27,20 @@ description: Secrets, encryption at rest, the network, access control and harden
 - Keep one verified local administrator with a known password for [break-glass access](/docs/administration/identity#break-glass-access), and test `/auth/login?local=1`.
 - Use the `auditor` role for compliance reviewers instead of `admin`.
 - Sessions are cached for up to five minutes per API replica, so revoking a session, banning or changing a role can take that long to reach every replica.
-- There is no multi-factor authentication for local accounts in v0.9.1; rely on your identity provider's MFA, and keep local accounts to break-glass administrators.
+- There is no multi-factor authentication for local accounts in v0.10.0; rely on your identity provider's MFA, and keep local accounts to break-glass administrators.
 
 ## Content
 
 - Model replies are rendered as sanitised Markdown; following a link to another site asks for confirmation first.
 - HTML and SVG artifacts run in a sandboxed frame with an opaque origin and no network access.
 - Uploads are checked by content, not file name, and logos refuse SVG.
-- Share links never include reasoning, attachments or project content, and deleting a conversation revokes them for good.
+- Share links never include reasoning, attachments or project content, and deleting a conversation revokes them for good. People can see and revoke all their links under Settings → Sharing, also after sharing is turned off for them.
 
 ## Data
 
 - Conversation content never enters the audit log, metrics, traces or webhooks.
 - The compliance export copies content only if an administrator turns that on.
-- Retention, legal hold and the trash are described under [Retention](/docs/administration/retention) and [Compliance](/docs/administration/compliance).
+- Retention, legal hold and the trash are described under [Retention](/docs/administration/retention) and [Compliance](/docs/administration/compliance). Every deletion is recorded in the audit log (what, whose, by whom and why, never the content), and a legal hold pauses every deletion of a held person's records.
 
 ## Images
 

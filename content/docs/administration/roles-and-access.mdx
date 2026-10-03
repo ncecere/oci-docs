@@ -17,26 +17,40 @@ For each role:
 - **Rate limits** and **Storage allowance**: editable here; see [Budgets and limits](/docs/administration/budgets-and-limits#rate-limits).
 - **Usage budgets**: the budgets assigned to the role, read-only, with a link to change them.
 
-Below the role tabs, **Instance-wide** holds limits that apply regardless of role: sign-in attempts per minute (per IP address and per account), and the budget and tokens held while a reply is written.
+Below the role tabs, **Instance-wide** holds limits that apply regardless of role: [sign-in attempts per minute](/docs/administration/budgets-and-limits#sign-in-attempts) (per client address and per account), and the budget and tokens held while a reply is written.
 
 ## Features and reasoning levels
 
-Each role has switches for **web search**, **file attachments**, **share links**, **temporary chats**, **branching** (forking, and editing an earlier message into a new conversation), **projects**, **user memory** and **artifacts**. Someone can use a feature only when every switch it has allows it:
+Each role has switches for **web search**, **file attachments**, **share links**, **temporary chats**, **branching** (forking, and editing an earlier message into a new conversation), **projects**, **user memory**, **artifacts** and **delete own account**. Someone can use a feature only when every switch it has allows it:
 
 | Feature | Instance-wide switch | Role switch |
 |---|---|---|
 | Web search | [Web search](/docs/administration/web-search) page (also needs a working provider) | ✓ |
 | File attachments, share links, temporary chats, branching | [General](/docs/administration/instance-settings#general) | ✓ |
 | User memory | General (off by default), and each person's own switch | ✓ |
-| Projects, artifacts | None | ✓ |
+| Projects, artifacts, delete own account | None | ✓ |
 
 When the role's switch is on but the instance's is off, the page says so. The server enforces every switch; hiding a control is only a convenience. A refused request reads, for example, "Attachments are not available for your role".
 
 **Reasoning levels** choose which of Low, Medium and High the role may pick on models with effort control. Instant is always allowed. The picker offers only levels both the model and the role allow. The level a new conversation starts at is the instance's **Default reasoning level** on [General](/docs/administration/instance-settings#general), lowered to Instant when the model or role does not allow it.
 
-**Defaults**: `restricted` cannot upload attachments, create share links, start temporary chats, or use projects, memory or artifacts; every other role can use everything the instance offers, at every reasoning level. User memory is also off instance-wide on a new instance.
+**Defaults**: `restricted` cannot upload attachments, create share links, start temporary chats, or use projects, memory or artifacts; every other role can use everything the instance offers, at every reasoning level. User memory is also off instance-wide on a new instance. **Delete own account** is off for every role, including after an upgrade.
 
 Saving sends only the fields you changed and is audited as `role.features.update`, with the previous and new values.
+
+Turning **share links** off for a role stops new links; people keep seeing the links they made under Settings → Sharing and can still revoke them there or from the conversation. Revoking is audited as `share_link.revoke` (one link) or `share_link.revoke_all` (with the count).
+
+## Self-service account deletion
+
+**Delete own account** lets people in the role delete their own account under Settings → Account. It is **off for every role** by default and has no instance-wide switch.
+
+<Screenshot slot="admin-roles-delete-own-account" />
+
+It is a role switch because the decision usually differs by population: an institution may let students and guests leave on their own while keeping staff accounts, whose data has records obligations, behind an administrator.
+
+The person types their email address and, if the account has a password, enters it. The deletion is the same as **Delete user** under [People](/docs/administration/people#deleting-an-account): the same data deleted and kept, and the same refusals for a person on [legal hold](/docs/administration/compliance#legal-hold) (they are told only that deletion is paused by their organisation) and for the last administrator. It is also refused in a session an administrator opened as the person; delete under People instead, where the entry names you. It is recorded as a `user.delete` entry with `self: true` and reason `user`; a wrong password is recorded as `user.delete.failure`.
+
+For an account that signs in through single sign-on there is no password to ask for, and signing in again later creates a new, empty account through just-in-time provisioning, which the dialog explains. If that is not wanted, leave the switch off for roles whose people sign in that way, or limit who may sign in under [Identity](/docs/administration/identity).
 
 ## Tools
 
@@ -70,7 +84,7 @@ Saving a field overrides the environment for that field only.
 
 ## Projects and governance
 
-Projects reuse governed features. Project files are attachments: uploading needs attachments allowed for the role and the instance, uses the upload rate limit and counts against the storage allowance. Removing a file or deleting a project deletes its files at once. Switching projects off for a role keeps existing projects and files (still counted) but refuses every project request and stops their instructions and files being used. Creating and changing projects is personal content and is not written to the audit log.
+Projects reuse governed features. Project files are attachments: uploading needs attachments allowed for the role and the instance, uses the upload rate limit and counts against the storage allowance. Removing a file or deleting a project deletes its files at once, except for a person on [legal hold](/docs/administration/compliance#legal-hold), for whom both are refused. Switching projects off for a role keeps existing projects and files (still counted) but refuses every project request and stops their instructions and files being used. Creating and changing projects is personal content and is not written to the audit log; deleting a project or a project file is, as a [deletion event](/docs/administration/compliance#deletion-events).
 
 ## Auditors
 

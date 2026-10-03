@@ -12,7 +12,7 @@ Every image in these docs has a named slot in `lib/screenshot-slots.json` (its a
   - **Sam Ortiz**, `sam.ortiz@example.edu`, `user` (research administrator)
   - **Jordan Kim**, `jordan.kim@example.edu`, `user` (IT service desk)
 - **Size**: PNG, **1440×900** (device scale factor 1), dark theme, accent Neutral unless the state says otherwise. Phone slots: **390×844** CSS pixels (capture at scale 3 is fine; the import script keeps width ≤ 1600 px).
-- **Version**: OCI **v0.9.1**. Pin the clock in the seed so timestamps don't churn.
+- **Version**: OCI **v0.10.0**. Pin the clock in the seed so timestamps don't churn.
 - **File name**: the slot name, `<slot>.png`, in the screenshots directory, then:
 
   ```sh
@@ -24,7 +24,7 @@ Every image in these docs has a named slot in `lib/screenshot-slots.json` (its a
 
 ## Interim images
 
-34 of 61 slots currently show **interim** images imported from the OCI repository's `docs/images/` (captured from its own fictional demo instance for v0.9.1). They do not use the Example University personas or data and some states differ from the target below, so recapture them in the session. Marked **Interim** in the table.
+34 of 71 slots currently show **interim** images imported from the OCI repository's `docs/images/` (captured from its own fictional demo instance, regenerated for v0.10.0). They do not use the Example University personas or data and some states differ from the target below, so recapture them in the session. Marked **Interim** in the table.
 
 ## Slots
 
@@ -53,11 +53,11 @@ Every image in these docs has a named slot in `lib/screenshot-slots.json` (its a
 | 21 | `memory-updated.png` | 1440×900 | `/chat/<id>` | Priya Shah (user) | Memory on, tool-capable model. Said "Remember that I teach first-year chemistry." Reply shows "Memory updated" with the note and Undo. | Placeholder |
 | 22 | `share-dialog.png` | 1440×900 | `/chat/<id>` | Sam Ortiz (user) | Share conversation dialog open; Share through "Latest messages (live)"; one existing link listed with Copy and Revoke. | Placeholder |
 | 23 | `export-menu.png` | 1440×900 | `/chat/<id>` | Sam Ortiz (user) | A reply containing a table; Export as… menu open showing Word document, PDF, Presentation, Spreadsheet. | Placeholder |
-| 24 | `settings-account.png` | 1440×900 | `/settings` | Priya Shah (user) | Password account (local). Account page with Change password, View Devices, cards beside it. Memory and Connectors tabs visible (memory on, a connector allowed) so all seven tabs show. | Interim (`docs/images/user-settings-account.png`) |
+| 24 | `settings-account.png` | 1440×900 | `/settings` | Priya Shah (user) | Password account (local). Account page with Change password, View Devices, cards beside it. Delete own account on for `user`, so the Delete account section shows. Memory and Connectors tabs visible (memory on, a connector allowed) and a share link made, so all eight tabs show. | Interim (`docs/images/user-settings-account.png`) |
 | 25 | `settings-devices.png` | 1440×900 | `/settings` | Priya Shah (user) | Signed in on three browsers (Chrome on macOS = this device, Safari on iOS, Firefox on Windows). Devices dialog open. | Placeholder |
 | 26 | `settings-customization.png` | 1440×900 | `/settings/customization` | Priya Shah (user) | What to call you "Priya", What you do "Lecturer in chemistry", traits Concise, anything else "British spelling"; scroll to show Appearance and the three switches. | Interim (`docs/images/user-settings-customization.png`) |
 | 27 | `settings-history.png` | 1440×900 | `/settings/history` | Sam Ortiz (user) | Active tab with ~12 conversations (some in projects), two ticked; Export and Import buttons visible. | Interim (`docs/images/user-settings-history.png`) |
-| 28 | `settings-models.png` | 1440×900 | `/settings/models` | Priya Shah (user) | Models available to the user role (5–6) with descriptions. | Interim (`docs/images/user-settings-models.png`) |
+| 28 | `settings-models.png` | 1440×900 | `/settings/models` | Priya Shah (user) | Defaults: Default model "Research model", Default reasoning level Instance default; models available to the user role (5–6) below, with "instance default" and "your default" marked. | Interim (`docs/images/user-settings-models.png`) |
 | 29 | `settings-attachments.png` | 1440×900 | `/settings/attachments` | Priya Shah (user) | Role storage allowance 1 GB enforced; a mix of chat files, project files and artifacts so all three parts of Storage used show. | Interim (`docs/images/user-settings-attachments.png`) |
 | 30 | `phone-chat-home.png` | 390×844 | `/` | Priya Shah (user) | 390×844 viewport, sidebar closed, empty new chat. | Interim (`docs/images/mobile-chat-home.png`) |
 | 31 | `phone-sidebar.png` | 390×844 | `/` | Priya Shah (user) | 390×844 viewport, sidebar panel open with projects and conversations. | Interim (`docs/images/mobile-sidebar.png`) |
@@ -79,7 +79,7 @@ Every image in these docs has a named slot in `lib/screenshot-slots.json` (its a
 | 47 | `admin-retention.png` | 1440×900 | `/admin/retention` | Morgan Lee (admin) | Conversation retention 365 days with Keep pinned on, trash 30, usage 90, memory 180, audit 730; source labels visible. | Interim (`docs/images/admin-retention.png`) |
 | 48 | `admin-acceptable-use.png` | 1440×900 | `/admin/policies` | Morgan Lee (admin) | Policy "Example University acceptable use of AI chat" version 2 published, version 1 in history. | Interim (`docs/images/admin-policies.png`) |
 | 49 | `admin-announcements.png` | 1440×900 | `/admin/broadcasts` | Morgan Lee (admin) | One maintenance announcement for all roles, dismissable, with Re-show. | Interim (`docs/images/admin-announcements.png`) |
-| 50 | `admin-web-search.png` | 1440×900 | `/admin/search` | Morgan Lee (admin) | Search on, provider Tavily with key set, a successful Test search result shown. | Interim (`docs/images/admin-search.png`) |
+| 50 | `admin-web-search.png` | 1440×900 | `/admin/search` | Morgan Lee (admin) | Search on, provider Tavily with key set, no fallback, a successful Test search result shown. | Interim (`docs/images/admin-search.png`) |
 | 51 | `admin-connectors.png` | 1440×900 | `/admin/connectors` | Morgan Lee (admin) | Two connectors: Docs (OAuth, 3 tools, 2 enabled read) and Service Desk (shared credential, create_ticket write enabled); last contact shown. | Placeholder |
 | 52 | `admin-audit-log.png` | 1440×900 | `/admin/audit` | Taylor Brooks (auditor) | Auditor view (read-only banner) filtered to "auth." over 7 days, a mix of success and failure entries. | Interim (`docs/images/admin-audit.png`) |
 | 53 | `admin-usage.png` | 1440×900 | `/admin/usage` | Morgan Lee (admin) | 30 days of seeded usage across 4 models including embedding: and rerank: entries. | Interim (`docs/images/admin-usage.png`) |
@@ -91,6 +91,16 @@ Every image in these docs has a named slot in `lib/screenshot-slots.json` (its a
 | 59 | `admin-general-settings.png` | 1440×900 | `/admin/settings/general` | Morgan Lee (admin) | Default prompt set, default reasoning Low, tool step limit 8, summaries on, editorial diagrams on, user memory on. | Interim (`docs/images/admin-settings.png`) |
 | 60 | `admin-storage.png` | 1440×900 | `/admin/storage` | Morgan Lee (admin) | S3 tab with a MinIO bucket configured and a passing Test put/read/delete. | Interim (`docs/images/admin-storage.png`) |
 | 61 | `admin-branding.png` | 1440×900 | `/admin/branding` | Morgan Lee (admin) | App name "Example University Chat", short name "EU", a PNG logo uploaded, accent Blue, default theme Dark; live preview visible. | Interim (`docs/images/admin-branding.png`) |
+| 62 | `project-passages-used.png` | 1440×900 | `/chat/<id>` | Priya Shah (user) | A CHEM 101 conversation whose reply used searched passages: the note "Searched project files. Used passages from handbook.pdf (2 passages)" with **Show passages used** expanded, showing passage numbers, section headings and first lines. | Placeholder |
+| 63 | `project-files-control.png` | 1440×900 | `/chat/<id>` | Priya Shah (user) | A CHEM 101 conversation (started, so the control shows); the **Files** popover open above the message box, four files listed, draft-2023.pdf unticked, the button reading "Files 3/4". | Placeholder |
+| 64 | `settings-sharing.png` | 1440×900 | `/settings/sharing` | Sam Ortiz (user) | Five share links: three Active (two Live, one Snapshot with an expiry), one Expired, one Revoked; view counts set. | Placeholder |
+| 65 | `settings-delete-account.png` | 1440×900 | `/settings` | Priya Shah (user) | Delete own account on for `user`; password account. **Delete account** selected, the dialog open with the email typed and the password field empty. | Placeholder |
+| 66 | `admin-model-limits.png` | 1440×900 | `/admin/models?tab=models` | Morgan Lee (admin) | **Edit model** open for "Research model": Context window 200,000, Max output 16,000, with the other fields visible above. | Placeholder |
+| 67 | `admin-roles-delete-own-account.png` | 1440×900 | `/admin/roles` | Morgan Lee (admin) | user tab scrolled to the end of Features: Artifacts and **Delete own account** (on) visible with their descriptions. | Placeholder |
+| 68 | `admin-delete-user.png` | 1440×900 | `/admin/users/<Jordan Kim>` | Morgan Lee (admin) | Jordan Kim's page (not on legal hold), scrolled to the end; **Delete user** dialog open with the email half typed, so the button is still disabled. | Placeholder |
+| 69 | `admin-usage-deleted-accounts.png` | 1440×900 | `/admin/usage` | Morgan Lee (admin) | 30 days of usage including two accounts deleted after the upgrade, so Top consumers shows a **Deleted accounts** row among named people. | Placeholder |
+| 70 | `admin-web-search-fallback.png` | 1440×900 | `/admin/search` | Morgan Lee (admin) | Provider Tavily (key set), Fallback provider SearXNG at `http://searxng:8080`; Test search run, showing a result for each provider. | Placeholder |
+| 71 | `admin-backups-files.png` | 1440×900 | `/admin/backups` | Morgan Lee (admin) | Copy attachment files on, Files checked after each backup "A random sample (32 files)"; history with a first run that copied every file and later runs copying a few, each with files read back and unused copies deleted. | Placeholder |
 
 ## Demo data to seed
 

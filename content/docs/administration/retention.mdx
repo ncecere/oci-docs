@@ -11,7 +11,7 @@ description: How long conversations, the trash, usage history, memory notes and 
 |---|---|---|
 | **Conversation retention** | Off (keep forever) | Conversations inactive this long move to the trash. **Keep pinned conversations** exempts anything a person pinned. Shared conversations are not exempt; moving one to the trash revokes its links. |
 | **Trash retention** | 30 days (1–365) | The recovery window before a deletion becomes permanent. |
-| **Usage history** | 90 days | Per-message usage records. Daily totals are kept regardless. Records with unresolved usage are kept until resolved. |
+| **Usage history** | 90 days | Per-message usage records. Daily totals are kept regardless. Records with unresolved usage are kept until resolved, except those of deleted accounts, which are pruned by age. |
 | **Memory retention** | Off | [Memory](/docs/administration/memory) notes not updated this long are deleted by a daily job. |
 | **Audit log** | 365 days | How long audit entries are kept. Check what your institution requires before shortening it. |
 | **Reporting timezone** | UTC | Where a day starts and ends on the Usage page. Budgets reset on their own time zone. |
@@ -26,7 +26,9 @@ While the [compliance export](/docs/administration/compliance) is on, audit entr
 
 ## Legal hold
 
-People on [legal hold](/docs/administration/compliance#legal-hold) are skipped by conversation, trash, memory and audit retention, and their expired temporary chats are kept, until the hold is lifted.
+People on [legal hold](/docs/administration/compliance#legal-hold) are skipped by conversation, trash, memory, usage-history and audit retention and by share-link pruning, and their expired temporary chats are kept, until the hold is lifted.
+
+Every deletion a retention job makes is recorded in the audit log as a [deletion event](/docs/administration/compliance#deletion-events), with no actor and the job as its reason.
 
 ## Advice
 

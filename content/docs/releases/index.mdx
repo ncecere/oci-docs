@@ -5,7 +5,9 @@ description: Open Chat Interface's releases, what to expect before 1.0, and how 
 
 | Release | Date | In short |
 |---|---|---|
-| [v0.9.1](/docs/releases/v0-9-1) | 2026-10-03 | Project conversations under their project in the sidebar; Settings → Account works (password, devices, name); a settings review. No migrations. |
+| [v0.10.0](/docs/releases/v0-10-0) | 2026-10-03 | Finish and harden: your shared links, a default model per person, optional self-service account deletion, Delete user, backups that copy files, legal hold over every deletion, deletions in the compliance export, a fallback search provider, PDF export in every script, a resizable artifact panel, branding everywhere. Migrations `0035` to `0038`, all pre-deploy safe. |
+| [v0.9.2](/docs/releases/v0-9-2) | 2026-10-03 | Security: the API trusts one client address, set by the web container; `TRUSTED_PROXIES` for proxies in front of it. No migrations. |
+| [v0.9.1](/docs/releases/v0-9-1) | 2026-10-03 | No published images; use v0.9.2. Project conversations under their project in the sidebar; Settings → Account works (password, devices, name); a settings review. No migrations. |
 | [v0.9.0](/docs/releases/v0-9-0) | 2026-10-03 | Make and operate: artifacts, export as Word, PDF, PowerPoint and Excel, user memory, long conversations summarised, meaning-based project search and reranking, compliance export and legal hold, automated backups, metrics, traces and webhooks. |
 | [v0.8.0](/docs/releases/v0-8-0) | 2026-10-02 | Tools and connected knowledge: tool calling with approvals, web search as a tool, search over large project files, MCP connectors with per-person OAuth. |
 | [v0.7.0](/docs/releases/v0-7-0) | 2026-10-01 | Organise and find: per-role features, full-text conversation search, projects, Mermaid diagrams, switching between retried replies, export everything and import from ChatGPT or Claude. |
@@ -25,9 +27,8 @@ OCI follows semantic versioning, but before 1.0 a minor release may change behav
 
 The [roadmap](https://github.com/ncecere/open-chat-interface/blob/main/ROADMAP.md) is a plan, not a promise:
 
-- **v0.10, finish and harden**: legal hold covering project files and usage records, deletions in the compliance export, backups that copy files, PDF export in every script, a resizable artifact panel, reporting failed summaries, a page listing your share links, a default model per person, optional self-service account deletion, and branding applied everywhere.
-- **v0.11, always on**: upgrades without downtime on large deployments (two-phase migrations, failover-safe jobs, rolling-upgrade tests), a Kubernetes Helm chart, connection pooling and a separate worker role.
-- **Later**: assistants, code execution, deep research, image generation, voice, groups and finer roles, multi-factor authentication and interface translations.
+- **Now, v0.11, always on**: upgrading from the previous minor release with no downtime on large deployments, surviving a database failover partway through, and tested rather than promised. Planned: two-phase and lock-safe migrations, rolling-upgrade tests and an upgrade preflight, a scale test harness, connection pooling, a Kubernetes Helm chart, `linux/arm64` images, draining replies on shutdown and a separate worker role.
+- **Later, v1.0 and beyond**: assistants, code execution, deep research, image generation, voice, groups and finer roles, multi-factor authentication and interface translations.
 
 ## How releases are published
 

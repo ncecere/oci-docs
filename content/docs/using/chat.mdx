@@ -30,7 +30,7 @@ The funnel beside the search box narrows the list to models with an ability you 
 
 <Screenshot slot="chat-model-details" />
 
-Which models you see is decided by your institution, and may depend on your role. A new conversation starts with the instance's default model.
+Which models you see is decided by your institution, and may depend on your role. A model you pick applies to that conversation, and reopening it later starts from the model it last used. A new conversation starts from your own default model, if you set one in [Settings → Models](/docs/using/settings#models), or else the instance's default; your default follows you to every device.
 
 ### Switching model mid-conversation
 
@@ -44,7 +44,7 @@ Some models think before they answer. While they do, the reply shows **Thinking�
 
 ### Reasoning level
 
-Models with **effort control** have a reasoning level beside the model name: **Instant**, **Low**, **Medium** or **High**. Higher means a slower, more considered answer; Instant answers straight away. A new conversation starts at the level your administrator chose (Instant unless they changed it), and the control lists only the levels both the model and your role allow.
+Models with **effort control** have a reasoning level beside the model name: **Instant**, **Low**, **Medium** or **High**. Higher means a slower, more considered answer; Instant answers straight away. A new conversation starts at your own default level, if you set one in [Settings → Models](/docs/using/settings#models), or else the level your administrator chose (Instant unless they changed it). The control lists only the levels both the model and your role allow.
 
 ## What you can do to a message
 
@@ -72,7 +72,7 @@ You can retry and switch only on the latest reply, and not while a reply is bein
 
 ## When a reply is interrupted
 
-A reply keeps being written on the server even if you reload, lose your connection or move to another conversation, and it reconnects when you come back. If it cannot (the live copy is limited in size and expires), OCI loads what was saved instead; **Reload saved messages** does the same by hand. A draft you were typing stays in the message box.
+A reply keeps being written on the server even if you reload, lose your connection or move to another conversation, and it reconnects when you come back. This works however long the reply is, including a long artifact. If it cannot (the live copy expires), OCI loads what was saved instead; **Reload saved messages** does the same by hand. A draft you were typing stays in the message box.
 
 ## Long conversations
 
@@ -86,6 +86,7 @@ When a conversation grows long, OCI summarises its earlier messages in the backg
 - **When it happens:** once the conversation fills about three quarters of what the model can take in. The most recent exchanges, up to about half of it, are always kept in full, and a question is never separated from its answer.
 - **It counts towards your usage**, because the conversation's own model writes it. When your allowance is spent, no summary is made until it returns.
 - **Summarise it yourself**: **Summarise earlier messages now**, at the top right of a conversation, asks for a summary straight away. You can say what it should keep ("keep every figure in the budget"). The dialog closes at once and you can keep writing.
+- **If a summary you asked for fails**, a quiet note under the conversation says *The summary you asked for could not be made* and why: your usage allowance ran out, the model returned an error, the model took too long, or there was nothing to summarise yet. **Retry** asks again with the same instructions (not offered when there was nothing to summarise), and **Dismiss** hides the note. It goes away by itself when a later summary succeeds. Summaries OCI makes on its own are never reported: if one fails, the conversation carries on as before.
 
 If a reply is needed before a summary is ready and the conversation no longer fits, the reply gets the most recent exchanges that fit and a notice says earlier context was left out. Your administrator can turn automatic summaries off; you can still ask for one.
 

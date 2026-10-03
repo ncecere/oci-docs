@@ -5,6 +5,10 @@ description: Project conversations live under their project in the sidebar, Sett
 
 Released 2026-10-03. A patch release after [v0.9.0](/docs/releases/v0-9-0) that reorganises the sidebar around projects and makes every settings page do what it says.
 
+<Callout type="warn" title="No published images">
+  v0.9.1 could not be published, so there are no v0.9.1 images. Its changes are in [v0.9.2](/docs/releases/v0-9-2), a security release: upgrade to v0.9.2 or later.
+</Callout>
+
 ## Highlights
 
 - **Project conversations live under their project.** In the sidebar, **Projects** is a plain heading and each project expands to its five most recent conversations, with **Show all (*n*)** opening the project's Conversations tab. Projects start collapsed, your choice is remembered in this browser, and the project you are working in opens by itself. **Today**, **Yesterday** and **Older** now list only conversations outside projects; pinned ones stay in **Pinned**. See [Conversations and the sidebar](/docs/using/conversations).
@@ -30,13 +34,18 @@ Released 2026-10-03. A patch release after [v0.9.0](/docs/releases/v0-9-0) that 
 
 ## Upgrading from v0.9.0
 
-**No migrations and no new environment variables.** Replace the API and web images as a pair (`v0.9.1`); a rolling upgrade works, and so does rolling back to v0.9.0. See [Upgrades](/docs/self-hosting/upgrades).
+**No migrations and no new environment variables.** There are no v0.9.1 images: upgrade to [v0.9.2](/docs/releases/v0-9-2) or later instead. See [Upgrades](/docs/self-hosting/upgrades).
 
 Things people will notice: project conversations move out of the date groups into their projects, and the Settings tabs change.
 
 ## Known limitations
 
-- The Keyboard Shortcuts card lists `Cmd/Ctrl + Shift + O`, `Cmd/Ctrl + B` and `Cmd/Ctrl + /`, which do nothing yet. See [Keyboard shortcuts](/docs/using/keyboard-shortcuts).
+Fixed in [v0.10.0](/docs/releases/v0-10-0):
+
+- The Keyboard Shortcuts card lists `Cmd/Ctrl + Shift + O`, `Cmd/Ctrl + B` and `Cmd/Ctrl + /`, which do nothing yet.
 - The dashboard has no button to delete an account.
 - The remembered open projects in the sidebar do not sync between open tabs.
+
+Also:
+
 - The limitations of [v0.9.0](/docs/releases/v0-9-0#known-limitations) still apply.

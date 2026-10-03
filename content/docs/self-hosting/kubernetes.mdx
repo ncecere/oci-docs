@@ -4,7 +4,7 @@ description: What exists for Kubernetes today, and how to map the Compose deploy
 ---
 
 <Callout title="No Helm chart yet">
-  OCI v0.9.1 ships no Helm chart, Kustomize base or Kubernetes manifests. The supported deployment is [Docker Compose](/docs/self-hosting/docker-compose). A first-party Helm chart, with a migration job before each rollout, rolling updates, disruption budgets and autoscaling on OCI's metrics, is on the roadmap for v0.11.
+  OCI v0.10.0 ships no Helm chart, Kustomize base or Kubernetes manifests. The supported deployment is [Docker Compose](/docs/self-hosting/docker-compose). A first-party Helm chart, with a migration job before each rollout, rolling updates, disruption budgets and autoscaling on OCI's metrics, is on the roadmap for v0.11.
 </Callout>
 
 The two images run on Kubernetes without changes. If you build your own manifests, map the Compose services like this:
@@ -25,6 +25,7 @@ Points that matter on Kubernetes:
 - **The web proxy finds API pods** by re-resolving `API_UPSTREAM_HOST` every ten seconds; a headless Service lets it balance across pods itself, while a normal ClusterIP Service balances for it.
 - **Metrics** are served on each API pod's port 3000 at `/metrics` when `METRICS_TOKEN` is set; scrape pods directly.
 - **The API image runs as a non-root user** (`oci`) and writes files under `/data/storage` only with the local driver.
-- **Ingress**: disable response buffering and raise timeouts for `/api`, and keep the [artifact frame](/docs/self-hosting/reverse-proxy#the-artifact-frame) headers intact.
+- **Ingress**: send every path, `/api` included, to the web Service; do not route `/api` straight to the API around it. Disable response buffering and raise timeouts for `/api`, and keep the [artifact frame](/docs/self-hosting/reverse-proxy#the-artifact-frame) headers intact.
+- **Client addresses.** Set `TRUSTED_PROXIES` on the web Deployment to the ingress controller pods' range (or the cluster's pod CIDR), separated by spaces, so sessions, the audit log and the sign-in limit see each person's address instead of the ingress's. See [Behind another proxy or an ingress](/docs/self-hosting/reverse-proxy#behind-another-proxy-or-an-ingress).
 - **Images are `linux/amd64` only.**
 - **Upgrades** follow the same procedure as Compose: [Upgrades](/docs/self-hosting/upgrades).

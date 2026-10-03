@@ -19,7 +19,7 @@ The menu works with the keyboard: arrow keys move between formats, Enter chooses
 | Format | What you get |
 |---|---|
 | **Word document** (`.docx`) | The title, then the content with real headings, bulleted and numbered lists, tables with a shaded header row that repeats on each page, and code in a monospace font. A4 pages. |
-| **PDF** (`.pdf`) | The same content on A4 pages, in Helvetica and Courier. See [Characters in PDFs](#characters-in-pdfs). |
+| **PDF** (`.pdf`) | The same content on A4 pages. Text in any common script, including right to left; see [Characters in PDFs](#characters-in-pdfs). |
 | **Presentation** (`.pptx`) | A widescreen deck: a title slide, then one slide per top-level heading (or per second-level heading when there is only one top-level heading). Paragraphs and list items become bullets; tables become slide tables; a slide that would overflow continues on the next, marked "(continued)". |
 | **Spreadsheet** (`.xlsx`) | One worksheet per table, named after the heading above it or "Table 1", "Table 2". The header row is bold and frozen. Plain numbers and percentages are stored as numbers; everything else, including `007` or `=SUM(A1)`, stays text. Offered only when there is a table. |
 
@@ -38,7 +38,19 @@ Not kept:
 
 ### Characters in PDFs
 
-PDFs use the standard PDF fonts, which cover Western European text (Windows-1252) only. Accented letters outside that set lose their accent ("ő" becomes "o"); arrows and `≤ ≥ ≠` become `-> <= >= !=`; anything else, including Greek, Cyrillic, Chinese, Japanese, Korean, Arabic, Hebrew and emoji, prints as "?". For other scripts, export a **Word document**, which keeps every character.
+A reply or document in Western European languages only is set in Helvetica and Courier, the standard PDF fonts. One with other text includes the fonts it needs instead, with only the characters used, so the file stays small:
+
+- Latin with any accents, Vietnamese, Greek, Cyrillic and Devanagari in Noto Sans;
+- Chinese, Japanese and Korean in Noto Sans SC, JP and KR. A document with Japanese kana uses the Japanese forms of shared characters, one with Korean Hangul the Korean forms, and otherwise the Chinese (simplified) forms;
+- Arabic, with its letters joined as they should be, and Hebrew, in Noto Sans Arabic and Hebrew. Right-to-left paragraphs start on the right and read right to left, with numbers and Latin words inside them kept left to right;
+- arrows, maths symbols and similar signs.
+
+Some limits:
+
+- **Emoji** print as "�": colour emoji fonts cannot be embedded this way.
+- Chinese, Japanese, Korean, Arabic and Hebrew have no italic, and Chinese, Japanese and Korean bold is drawn slightly thicker rather than in a bold font.
+- A few rare characters no bundled font has also print as "�". Word documents keep every character, for your own fonts to show.
+- List bullets and numbers stay on the left, also in right-to-left lists.
 
 ## Limits
 

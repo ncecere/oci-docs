@@ -12,10 +12,11 @@ description: Who did what and from where, what has been consumed, and usage summ
 ### What is recorded
 
 - **Administrative actions**: settings, models, providers, budgets, invitations, policies, announcements, connectors, webhooks, backups, compliance, bulk operations.
-- **Authentication**: sign-in, sign-up, sign-out, password reset and change, verification and single sign-on, **including failures** and attempts for accounts that do not exist, which is what makes a brute-force attempt visible. People's own changes in Settings → Account are recorded too: their name (`auth.profile.updated`) and signing devices out (`auth.session.revoked`, `auth.sessions.revoked_others`).
-- **Activity metadata**: tool calls (`tool.call`), file exports (`message.export`, `artifact.export`), full exports and imports (`user.export`, `user.import`), connector connections, memory changes.
+- **Authentication**: sign-in, sign-up, sign-out, password reset and change, verification and single sign-on, **including failures** and attempts for accounts that do not exist, which is what makes a brute-force attempt visible. People's own changes in Settings → Account are recorded too: their name (`auth.profile.updated`) and signing devices out (`auth.session.revoked`, `auth.sessions.revoked_others`). Attempts refused by the [sign-in limit](/docs/administration/budgets-and-limits#sign-in-attempts) are recorded as `auth.rate_limited`, once a minute per address or account.
+- **Deletions**: every conversation, file, project, memory note and account moved to the trash, restored or deleted, by the person, an administrator or a background job (`conversation.trash`, `conversation.delete`, `attachment.delete`, `project.delete`, `memory.delete`, `user.delete` and others). Each names what was deleted, whose it was and why, never its content; see [deletion events](/docs/administration/compliance#deletion-events). A refused attempt to delete one's own account (wrong password) is `user.delete.failure`.
+- **Activity metadata**: tool calls (`tool.call`), file exports (`message.export`, `artifact.export`), full exports and imports (`user.export`, `user.import`), connector connections, memory changes, revoking share links (`share_link.revoke`, `share_link.revoke_all`).
 
-Only outcomes and metadata are recorded. **No credentials, no tokens, no request bodies and no conversation content.** Creating and changing projects, conversations and share links is personal content and is not written to the log.
+Only outcomes and metadata are recorded. **No credentials, no tokens, no request bodies and no conversation content.** Creating and changing projects, conversations and share links is personal content and is not written to the log; deleting them and revoking links is.
 
 ### Searching it
 
@@ -42,6 +43,19 @@ How long entries are kept, and which are kept regardless, is on [Retention](/doc
 - Usage records carry no reference to a conversation.
 - Embeddings, reranking and summaries show under model names starting with `embedding:` and `rerank:`, and the conversation's model.
 - The reporting time zone is set on [Retention](/docs/administration/retention).
+
+### Deleted accounts
+
+Deleting an account, by an administrator or by the person, keeps its usage records (events, daily totals and limit refusals) without anything that identifies the person, so totals, the daily and per-model figures and scheduled reports do not change afterwards:
+
+- **Top consumers** and the scheduled report's **Heaviest use** show the usage of every deleted account as one **Deleted accounts** row, ranked with everyone else.
+- **People** (and **Active people** in reports) and **people affected** on the Limits tab count accounts that still exist; a deleted person's usage stays in every other figure.
+- A person's own usage meter and their page under People never include it.
+- Usage history retention prunes these records by age like any other.
+
+<Screenshot slot="admin-usage-deleted-accounts" />
+
+Usage records of accounts deleted before v0.10 were removed at the time and cannot be recovered.
 
 Use this page before setting a budget: a limit chosen from observed use lands better than one chosen from an assumption.
 

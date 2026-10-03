@@ -47,7 +47,7 @@ Either way the model is asked to link the sources it relies on, and the sources 
 
 <Screenshot slot="chat-reasoning-tool-step" />
 
-If a search fails, for example because the search provider rejected your institution's key, you still get an answer: the reply shows **Web search failed** with the reason, and the model is told to say that current sources could not be checked. A search that times out or cannot reach the provider is tried once more first. A search gives up within about 25 seconds.
+If a search fails, for example because the search provider rejected your institution's key, you still get an answer: the reply shows **Web search failed** with the reason, and the model is told to say that current sources could not be checked. A search that times out, cannot reach the provider or meets a server error is tried once more first. If your institution has set up a second, fallback provider, the search then goes to it, and the reply's search details name the provider that answered. A rejected key or a rate limit is reported straight away, since trying again would not help. A search gives up within about 25 seconds.
 
 ### When it helps
 

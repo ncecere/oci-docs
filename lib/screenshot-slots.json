@@ -93,6 +93,18 @@
     ],
     "alt": "The Files tab of a project: four files, three marked \"Searchable · n passages\" and one scanned PDF marked \"No text to search\"."
   },
+  "project-passages-used": {
+    "files": [
+      "project-passages-used"
+    ],
+    "alt": "A reply in a project conversation with the note \"Searched project files. Used passages from handbook.pdf (2 passages)\" expanded by Show passages used: each passage's number, its section heading and its first lines."
+  },
+  "project-files-control": {
+    "files": [
+      "project-files-control"
+    ],
+    "alt": "The Files control open above the message box in a project conversation: the project's files with a checkbox each, one unticked, and the button reading \"Files 3/4\"."
+  },
   "artifact-writing": {
     "files": [
       "artifact-writing"
@@ -135,6 +147,12 @@
     ],
     "alt": "The Share conversation dialog: Share through set to \"Latest messages (live)\", an optional expiry, Create and copy link, and one existing link with Copy and Revoke."
   },
+  "settings-sharing": {
+    "files": [
+      "settings-sharing"
+    ],
+    "alt": "Settings → Sharing: \"Your shared links\" with Revoke all, and a list of links, each with its conversation, Live or Snapshot, Active, Expired or Revoked, the dates, the view count, and Copy and Revoke."
+  },
   "export-menu": {
     "files": [
       "export-menu"
@@ -146,7 +164,13 @@
       "settings-account",
       "user-settings-account"
     ],
-    "alt": "Settings → Account: name, email address, role and how the person signs in, with Change Password and View Devices, and the Keyboard Shortcuts and Need help? cards beside the page."
+    "alt": "Settings → Account: name, email address, role and whether the email is verified, Change Password and View Devices, a note on deleting the account, and the Usage Limits, Keyboard Shortcuts and Need help? cards beside the page."
+  },
+  "settings-delete-account": {
+    "files": [
+      "settings-delete-account"
+    ],
+    "alt": "The Delete your account? dialog over Settings → Account: what is deleted and what is kept, a field to type the email address, a password field, and Delete my account."
   },
   "settings-devices": {
     "files": [
@@ -173,7 +197,7 @@
       "settings-models",
       "user-settings-models"
     ],
-    "alt": "Settings → Models: the models available to the person, each with its description and capabilities."
+    "alt": "Settings → Models: Defaults with Default model and Default reasoning level, each set to Instance default, and Save defaults; below, Available models with a search box and each model's description and capabilities, the instance default marked."
   },
   "settings-attachments": {
     "files": [
@@ -231,6 +255,12 @@
     ],
     "alt": "Providers & Models, Models tab: the default model chooser above the catalogue, and catalogue entries with display names, capabilities, visible roles and an enabled switch."
   },
+  "admin-model-limits": {
+    "files": [
+      "admin-model-limits"
+    ],
+    "alt": "The Edit model dialog for \"Research model\" with Context window 200,000 and Max output 16,000 among its fields."
+  },
   "admin-embeddings": {
     "files": [
       "admin-embeddings"
@@ -249,6 +279,12 @@
     ],
     "alt": "The Tools section of a role on Roles & access: built-in tools and connector tools grouped under their connector, each marked read or write, with a switch."
   },
+  "admin-roles-delete-own-account": {
+    "files": [
+      "admin-roles-delete-own-account"
+    ],
+    "alt": "The Features section of the user role on Roles & access, with the Delete own account switch among the other feature switches."
+  },
   "admin-users": {
     "files": [
       "admin-users"
@@ -260,6 +296,12 @@
       "admin-user-detail"
     ],
     "alt": "One person's account page: totals, storage, active sessions with address and client, limits with budget progress bars, recent conversation titles and their audit trail."
+  },
+  "admin-delete-user": {
+    "files": [
+      "admin-delete-user"
+    ],
+    "alt": "The Delete Jordan Kim? dialog on a person's account page: what is deleted and what is kept, a field to type their email address, and Delete user."
   },
   "admin-users-bulk-actions": {
     "files": [
@@ -317,7 +359,13 @@
       "admin-web-search",
       "admin-search"
     ],
-    "alt": "Tools & integrations → Web search: the on/off switch, the provider choice, its API key field and Test search."
+    "alt": "Tools & integrations → Web search: the Enable web search switch, the provider choice and maximum results, the Fallback provider section, and Test search and Save changes."
+  },
+  "admin-web-search-fallback": {
+    "files": [
+      "admin-web-search-fallback"
+    ],
+    "alt": "Tools & integrations → Web search: the primary provider, then Fallback provider set to SearXNG with its address, and Test search results for both providers."
   },
   "admin-connectors": {
     "files": [
@@ -338,6 +386,12 @@
     ],
     "alt": "Insights → Usage: totals, daily volume, a breakdown by model and the heaviest consumers."
   },
+  "admin-usage-deleted-accounts": {
+    "files": [
+      "admin-usage-deleted-accounts"
+    ],
+    "alt": "Insights → Usage, Top consumers: named people and one \"Deleted accounts\" row ranked among them."
+  },
   "admin-reports": {
     "files": [
       "admin-reports"
@@ -355,6 +409,12 @@
       "admin-backups"
     ],
     "alt": "Data & storage → Backups: Back up automatically on at 03:00 UTC to a separate S3 bucket, the pg_dump version found, retention, and a run history of verified backups."
+  },
+  "admin-backups-files": {
+    "files": [
+      "admin-backups-files"
+    ],
+    "alt": "Data & storage → Backups: Copy attachment files on, Files checked after each backup set to a random sample, and a run history showing files copied, already backed up, read back and swept."
   },
   "admin-webhooks": {
     "files": [
