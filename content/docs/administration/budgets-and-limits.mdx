@@ -69,6 +69,8 @@ Per role, on **People → Roles & access**:
 | Messages per minute | 120 | 30 | 30 | 10 |
 | Uploads per minute | 120 | 20 | 20 | 5 |
 
+**Starting a conversation** counts against the same messages-per-minute value, separately: a person can start as many conversations a minute as they can send messages. A person who already has ten conversations from the last minute that are still untitled and empty is refused another until one is used or the minute passes. Both answer 429 with `Retry-After`, and together they stop a looping client from filling an account with empty conversations.
+
 These are the built-in defaults. An [environment variable](/docs/self-hosting/configuration#limits-and-retention-defaults) such as `RATE_LIMIT_CHAT_PER_MINUTE` replaces the default for every role; a value saved here wins over both. Each value shows where it came from.
 
 A person working normally should never meet these. The concurrency cap also bounds how far a budget can be overshot by simultaneous requests. Without Redis, rate limits are enforced per API replica.

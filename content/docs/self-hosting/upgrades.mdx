@@ -60,6 +60,10 @@ Images can be rolled back by setting `OCI_API_IMAGE` and `OCI_WEB_IMAGE` to the 
 
 ## Per-version notes
 
+### To v0.10.2
+
+**No migrations** and no new environment variables. Replace the API and web images as a pair, from v0.10.0 or v0.10.1 directly, one replica at a time. Skip v0.10.1: it can create many empty conversations from a single send. See [v0.10.2](/docs/releases/v0-10-2).
+
 ### To v0.10.1
 
 **No migrations** and no new environment variables. A web change only: how a reply shows its reasoning and tool steps. Replace the API and web images as a pair, from v0.10.0 directly, one replica at a time. See [v0.10.1](/docs/releases/v0-10-1).

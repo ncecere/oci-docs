@@ -24,9 +24,13 @@ Access-control and security entries in the audit log are kept regardless of audi
 
 While the [compliance export](/docs/administration/compliance) is on, audit entries it has not exported yet are kept too, so a short audit retention never opens a gap.
 
+## Unused conversations
+
+A conversation that was started and never used (still **New Chat**, with no message, untouched for a day) is deleted by an hourly job. Pinned, archived, imported and temporary conversations are left alone. This isn't a setting: such a conversation holds nothing to keep. Each deletion is recorded as a [deletion event](/docs/administration/compliance#deletion-events) with the reason `unused_expiry`.
+
 ## Legal hold
 
-People on [legal hold](/docs/administration/compliance#legal-hold) are skipped by conversation, trash, memory, usage-history and audit retention and by share-link pruning, and their expired temporary chats are kept, until the hold is lifted.
+People on [legal hold](/docs/administration/compliance#legal-hold) are skipped by conversation, trash, memory, usage-history and audit retention and by share-link pruning, and their expired temporary chats and unused conversations are kept, until the hold is lifted.
 
 Every deletion a retention job makes is recorded in the audit log as a [deletion event](/docs/administration/compliance#deletion-events), with no actor and the job as its reason.
 

@@ -27,7 +27,7 @@ description: Secrets, encryption at rest, the network, access control and harden
 - Keep one verified local administrator with a known password for [break-glass access](/docs/administration/identity#break-glass-access), and test `/auth/login?local=1`.
 - Use the `auditor` role for compliance reviewers instead of `admin`.
 - Sessions are cached for up to five minutes per API replica, so revoking a session, banning or changing a role can take that long to reach every replica.
-- There is no multi-factor authentication for local accounts in v0.10.1; rely on your identity provider's MFA, and keep local accounts to break-glass administrators.
+- There is no multi-factor authentication for local accounts in v0.10.2; rely on your identity provider's MFA, and keep local accounts to break-glass administrators.
 
 ## Content
 

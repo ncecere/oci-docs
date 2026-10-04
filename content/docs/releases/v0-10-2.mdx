@@ -1,0 +1,24 @@
+---
+title: v0.10.2
+description: One send starts one conversation, a limit on starting conversations, and unused conversations cleaned up after a day. No migrations.
+---
+
+Released 2026-10-03. A patch release after [v0.10.1](/docs/releases/v0-10-1). **Upgrade to this instead of v0.10.1**, which it replaces.
+
+## Fixed
+
+- **One send starts one conversation.** On v0.10.1, sending from the new-chat page could start another conversation for every key press that arrived before the page had moved to the new one. Once, that left thousands of empty conversations. A second start is now blocked while one is under way, **Send** is disabled meanwhile, and holding Enter sends once.
+- **New chat with query** in the command palette now sends its query. It used to leave an empty conversation instead.
+
+## For administrators
+
+- **A limit on starting conversations.** Each person can start as many conversations a minute as their role's messages per minute, and an eleventh unused conversation within a minute is refused. Both answer 429 with `Retry-After`. See [Budgets and limits](/docs/administration/budgets-and-limits).
+- **Unused conversations are cleaned up.** An hourly job deletes conversations that are still untitled, have no messages and have not been touched for a day. Pinned, archived, imported and temporary conversations are left alone, as is everything belonging to someone on legal hold. Each deletion is recorded in the audit log with the reason `unused_expiry`. See [Retention](/docs/administration/retention#unused-conversations).
+
+## For operators
+
+- **The repository and images are public.** Pulling `ghcr.io/ncecere/open-chat-interface/{api,web}` needs no registry login.
+
+## Upgrading
+
+**No migrations** and no new environment variables. Replace the API and web images as a pair (`v0.10.2`). See [Upgrades](/docs/self-hosting/upgrades#to-v0102).

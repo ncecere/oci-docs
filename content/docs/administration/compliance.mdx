@@ -54,7 +54,7 @@ Every one has the same `metadata.deletion` object:
 | `type` | `conversation`, `attachment`, `project`, `memory` or `user`. |
 | `id` | The ID of what was trashed, restored or deleted. |
 | `ownerUserId`, `ownerEmail` | Whose data it was; kept after the account is deleted. |
-| `reason` | `user`, `admin`, `tool`, `retention`, `trash_expiry` or `temporary_expiry`. |
+| `reason` | `user`, `admin`, `tool`, `retention`, `trash_expiry`, `temporary_expiry` or `unused_expiry` (a conversation started and never used). |
 | `permanent` | `true` for `*.delete`; `false` for trash and restore. |
 
 **Who** is `actorUserId` and `actorEmail`: the owner, the administrator, or null for a background job (the `reason` names the job). **When** is `createdAt`. **Never what was deleted**: no conversation titles, file names, project names or memory text, because audit entries are shown to administrators, sent to webhooks and kept after the thing itself is gone. With **Include conversation content** on, the archive already holds the messages, keyed by `threadId`, so the IDs join a deletion to what it removed.
