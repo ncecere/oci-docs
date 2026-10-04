@@ -36,11 +36,24 @@ Which models you see is decided by your institution, and may depend on your role
 
 You can change model at any point. The new model receives the recent conversation that fits what it can take in, including earlier attachments it can read. Starting with a fast, inexpensive model and moving to a more capable one when the question gets hard is a good way to work. Each reply records which model wrote it.
 
-## Reasoning
+## How a reply shows the model's work
 
-Some models think before they answer. While they do, the reply shows **Thinking…** and a small window under it with the latest few lines, so you can follow along. Once the model moves on (to a tool step or the answer), the heading becomes **Reasoning**, collapsed; select it to read everything. A reply that uses tools can think more than once, and each piece of reasoning sits before the step it led to. Screen readers get the heading and, when expanded, the full text.
+Some models think before they answer, and some use [tools](/docs/using/tools-and-connectors) (a web search, an artifact, a connector). Everything a reply did before its answer is gathered into **one collapsed block** at the top of the reply, so the answer reads cleanly however many steps it took.
+
+- A reply that only thought once shows a **Reasoning** heading. Select it to read the thinking in full.
+- A reply that took more than one step, or used a tool, shows a one-line summary instead, for example **Thought · created an artifact**, **Thought · searched the web twice**, **Searched the web**, or **Worked · 3 steps** when it did several different things. Select it to see a timeline of every piece of reasoning and every tool step in the order they happened; each tool step expands to its inputs and result.
+
+<Screenshot slot="chat-reasoning-tool-step" />
+
+What the work **made or needs from you** stays in sight below the block and above the answer: artifact cards, tool approvals waiting for an answer, and "Memory updated" notes. Nothing you need to act on is hidden in the collapsed block.
+
+While the model works, the block's heading says what it is doing now: **Thinking…**, **Searching the web…**, **Writing *Title*…**. While it thinks, a small window under the heading shows the latest few lines as they arrive, so you can follow along without the reply jumping around; select the heading or the window to read everything so far. When the answer starts, the block collapses to its summary. If you opened or collapsed it yourself, it stays the way you left it.
 
 <Screenshot slot="chat-reasoning-live" />
+
+The heading is a button that says whether it is expanded, and the timeline is a list. Screen readers hear each new step as it starts (once, not every word); the moving window is not read out. Animation stops if your system asks for reduced motion.
+
+The same block appears when you reload a conversation, switch between retried replies, and on [share links](/docs/using/sharing), which show the tool steps' one-line summaries but not the reasoning.
 
 ### Reasoning level
 

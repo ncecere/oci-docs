@@ -16,11 +16,13 @@ Artifacts work with every model: a model without tools writes a code block, and 
 
 ## Watching one being written
 
-When a model that can use tools writes an artifact, the reply shows its card straight away, where the model started it:
+When a model that can use tools writes an artifact, the reply shows its card straight away, below the reply's work block (see [How a reply shows the model's work](/docs/using/chat#how-a-reply-shows-the-models-work)) and above its answer, while the block's heading reads **Writing *Title*…**:
 
 - **Preparing *Title*…** until the first text arrives. Some providers send the whole artifact at the end; after a few seconds the card says how long it has been waiting.
 - **Writing *Title*…** with the lines and characters so far and the last few lines. A revision shows **Revising *Title*… (2 changes)**.
-- Once saved, it becomes the ordinary card that opens the artifact. **Details** beside it shows the title, kind and size, and each change of a revision as a before-and-after snippet.
+- Once saved, it becomes the ordinary card that opens the artifact.
+
+Select the small arrow at the right edge of a card (**Show details for *Title*** to a screen reader) to open the details inside the card: the title, kind and size, each change of a revision as a before-and-after snippet, the latest source while it is being written, and **Open artifact (version *N*)** for the version that call made. Selecting the rest of the card still opens the artifact. In the expanded work block the same call is one line, such as **Created artifact 'Title'**; select it to jump to the card. A call that failed has no card; its line in the work block opens the same details and the error.
 
 <Screenshot slot="artifact-writing" />
 

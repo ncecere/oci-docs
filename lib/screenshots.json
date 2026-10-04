@@ -19,8 +19,38 @@
     "width": 1440,
     "height": 900
   },
+  "admin-backups": {
+    "src": "/images/admin-backups.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-backups-files": {
+    "src": "/images/admin-backups-files.webp",
+    "width": 1440,
+    "height": 900
+  },
   "admin-branding": {
     "src": "/images/admin-branding.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-compliance": {
+    "src": "/images/admin-compliance.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-connectors": {
+    "src": "/images/admin-connectors.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-delete-user": {
+    "src": "/images/admin-delete-user.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-embeddings": {
+    "src": "/images/admin-embeddings.webp",
     "width": 1440,
     "height": 900
   },
@@ -36,6 +66,11 @@
   },
   "admin-invitations": {
     "src": "/images/admin-invitations.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-model-limits": {
+    "src": "/images/admin-model-limits.webp",
     "width": 1440,
     "height": 900
   },
@@ -69,6 +104,16 @@
     "width": 1440,
     "height": 900
   },
+  "admin-roles-delete-own-account": {
+    "src": "/images/admin-roles-delete-own-account.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-roles-tools": {
+    "src": "/images/admin-roles-tools.webp",
+    "width": 1440,
+    "height": 900
+  },
   "admin-sso-provider-form": {
     "src": "/images/admin-sso-provider-form.webp",
     "width": 1440,
@@ -86,6 +131,11 @@
   },
   "admin-usage-budgets": {
     "src": "/images/admin-usage-budgets.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-usage-deleted-accounts": {
+    "src": "/images/admin-usage-deleted-accounts.webp",
     "width": 1440,
     "height": 900
   },
@@ -109,8 +159,43 @@
     "width": 1440,
     "height": 900
   },
+  "admin-web-search-fallback": {
+    "src": "/images/admin-web-search-fallback.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "admin-webhooks": {
+    "src": "/images/admin-webhooks.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "artifact-full-screen": {
+    "src": "/images/artifact-full-screen.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "artifact-panel-docked": {
+    "src": "/images/artifact-panel-docked.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "artifact-writing": {
+    "src": "/images/artifact-writing.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "chat-attachment": {
+    "src": "/images/chat-attachment.webp",
+    "width": 1440,
+    "height": 900
+  },
   "chat-home": {
     "src": "/images/chat-home.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "chat-long-conversation": {
+    "src": "/images/chat-long-conversation.webp",
     "width": 1440,
     "height": 900
   },
@@ -124,20 +209,85 @@
     "width": 1440,
     "height": 900
   },
+  "chat-reasoning-live": {
+    "src": "/images/chat-reasoning-live.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "chat-reasoning-tool-step": {
+    "src": "/images/chat-reasoning-tool-step.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "chat-reply-switcher": {
+    "src": "/images/chat-reply-switcher.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "chat-tool-approval": {
+    "src": "/images/chat-tool-approval.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "conversation-search": {
+    "src": "/images/conversation-search.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "export-menu": {
+    "src": "/images/export-menu.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "memory-settings": {
+    "src": "/images/memory-settings.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "memory-updated": {
+    "src": "/images/memory-updated.webp",
+    "width": 1440,
+    "height": 900
+  },
   "phone-admin-overview": {
     "src": "/images/phone-admin-overview.webp",
-    "width": 1082,
-    "height": 2202
+    "width": 780,
+    "height": 1688
+  },
+  "phone-artifact": {
+    "src": "/images/phone-artifact.webp",
+    "width": 780,
+    "height": 1688
   },
   "phone-chat-home": {
     "src": "/images/phone-chat-home.webp",
-    "width": 1082,
-    "height": 2202
+    "width": 780,
+    "height": 1688
   },
   "phone-sidebar": {
     "src": "/images/phone-sidebar.webp",
-    "width": 1082,
-    "height": 2202
+    "width": 780,
+    "height": 1688
+  },
+  "project-conversations": {
+    "src": "/images/project-conversations.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "project-files": {
+    "src": "/images/project-files.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "project-files-control": {
+    "src": "/images/project-files-control.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "project-passages-used": {
+    "src": "/images/project-passages-used.webp",
+    "width": 1440,
+    "height": 900
   },
   "settings-account": {
     "src": "/images/settings-account.webp",
@@ -149,8 +299,23 @@
     "width": 1440,
     "height": 900
   },
+  "settings-connectors": {
+    "src": "/images/settings-connectors.webp",
+    "width": 1440,
+    "height": 900
+  },
   "settings-customization": {
     "src": "/images/settings-customization.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "settings-delete-account": {
+    "src": "/images/settings-delete-account.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "settings-devices": {
+    "src": "/images/settings-devices.webp",
     "width": 1440,
     "height": 900
   },
@@ -164,8 +329,28 @@
     "width": 1440,
     "height": 900
   },
+  "settings-sharing": {
+    "src": "/images/settings-sharing.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "share-dialog": {
+    "src": "/images/share-dialog.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "sidebar-projects": {
+    "src": "/images/sidebar-projects.webp",
+    "width": 1440,
+    "height": 900
+  },
   "sign-in": {
     "src": "/images/sign-in.webp",
+    "width": 1440,
+    "height": 900
+  },
+  "sign-in-sso": {
+    "src": "/images/sign-in-sso.webp",
     "width": 1440,
     "height": 900
   }

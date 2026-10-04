@@ -1,0 +1,17 @@
+---
+title: v0.10.1
+description: One block for the model's work — reasoning and tool steps gathered into one collapsible block per reply, with artifact cards and approvals kept in sight, and artifact details inside the card. No migrations.
+---
+
+Released 2026-10-03. A patch release after [v0.10.0](/docs/releases/v0-10-0) that changes how a reply shows the work behind it. Nothing changes for administrators or operators.
+
+## For people
+
+- **One block for the model's work.** A reply that reasoned and used tools in several steps used to show a **Reasoning** heading for each step around its tool steps. Everything the model did before its answer now sits in one collapsed block, in order, summarised as for example **Thought · created an artifact** or **Thought · searched the web twice**. While the reply is written, the block's heading names the current step (**Thinking…**, **Writing *Title*…**). Artifact cards and anything waiting for your approval stay visible below it. Replies with a single reasoning step look as before. See [How a reply shows the model's work](/docs/using/chat#how-a-reply-shows-the-models-work).
+- **Artifact details open inside the card,** from a small arrow at its edge, instead of a separate **Details** link beside it. See [Artifacts](/docs/using/artifacts#watching-one-being-written).
+
+<Screenshot slot="chat-reasoning-tool-step" />
+
+## Upgrading
+
+**No migrations** and no new environment variables. Replace the API and web images as a pair (`v0.10.1`). See [Upgrades](/docs/self-hosting/upgrades#to-v0101).

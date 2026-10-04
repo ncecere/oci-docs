@@ -1,8 +1,7 @@
 {
   "sign-in": {
     "files": [
-      "sign-in",
-      "user-sign-in"
+      "sign-in"
     ],
     "alt": "The Open Chat Interface sign-in page in the dark theme: the instance name, \"Sign in to continue to your conversations\", email and password fields, a Sign in button, and a note that the instance is invite only."
   },
@@ -10,12 +9,11 @@
     "files": [
       "sign-in-sso"
     ],
-    "alt": "The sign-in page of Example University's instance with a \"Continue with Example University SSO\" button above the email and password form."
+    "alt": "The sign-in page of Example University's instance: the email and password form with Forgot your password?, then \"Continue with Example University SSO\" below it."
   },
   "chat-home": {
     "files": [
-      "chat-home",
-      "user-chat-home"
+      "chat-home"
     ],
     "alt": "The chat home screen: the sidebar with New Chat, search, Projects and the conversation list on the left, and an empty conversation with the message box, model picker, reasoning level, Search and Attach controls."
   },
@@ -23,25 +21,23 @@
     "files": [
       "chat-reasoning-tool-step"
     ],
-    "alt": "A reply to \"What are the library's opening hours this week?\": a collapsed Reasoning heading, a tool step reading \"Searched the web for 'Example University library opening hours' · 5 results\", the sources above the answer, and the answer with linked sources."
+    "alt": "A reply to \"Can you check the status of my IT Service Desk ticket INC-2041…\" with its work block expanded under the summary \"Thought · used Get ticket status\": a timeline of a short piece of reasoning, the tool step \"Used Get ticket status\" and a second piece of reasoning noting that the technician's visit clashes with the lecture, then the answer below the block."
   },
   "chat-reasoning-live": {
     "files": [
       "chat-reasoning-live"
     ],
-    "alt": "A reply still being written: the heading \"Thinking…\" with a small three-line window under it showing the latest lines of the model's reasoning."
+    "alt": "A reply still being written: the work block's heading \"Thinking…\" with a small three-line window under it showing the latest lines of the model's reasoning, the oldest line fading out."
   },
   "chat-model-picker": {
     "files": [
-      "chat-model-picker",
-      "user-model-picker"
+      "chat-model-picker"
     ],
-    "alt": "The model picker open above the message box: a search box with a capability filter, and a list of models with coloured capability icons for vision, reasoning, effort control, tool calling and PDF reading."
+    "alt": "The model picker open above the message box: a search box with a capability filter, lab filters on the left, and the two models, Chat model and Fast model, each with a short description and coloured capability icons for vision, reasoning, effort control, tool calling and fast."
   },
   "chat-model-details": {
     "files": [
-      "chat-model-details",
-      "user-model-details"
+      "chat-model-details"
     ],
     "alt": "A model's information card: its name, description, capabilities, provider and limits."
   },
@@ -55,7 +51,7 @@
     "files": [
       "chat-tool-approval"
     ],
-    "alt": "A reply paused on an approval card for a connector tool, \"Create ticket\" from the Service Desk connector, showing the exact inputs it will run with and Approve and Deny buttons."
+    "alt": "A reply paused on an approval card below its collapsed Reasoning heading: \"Allow Create a ticket?\", the tool and its connector (the IT Service Desk), the exact inputs it will run with, Approve and Deny buttons, and \"Create a ticket is waiting for your approval\"."
   },
   "chat-attachment": {
     "files": [
@@ -73,13 +69,13 @@
     "files": [
       "sidebar-projects"
     ],
-    "alt": "The sidebar with the Projects heading, one project expanded to its five most recent conversations and \"Show all (8)\", two collapsed projects, then Pinned, Today and Older."
+    "alt": "The sidebar with the Projects heading: \"CHEM 101 teaching\" expanded to its five most recent conversations and \"Show all (9)\", with the open conversation highlighted, two collapsed projects, then Pinned (a project conversation with its project name) and Today."
   },
   "conversation-search": {
     "files": [
       "conversation-search"
     ],
-    "alt": "Conversation search for \"migr plan\": results show each conversation's title with matching lines below and the matched words highlighted; one result is marked Archived and one shows its project's name."
+    "alt": "Conversation search for \"migr plan\": results show each conversation's title with matching lines below and the matched words highlighted; one result is marked Archived."
   },
   "project-conversations": {
     "files": [
@@ -97,7 +93,7 @@
     "files": [
       "project-passages-used"
     ],
-    "alt": "A reply in a project conversation with the note \"Searched project files. Used passages from handbook.pdf (2 passages)\" expanded by Show passages used: each passage's number, its section heading and its first lines."
+    "alt": "A reply in a CHEM 101 project conversation with the note \"Searched project files by meaning and keywords and reranked the results. Used passages from course-handbook.pdf (3 passages), lab-safety.pdf (2 passages)\" expanded by Show passages used: for each file, the passage numbers and their first lines, then the answer."
   },
   "project-files-control": {
     "files": [
@@ -109,13 +105,13 @@
     "files": [
       "artifact-writing"
     ],
-    "alt": "A model writing an artifact: the card in the reply reads \"Writing Course timeline…\" with line and character counts, and the docked panel beside the conversation shows the source as it arrives."
+    "alt": "A model writing an artifact: the reply's work block reads \"Writing CHEM 101 Term Timeline…\", the card below it reads the same with \"HTML · 35 lines · 1,084 characters\" and the last few lines written, and the docked panel beside the conversation shows the HTML source as it arrives."
   },
   "artifact-panel-docked": {
     "files": [
       "artifact-panel-docked"
     ],
-    "alt": "The artifact panel docked beside the conversation, showing the preview of an HTML page with Preview, Source and Versions tabs and Copy, Download, Full screen and Close buttons."
+    "alt": "A finished reply with its work block collapsed to \"Thought · created an artifact\", the artifact card below it with the arrow that opens its details, and the artifact panel docked beside the conversation showing the preview of the HTML timeline, with Preview, Source and Versions tabs and Copy, Download, Full screen and Close buttons."
   },
   "artifact-full-screen": {
     "files": [
@@ -127,7 +123,7 @@
     "files": [
       "settings-connectors"
     ],
-    "alt": "Settings → Connectors: the Docs service marked Connected with a Disconnect button, and the Service Desk service with a Connect button."
+    "alt": "Settings → Connectors: Course catalogue marked Not connected with a Connect button, and Docs marked Connected with a Disconnect button."
   },
   "memory-settings": {
     "files": [
@@ -139,7 +135,7 @@
     "files": [
       "memory-updated"
     ],
-    "alt": "A reply showing \"Memory updated\" with the saved note \"Teaches first-year chemistry\" and an Undo button."
+    "alt": "A reply to \"Remember that I teach first-year chemistry.\" with its collapsed Reasoning heading, then a \"Memory updated\" note reading \"Remembered: Teaches first-year chemistry.\" with an Undo button, above the answer."
   },
   "share-dialog": {
     "files": [
@@ -161,10 +157,9 @@
   },
   "settings-account": {
     "files": [
-      "settings-account",
-      "user-settings-account"
+      "settings-account"
     ],
-    "alt": "Settings → Account: name, email address, role and whether the email is verified, Change Password and View Devices, a note on deleting the account, and the Usage Limits, Keyboard Shortcuts and Need help? cards beside the page."
+    "alt": "Settings → Account: name, email address, role and whether the email is verified, Change Password and View Devices, and the Delete account section, with the Usage Limits, Keyboard Shortcuts and Need help? cards beside the page and all eight settings tabs above."
   },
   "settings-delete-account": {
     "files": [
@@ -180,44 +175,38 @@
   },
   "settings-customization": {
     "files": [
-      "settings-customization",
-      "user-settings-customization"
+      "settings-customization"
     ],
-    "alt": "Settings → Customization: what to call you, what you do, traits and anything else, then Appearance, Invert Send/New Line Behavior, Wrap Long Code Lines and Open artifacts automatically."
+    "alt": "Settings → Customization: what to call you (\"Priya\"), what you do (\"Lecturer in chemistry\"), the trait \"concise\" chosen from suggestions, anything else (\"British spelling, please.\"), and Save Preferences, beside the profile, Usage Limits and Keyboard Shortcuts cards."
   },
   "settings-history": {
     "files": [
-      "settings-history",
-      "user-settings-history"
+      "settings-history"
     ],
-    "alt": "Settings → History: Export all conversations and Import from ChatGPT or Claude at the top, Active, Archived and Trash tabs, a title search and a list of conversations with checkboxes."
+    "alt": "Settings → History: Export all conversations and Import from ChatGPT or Claude at the top, Active, Archived and Trash tabs, a title search, and a list of conversations with checkboxes, two of them ticked with Archive and Delete beside \"2 selected\"."
   },
   "settings-models": {
     "files": [
-      "settings-models",
-      "user-settings-models"
+      "settings-models"
     ],
-    "alt": "Settings → Models: Defaults with Default model and Default reasoning level, each set to Instance default, and Save defaults; below, Available models with a search box and each model's description and capabilities, the instance default marked."
+    "alt": "Settings → Models: Defaults with Default model set to Fast model and Default reasoning level set to Instance default (Low), and Save defaults; below, Available models with a search box, Chat model marked instance default and Fast model marked your default, each with its description and capabilities."
   },
   "settings-attachments": {
     "files": [
-      "settings-attachments",
-      "user-settings-attachments"
+      "settings-attachments"
     ],
     "alt": "Settings → Attachments: storage used against the role's limit, split into chat files, project files and artifacts, and the list of uploaded files."
   },
   "phone-chat-home": {
     "files": [
-      "phone-chat-home",
-      "mobile-chat-home"
+      "phone-chat-home"
     ],
     "phone": true,
     "alt": "The chat home screen on a phone, with the sidebar closed and the composer's controls behind one button."
   },
   "phone-sidebar": {
     "files": [
-      "phone-sidebar",
-      "mobile-sidebar"
+      "phone-sidebar"
     ],
     "phone": true,
     "alt": "The sidebar open as a panel on a phone, with projects and conversations."
@@ -227,12 +216,11 @@
       "phone-artifact"
     ],
     "phone": true,
-    "alt": "An artifact open on a phone, filling the screen, with Preview, Source and Versions and a Close button."
+    "alt": "An HTML artifact open on a phone, filling the screen, with its title and version, Copy, Download, Full screen and Close, and Preview, Source and Versions tabs above the preview."
   },
   "phone-admin-overview": {
     "files": [
-      "phone-admin-overview",
-      "mobile-admin-overview"
+      "phone-admin-overview"
     ],
     "phone": true,
     "alt": "The admin Overview on a phone, with the menu button that opens the admin navigation."
@@ -259,7 +247,7 @@
     "files": [
       "admin-model-limits"
     ],
-    "alt": "The Edit model dialog for \"Research model\" with Context window 200,000 and Max output 16,000 among its fields."
+    "alt": "The Edit model dialog for \"Chat model\": provider, lab, upstream model ID, display name, slug and description above Context window 131072 and Max output 16384, then sort order, prices and capabilities."
   },
   "admin-embeddings": {
     "files": [
@@ -295,7 +283,7 @@
     "files": [
       "admin-user-detail"
     ],
-    "alt": "One person's account page: totals, storage, active sessions with address and client, limits with budget progress bars, recent conversation titles and their audit trail."
+    "alt": "One person's account page: totals for threads, messages, storage and files, active sessions with address and client, and limits with a monthly cost budget's progress bar and storage use."
   },
   "admin-delete-user": {
     "files": [
@@ -317,8 +305,7 @@
   },
   "admin-authentication": {
     "files": [
-      "admin-authentication",
-      "admin-settings-authentication"
+      "admin-authentication"
     ],
     "alt": "Sign-in & security → Authentication: registration mode, email verification, local sign-in, session length, and the Single sign-on section listing providers."
   },
@@ -330,8 +317,7 @@
   },
   "admin-usage-budgets": {
     "files": [
-      "admin-usage-budgets",
-      "admin-quotas"
+      "admin-usage-budgets"
     ],
     "alt": "Models → Usage budgets: budgets with their measure, window, model scope and the roles they apply to."
   },
@@ -343,10 +329,9 @@
   },
   "admin-acceptable-use": {
     "files": [
-      "admin-acceptable-use",
-      "admin-policies"
+      "admin-acceptable-use"
     ],
-    "alt": "Sign-in & security → Acceptable use: the published policy version and the editor for a new version."
+    "alt": "Sign-in & security → Acceptable use: version 2 of \"Example University acceptable use of AI chat\" in force with its acceptances, version 1 superseded, and New version."
   },
   "admin-announcements": {
     "files": [
@@ -356,16 +341,15 @@
   },
   "admin-web-search": {
     "files": [
-      "admin-web-search",
-      "admin-search"
+      "admin-web-search"
     ],
-    "alt": "Tools & integrations → Web search: the Enable web search switch, the provider choice and maximum results, the Fallback provider section, and Test search and Save changes."
+    "alt": "Tools & integrations → Web search: web search on with the self-hosted SearXNG provider and its address, maximum results, Fallback provider set to None, and a successful Test search."
   },
   "admin-web-search-fallback": {
     "files": [
       "admin-web-search-fallback"
     ],
-    "alt": "Tools & integrations → Web search: the primary provider, then Fallback provider set to SearXNG with its address, and Test search results for both providers."
+    "alt": "Tools & integrations → Web search: SearXNG as the provider, a second SearXNG instance as the fallback provider with its address, and Test search results for both."
   },
   "admin-connectors": {
     "files": [
@@ -375,16 +359,15 @@
   },
   "admin-audit-log": {
     "files": [
-      "admin-audit-log",
-      "admin-audit"
+      "admin-audit-log"
     ],
-    "alt": "Insights → Audit log: search, action filter and date window, with entries showing time, actor, action, target and IP address, and Export."
+    "alt": "Insights → Audit log in the auditor's read-only view: a search for \"auth.\" over the last 7 days, with entries showing time, actor, action and target, Details, and Export."
   },
   "admin-usage": {
     "files": [
       "admin-usage"
     ],
-    "alt": "Insights → Usage: totals, daily volume, a breakdown by model and the heaviest consumers."
+    "alt": "Insights → Usage, Spend tab over 30 days: total spend, messages, tokens and people, spend per day, and spend by model, including the embeddings and reranking models."
   },
   "admin-usage-deleted-accounts": {
     "files": [
@@ -402,19 +385,19 @@
     "files": [
       "admin-compliance"
     ],
-    "alt": "Data & storage → Compliance: the export schedule and destination, Include conversation content off, recent runs, and Legal holds with one person on hold."
+    "alt": "Data & storage → Compliance in the auditor's read-only view: the end of the export settings, Legal holds with one person on hold and the matter reference, and a history of verified export runs."
   },
   "admin-backups": {
     "files": [
       "admin-backups"
     ],
-    "alt": "Data & storage → Backups: Back up automatically on at 03:00 UTC to a separate S3 bucket, the pg_dump version found, retention, and a run history of verified backups."
+    "alt": "Data & storage → Backups: daily at 03:00 UTC with the next run and last successful backup, the pg_dump version found, Back up now, and the settings: Back up automatically and Copy attachment files on, files checked by a random sample, time of day and a separate S3 bucket as destination."
   },
   "admin-backups-files": {
     "files": [
       "admin-backups-files"
     ],
-    "alt": "Data & storage → Backups: Copy attachment files on, Files checked after each backup set to a random sample, and a run history showing files copied, already backed up, read back and swept."
+    "alt": "Data & storage → Backups, further down: retention of daily and weekly backups, Test destination, and the history: a first run that copied every file, then runs copying only new files, each read back and checksummed, older ones marked Expired."
   },
   "admin-webhooks": {
     "files": [
@@ -426,12 +409,11 @@
     "files": [
       "admin-health"
     ],
-    "alt": "Data & storage → System health: rows for the database, Redis, model providers, models, background jobs, email delivery, attachment storage, connectors, backups and webhooks, each with its status."
+    "alt": "Data & storage → System health: \"Everything is responding normally.\" and rows for the database, Redis, model providers, models, background jobs, email delivery, attachment storage, connectors, meaning-based search, backups and webhooks, each with its status."
   },
   "admin-general-settings": {
     "files": [
-      "admin-general-settings",
-      "admin-settings"
+      "admin-general-settings"
     ],
     "alt": "Appearance & features → General: the default system prompt, default reasoning level, tool step limit, Summarise long conversations, Editorial diagrams and the feature switches."
   },
@@ -439,12 +421,12 @@
     "files": [
       "admin-storage"
     ],
-    "alt": "Data & storage → Storage: the storage driver, S3 connection and upload policy tabs."
+    "alt": "Data & storage → Storage, S3 connection tab: bucket, region, endpoint, access key ID, a configured secret access key, path-style addressing, and \"S3 put, read, and delete test succeeded.\""
   },
   "admin-branding": {
     "files": [
       "admin-branding"
     ],
-    "alt": "Appearance & features → Branding: the instance name and short name, logo upload, accent colour presets, default theme and the sign-in message."
+    "alt": "Appearance & features → Branding: the app name and short name, logo upload and logo URL, a live preview of the sign-in page, and the accent colour presets with Blue chosen."
   }
 }

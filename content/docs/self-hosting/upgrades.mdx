@@ -60,6 +60,10 @@ Images can be rolled back by setting `OCI_API_IMAGE` and `OCI_WEB_IMAGE` to the 
 
 ## Per-version notes
 
+### To v0.10.1
+
+**No migrations** and no new environment variables. A web change only: how a reply shows its reasoning and tool steps. Replace the API and web images as a pair, from v0.10.0 directly, one replica at a time. See [v0.10.1](/docs/releases/v0-10-1).
+
 ### To v0.10.0
 
 Migrations `0035` to `0038`. **All four are safe to apply before the new images are deployed**: none scans or rewrites a large table, and every lock they take is brief. v0.9 replicas keep working against the new schema while you replace them one at a time.
