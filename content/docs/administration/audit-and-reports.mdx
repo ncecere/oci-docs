@@ -44,6 +44,14 @@ How long entries are kept, and which are kept regardless, is on [Retention](/doc
 - Embeddings, reranking and summaries show under model names starting with `embedding:` and `rerank:`, and the conversation's model.
 - The reporting time zone is set on [Retention](/docs/administration/retention).
 
+### How the figures are read
+
+From v0.11 this page, the [scheduled reports](#scheduled-reports) and every [usage budget](/docs/administration/budgets-and-limits#how-enforcement-works) read **hourly usage totals** kept alongside the individual usage records, so they stay fast however much history the instance holds. The figures are exact, not estimates: they always equal what adding up the individual records would give, including usage recorded a moment ago, days that start at midnight in the reporting time zone (half- and quarter-hour zones included), and the **Deleted accounts** row. They cover the same history as the usage records and are pruned with them by usage history retention.
+
+After an upgrade to v0.11, the totals for earlier usage are filled in by a background migration (**System health → Background work**, *Adds usage recorded before 0.11 to the hourly usage rollups*). Until it finishes the page reads the individual records as before: the numbers are the same, only slower. About 125,000 usage records take ten seconds.
+
+With a read replica configured by your operator (`READ_DATABASE_URL`), this page and the admin Overview read from it while it is within a second of the primary.
+
 ### Deleted accounts
 
 Deleting an account, by an administrator or by the person, keeps its usage records (events, daily totals and limit refusals) without anything that identifies the person, so totals, the daily and per-model figures and scheduled reports do not change afterwards:

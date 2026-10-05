@@ -8,8 +8,10 @@ The repository's `docker/compose.yaml` is the supported deployment. It runs:
 | Service | Image | Notes |
 |---|---|---|
 | `web` | `OCI_WEB_IMAGE` | Published on `OCI_PORT` (8080). Forwards `/api/*` to the API. |
-| `api` | `OCI_API_IMAGE` | Applies migrations on start unless `RUN_MIGRATIONS=false`. Files on the `storage_data` volume. |
-| `migrate` | `OCI_API_IMAGE` | Profile `tools`. A one-shot migration job for multi-replica rollouts. |
+| `api` | `OCI_API_IMAGE` | Applies migrations on start unless `RUN_MIGRATIONS=false`. Files on the `storage_data` volume. Drains when stopped (`stop_grace_period: 30s`). Runs as `OCI_API_ROLE` (default `all`). |
+| `worker` | `OCI_API_IMAGE` | Profile `worker`. Optional: runs the background jobs (`OCI_ROLE=worker`) so the API containers only serve requests. |
+| `migrate` | `OCI_API_IMAGE` | Profile `tools`. A one-shot pre-deploy migration job for multi-replica rollouts; also runs the upgrade preflight. |
+| `migrate-post` | `OCI_API_IMAGE` | Profile `tools`. The post-deploy step (`migrate --post`), run once every replica runs the new release. |
 | `postgres` | `postgres:17-alpine` | Volume `postgres_data`. |
 | `redis` | `redis:7-alpine` | Volume `redis_data`. |
 | `minio` | `minio/minio` | Profile `s3`. Optional S3-compatible storage. |
@@ -25,7 +27,7 @@ The repository's `docker/compose.yaml` is the supported deployment. It runs:
 ```sh
 git clone https://github.com/ncecere/open-chat-interface.git
 cd open-chat-interface
-git checkout v0.10.2
+git checkout v0.11.0
 cd docker
 ```
 
@@ -45,8 +47,8 @@ INITIAL_ADMIN_EMAIL=morgan.lee@example.edu
 # Leave INITIAL_ADMIN_PASSWORD out to get a one-time password in the API's log.
 # Behind a load balancer or another proxy: its addresses (see Reverse proxy).
 # TRUSTED_PROXIES=10.0.0.0/8
-OCI_API_IMAGE=ghcr.io/ncecere/open-chat-interface/api:v0.10.2
-OCI_WEB_IMAGE=ghcr.io/ncecere/open-chat-interface/web:v0.10.2
+OCI_API_IMAGE=ghcr.io/ncecere/open-chat-interface/api:v0.11.0
+OCI_WEB_IMAGE=ghcr.io/ncecere/open-chat-interface/web:v0.11.0
 ```
 
 `APP_URL` must be the address people use, through your proxy. See [Configuration](/docs/self-hosting/configuration) for everything else. Without `INITIAL_ADMIN_PASSWORD`, the API prints a one-time password for the first administrator to its log (`docker compose logs api`) the first time it starts; a password you do set must be at least 12 characters. Unset variables are left out of the containers, and an empty optional variable counts as unset.
@@ -83,7 +85,7 @@ Sign in as the first administrator and follow the setup checklist: [First run](/
 </Steps>
 
 <Callout title="Pin versions">
-  Pin both images to the same `vX.Y.Z`. Use `latest` only for evaluation: it moves with each release, and its two images are updated one after the other, not together. For content identity independent of tags, pin by digest. Released images are `linux/amd64` only.
+  Pin both images to the same `vX.Y.Z`. Use `latest` only for evaluation: it moves with each release, and its two images are updated one after the other, not together. For content identity independent of tags, pin by digest. From v0.11 each tag has a `linux/amd64` and a `linux/arm64` image, and Docker pulls the one for the host.
 </Callout>
 
 The images are public, so pulling them needs no registry login.
@@ -97,14 +99,32 @@ docker compose --profile tools run --rm migrate
 RUN_MIGRATIONS=false docker compose up -d --no-build --scale api=3
 ```
 
-A replica started with `RUN_MIGRATIONS=false` against a database missing the latest migration refuses to start. The web container's Caddy re-resolves the `api` service name every ten seconds, so new replicas are found as you scale, and it retries a failed replica. No sticky sessions are needed: sessions are cookies and replies are resumed through Redis.
+A replica started with `RUN_MIGRATIONS=false` against a database missing the latest migration refuses to start. With `RUN_MIGRATIONS=false` the replicas also leave post-deploy steps alone, so after an upgrade run `docker compose --profile tools run --rm migrate-post` once every replica runs the new release ([Upgrades](/docs/self-hosting/upgrades)).
+
+The web container's Caddy re-resolves the `api` service name every 2 seconds, so new replicas are found as you scale and stopped ones are forgotten. It takes a replica out of rotation for 10 seconds when it answers `503` (it is draining) or refuses or delays a connection, and sends a request whose connection failed to another replica. No sticky sessions are needed: sessions are cookies and replies are resumed through Redis.
 
 Before scaling:
 
 - **Use S3-compatible storage.** The local driver writes to a per-container volume, so a file uploaded through one replica is invisible to the others.
-- **Use Redis.** Without it, rate limits and reply recovery are per replica.
-- **Role and ban changes lag.** Sessions are cached for up to five minutes per replica.
-- **Database connections**: each replica needs its pool plus one connection per running background job.
+- **Redis is required.** Without it, rate limits, provider capacity and reply recovery are per replica, and System health shows an error. The bundled stack includes it.
+- **Database connections**: each replica needs its pool (`DATABASE_POOL_MAX`, ten) plus a connection per running background job; see [Requirements](/docs/self-hosting/requirements#database-connections).
+
+Role changes, bans and revoked sessions apply on the next request on every replica, and settings changes reach every replica at once through Redis.
+
+## Stopping and replacing containers
+
+The `api` service has `stop_grace_period: 30s`, above its 25-second drain (`SHUTDOWN_DRAIN_TIMEOUT_MS`). `docker compose stop`, `up -d` with a new image and `down` all drain: the replica stops taking new chat turns, lets replies in progress finish for up to 25 seconds, and saves anything left as interrupted. If you raise `SHUTDOWN_DRAIN_TIMEOUT_MS`, raise `stop_grace_period` with it. See [draining](/docs/self-hosting/upgrades#replacing-replicas-draining).
+
+## Background jobs in a worker
+
+The optional `worker` service (profile `worker`) runs the background jobs (imports, embeddings, summaries, webhooks, backups, compliance exports, retention) in a container of its own, so the API containers only serve requests:
+
+```sh
+OCI_API_ROLE=web docker compose --profile worker up -d --no-build
+docker compose --profile worker up -d --no-build --scale worker=2   # more than one
+```
+
+`OCI_API_ROLE=web` makes the `api` service a `web` replica. Without the profile, `api` runs as `all` and does both, as before v0.11. The worker serves only health and metrics, is never behind the web proxy, starts once `api` is healthy, and never migrates. Job locks keep each job on one worker at a time. If you run `web` API containers, keep at least one worker running: **System health → Background workers** turns red without one. See [Process roles](/docs/self-hosting/high-availability#process-roles).
 
 ## Optional services
 
@@ -117,6 +137,7 @@ Before scaling:
 |---|---|
 | Logs | `docker compose logs -f api` |
 | Status | `docker compose ps` |
+| Upgrade preflight (changes nothing) | `docker compose --profile tools run --rm migrate node dist/scripts/upgrade-check.js` |
 | Promote an account to admin | `docker compose exec api node dist/scripts/promote-admin.js someone@example.edu` |
 | Database shell | `docker compose exec postgres psql --username=oci --dbname=oci` |
 

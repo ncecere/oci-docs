@@ -51,6 +51,18 @@ Type in the sidebar's search box, or press `Cmd/Ctrl + K`, to search your conver
 
 `Cmd/Ctrl + K` also opens commands: a new chat, your history, models, attachments, settings, switching theme, and (for administrators and auditors) every admin page.
 
+## Very long conversations
+
+From v0.11 a conversation opens at its **latest 100 messages**. Earlier ones load in parts as you scroll up, without moving what you are reading; **Load earlier messages** at the top does the same from the keyboard, and a screen reader hears how many were loaded. Opening a conversation from search loads the messages around the match and the latest ones; **Load more messages** fills in between, and scrolling towards the gap fills it too.
+
+Once a conversation is long, only the messages near what you are looking at are drawn on the page, so even thousands of messages scroll smoothly and replies stream as before.
+
+<Callout title="Your browser's Find only finds what is drawn">
+  **Ctrl+F** (or **Cmd+F**) only finds messages that are drawn, which in a long conversation means those near the view. To find something anywhere in a conversation, use [conversation search](#finding-a-conversation) (the sidebar's search box, or `Cmd/Ctrl + K`): it searches every message and opens the conversation at the match.
+</Callout>
+
+Exports and share links always contain the whole conversation.
+
 ## Downloading one conversation
 
 The download button at the top right of a conversation saves it as Markdown. To save everything at once, see [Your data](/docs/using/your-data).

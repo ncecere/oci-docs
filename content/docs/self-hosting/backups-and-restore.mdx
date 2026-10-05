@@ -19,6 +19,8 @@ Redis holds nothing that needs a backup.
 
 Copying is on for a new backup configuration. An instance that saved backup settings before v0.10 only lists files until an administrator turns copying on; while it is off, you still need bucket versioning (and ideally replication) or volume snapshots for files.
 
+A `pg_dump` suits small and medium databases. For a large PostgreSQL cluster, use the cluster's own physical backups and point-in-time recovery (pgBackRest, WAL-G, or your operator's) instead. With `CONTROL_DATABASE_URL` set, backups connect through it.
+
 ## Option 2: your own
 
 For the bundled Compose stack:
@@ -102,7 +104,7 @@ If the backup did not copy files, check them instead: every key in `attachments.
 
 ### Start a test deployment
 
-Point it at the restored database with the **same `ENCRYPTION_KEY` and `AUTH_SECRET`** and the restored file storage. Run the same or a newer OCI version: startup applies any newer migrations.
+Point it at the restored database with the **same `ENCRYPTION_KEY` and `AUTH_SECRET`** and the restored file storage. If you have [rotated `ENCRYPTION_KEY`](/docs/self-hosting/security#rotating-encryption_key) since the backup was taken, set the key current at the time in `ENCRYPTION_KEYS_PREVIOUS`. Run the same or a newer OCI version: startup applies any newer migrations.
 
 </Step>
 <Step>

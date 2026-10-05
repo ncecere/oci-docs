@@ -7,8 +7,10 @@ description: Liveness and readiness probes, System health, metrics, traces, logs
 
 | Endpoint | Served by | Answers |
 |---|---|---|
-| `GET /api/health/live` | API (also through the web container) | `200 {"status":"ok"}` while the process is up. Used by the API image's own health check. |
-| `GET /api/health/ready` | API (also through the web container) | `200` when the database answers; `503` with `{"status":"degraded","checks":{"database":"error"}}` when it does not. Used by the bundled Compose health check and by Caddy to pick healthy API replicas. |
+| `GET /api/health/live` | API and worker (also through the web container) | `200 {"status":"ok"}` while the process is up, draining included, so nothing restarts a replica mid-drain. Used by the API image's own health check. |
+| `GET /api/health/ready` | API and worker (also through the web container) | `200` when the database answers. When it does not, `200` with `"status":"degraded"` for the first 30 seconds (so a database failover does not take every replica out of rotation at once), then `503`. `503` with `"status":"draining"` from the moment a replica is told to stop. The body names the replica's `role`. Used by the bundled Compose health check. |
+
+On a worker (`OCI_ROLE=worker`), nothing routes to it: use readiness with liveness to restart a stuck worker. For your own load balancer's checks, see [Health checks and draining](/docs/self-hosting/reverse-proxy#health-checks-and-draining).
 
 ```sh
 curl --fail https://chat.example.edu/api/health/ready
@@ -16,14 +18,42 @@ curl --fail https://chat.example.edu/api/health/ready
 
 ## System health
 
-**Admin → Data & storage → System health** checks what probes do not: Redis, providers and models, background jobs, email, file storage, connectors, backups, webhooks, compliance export and meaning-based search. Open it first when something is reported. See [System health](/docs/administration/instance-settings#system-health).
+**Admin → Data & storage → System health** checks what probes do not: Redis, providers and models, background jobs and workers, email, file storage, connectors, backups, webhooks, compliance export, meaning-based search, read-only mode, cache invalidation and encryption keys. It also lists the replicas it has heard from, pending upgrade work and background migrations. Open it first when something is reported. See [System health](/docs/administration/instance-settings#system-health).
 
 ## Metrics and traces
 
-- **Prometheus metrics** at `/metrics` on each API replica's port (3000), when `METRICS_TOKEN` is set. Not forwarded by the web container: scrape the API directly.
+- **Prometheus metrics** at `/metrics` on each API and worker replica's port (3000), when `METRICS_TOKEN` is set. Not forwarded by the web container: scrape every API and worker replica directly, since values are per process.
 - **OpenTelemetry traces** over OTLP/HTTP, when `OTEL_EXPORTER_OTLP_ENDPOINT` is set.
 
-The metric list, a scrape configuration and example alerts are on [Observability and webhooks](/docs/administration/observability-and-webhooks). Suggested alerts: no successful backup in 26 hours, reply error rate above 5%, a webhook backlog, and failing background jobs (`oci_job_runs_total{outcome="error"}`).
+The metric list and a scrape configuration are on [Observability and webhooks](/docs/administration/observability-and-webhooks#metrics). v0.11 adds metrics for the objectives below: the reply start OCI adds (`oci_chat_reply_start_seconds`), the provider's time to first output, throttling, retries and capacity waits, database pool use and replication lag, queue depths, Redis, background workers, replicas, readiness changes and draining.
+
+## Service objectives and alerts
+
+From v0.11 OCI publishes four service objectives, measured from its own metrics over a rolling 30 days:
+
+| Objective | Target | Metric |
+|---|---|---|
+| **Availability**: API requests not answered with a `5xx` (health probes, `/metrics` and draining refusals excluded) | 99.9 % | `oci_http_requests_total` |
+| **Reply start added by OCI**: from the request arriving to the first model request, waits for provider capacity excluded | p95 under 1 s | `oci_chat_reply_start_seconds` |
+| **Sidebar and opening a conversation** | p95 under 300 ms | `oci_http_request_duration_seconds` |
+| **Conversation search** | p95 under 1 s | `oci_http_request_duration_seconds` |
+
+The model provider's own latency and errors are outside them, and exported separately (`oci_provider_first_output_seconds`, `oci_provider_throttled_total`, `oci_chat_replies_total`). The latency targets have been measured with the scale harness up to 6,000 people and 4 million messages, on a shared laptop, not yet at its largest profile on dedicated hardware.
+
+The OCI repository's `deploy/monitoring` folder has:
+
+- **`prometheus-rules.yaml`**: 47 rules. 16 recording rules for the objectives, and 31 alerts: for each objective a fast burn-rate alert (burn rate above 14.4 over 1 hour and 5 minutes, `critical`) and a slow one (above 6 over 6 hours and 30 minutes, `warning`), and operational alerts for database pool saturation and replication lag, no background worker, stalled or failing jobs, queue backlogs, failed or stalled background migrations, the usage rollups, a stale backup, provider errors, throttling, slow first output and capacity waits, Redis, readiness flapping, and replies interrupted by a drain. `critical` should page someone; `warning` should open a ticket. Thresholds of the operational alerts are starting points.
+- **`grafana-dashboard.json`**: a dashboard of the objectives and the operational signals. Import it into Grafana and choose a Prometheus data source; the burn-rate panel needs the recording rules.
+- **`prometheus-rules.test.yaml`**: `promtool` unit tests for the rules.
+
+To load the rules into Prometheus:
+
+```yaml
+rule_files:
+  - /etc/prometheus/oci/prometheus-rules.yaml   # deploy/monitoring/prometheus-rules.yaml
+```
+
+With the [Helm chart](/docs/self-hosting/kubernetes#monitoring) and the Prometheus Operator, set `metrics.serviceMonitor.enabled` and `metrics.prometheusRule.enabled` (which renders the same rules), plus the labels your Prometheus selects by. The job metrics' `job` label is stored by Prometheus as `exported_job`, and the rules use that. The OCI repository's `docs/dev/slo.md` explains each alert and its first steps.
 
 ## Logs
 
@@ -34,6 +64,11 @@ Messages worth recognising:
 | Log | Means |
 |---|---|
 | `Applying database migrations` | Start-up with `RUN_MIGRATIONS=true`. |
+| `Shutting down: not ready, refusing new chat turns, finishing replies in progress` | The replica received `SIGTERM` and is draining. |
+| `Drain limit reached; saving the remaining replies as interrupted` | Replies were still running at `SHUTDOWN_DRAIN_TIMEOUT_MS`. Raise it and the grace period together if this is common. |
+| `Background migration throttled` | A background migration batch is waiting for replication lag or a long transaction. |
+| `N replicas share this database but Redis is not configured` | Several replicas without Redis. Configure Redis on every replica. |
+| `No background worker has checked in recently` | Every replica runs `OCI_ROLE=web`; start a `worker` or `all` replica. |
 | `Reranking project passages failed; using the previous order` | The reranker failed or timed out; replies continue. |
 | `Failed to start tracing; continuing without it` | The OpenTelemetry setup failed; nothing else is affected. |
 | `RUN_MIGRATIONS is false but the latest required database migration is not recorded` | Run the migration job first. |

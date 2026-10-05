@@ -13,7 +13,7 @@ Every way of signing in is on one page, **Sign-in & security → Authentication*
 - **Registration mode**: **Open** (anybody who reaches the sign-up page), **Invite only** (the default; needs an [invitation](/docs/administration/people#invitations)) or **Closed**.
 - **Session length (days)**: 1 to 365. Shortening it does not end sessions already issued; use **Sign out everywhere** on a person's page for that.
 
-Sign-in, sign-up, password reset and verification are limited to **Sign-in attempts per minute** per client address and per account (10 by default); past it a request is refused for the rest of the minute. See [Sign-in attempts](/docs/administration/budgets-and-limits#sign-in-attempts).
+Failed sign-ins are limited to **Sign-in attempts per minute** per account (10 by default); past it the account's sign-ins are refused with `429` for the rest of the minute. Successful sign-ins are not counted, so many people behind one address (a campus network) can all sign in at once: an address has its own, much larger allowance for failures (300 a minute by default). See [Sign-in attempts](/docs/administration/budgets-and-limits#sign-in-attempts).
 
 ### Email verification
 
@@ -33,6 +33,10 @@ OIDC and SAML 2.0 are both supported. Add a provider under **Single sign-on**; o
 The **Provider ID** (lowercase letters, numbers and dashes) and the protocol cannot be changed later. Client secrets and certificates are submitted once and never returned. An identity provider on a private network must be listed in `AUTH_TRUSTED_ORIGINS` ([Configuration](/docs/self-hosting/configuration)), or discovery is refused.
 
 <Screenshot slot="admin-sso-provider-form" />
+
+### Sign-in limits for single sign-on
+
+Single sign-on is limited per identity provider, not per client address: each provider may complete 3,000 sign-ins a minute by default (`RATE_LIMIT_AUTH_SSO_PROVIDER_PER_MINUTE`, set by your operator), shared by every replica, so a provider that misbehaves or floods OCI with callbacks uses up only its own allowance and the others keep working. 3,000 a minute is 50 a second, enough for 30,000 people in ten minutes. Successful sign-ins are never limited by address; failed ones count towards the address's allowance like failed passwords. A refusal is audited as `auth.rate_limited` with the provider and the limit that refused.
 
 The fields whose consequences are not obvious:
 

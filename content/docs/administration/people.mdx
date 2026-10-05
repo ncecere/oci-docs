@@ -84,4 +84,4 @@ Links expire, and an unused one can be revoked. Invitations are emailed when [em
 
 ## Sessions after a change
 
-Sessions are cached for up to five minutes per API replica, so a role change, ban or sign-out can take up to five minutes to reach every replica.
+A role change, ban or sign-out applies on the person's next request, on every replica: from v0.11 sessions are read from the database on every request rather than cached. (Before v0.11 it could take up to five minutes.)

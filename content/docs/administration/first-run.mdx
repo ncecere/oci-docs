@@ -86,7 +86,7 @@ Connecting an identity provider? Read [Identity and sign-in](/docs/administratio
 
 ### Connect Redis for several replicas (optional)
 
-Set with `REDIS_URL` in the environment. Without it, rate limits and reply recovery work per replica only. The checklist reports whether it is configured; System health reports whether it answers.
+Set in the environment: `REDIS_URL` for one server, or `REDIS_SENTINELS` or `REDIS_CLUSTER_NODES` for Sentinel or Cluster ([Configuration](/docs/self-hosting/configuration#redis)). Optional with one API replica; from v0.11 **required with more than one**, and System health shows an error without it. Without it, rate limits, provider capacity and reply recovery work per replica only. The checklist reports whether it is configured; System health reports whether it answers.
 
 </Step>
 </Steps>

@@ -59,6 +59,8 @@ If a provider does not report usage, the estimate stays held within the budget's
 
 Besides replies, conversation summaries, embeddings and reranking are usage too (summaries and embeddings count tokens; none counts messages). Imported conversations do not count.
 
+A budget's count is exact to the moment, in the budget's own time zone, and includes what replies in progress have reserved. From v0.11 it is read from hourly usage totals, so checking a budget before each message costs the same for someone who sends thousands a month as for someone who sends a few. See [How the figures are read](/docs/administration/audit-and-reports#how-the-figures-are-read).
+
 ## Rate limits
 
 Per role, on **People → Roles & access**:
@@ -73,20 +75,27 @@ Per role, on **People → Roles & access**:
 
 These are the built-in defaults. An [environment variable](/docs/self-hosting/configuration#limits-and-retention-defaults) such as `RATE_LIMIT_CHAT_PER_MINUTE` replaces the default for every role; a value saved here wins over both. Each value shows where it came from.
 
-A person working normally should never meet these. The concurrency cap also bounds how far a budget can be overshot by simultaneous requests. Without Redis, rate limits are enforced per API replica.
+A person working normally should never meet these. The concurrency cap also bounds how far a budget can be overshot by simultaneous requests. Without Redis, rate limits are enforced per API replica, so with several replicas each limit is multiplied by their number; from v0.11 Redis is required for more than one replica.
+
+These limits are per person. Limits on how much OCI sends to each model provider are separate: see [Provider capacity](/docs/administration/providers-and-models#provider-capacity).
 
 ### Sign-in attempts
 
-**Sign-in attempts per minute**, under **Instance-wide** on Roles & access (`RATE_LIMIT_AUTH_PER_MINUTE`, default 10), limits how fast passwords and tokens can be tried. It counts every request to sign in with a password or single sign-on, sign up, request or complete a password reset, and send or follow a verification link, successful or not, in two counters with the same limit:
+**Sign-in attempts per minute**, under **Instance-wide** on Roles & access (`RATE_LIMIT_AUTH_PER_MINUTE`, default 10), limits how fast one account's credentials can be tried. From v0.11 it counts:
 
-- **per client address**, so one machine cannot try many accounts;
-- **per account** (the email address in the request), so many machines cannot try one account.
+- **failed sign-ins per account** (the email address in the request), from any address, so many machines cannot try one account. A successful sign-in is not counted;
+- every sign-up, password reset and verification request naming the account;
+- password and email changes per signed-in session.
 
-Past the limit the request is refused with `429 Too Many Requests` and a `Retry-After` header until the minute ends, and the sign-in page says *Too many attempts. Wait a minute and try again.* The first refusal each minute for an address or account is audited as `auth.rate_limited`, so a flood of refused requests does not flood the audit log too. Refused requests never reach the sign-in code, so they are not also recorded as failed sign-ins. Signing out, reading the session and changing a password while signed in are not counted.
+A client address has its own, much larger allowance, set by your operator: 300 **failed** attempts a minute by default (`RATE_LIMIT_AUTH_ADDRESS_PER_MINUTE`), and ten times that for every request, successful or not. Many people behind one address, such as a campus network, can therefore all sign in at once; 300 failures a minute is about one typo each for 300 people signing in together. Single sign-on is limited per identity provider instead ([Sign-in limits for single sign-on](/docs/administration/identity#sign-in-limits-for-single-sign-on)).
 
-The counters live in Redis and are shared by every API replica; without Redis each replica counts on its own. The client address is the one the web container reports: behind a load balancer or ingress, set [`TRUSTED_PROXIES`](/docs/self-hosting/reverse-proxy#behind-another-proxy-or-an-ingress), or everybody shares the proxy's address and its one counter. Many people behind one real address, such as a campus network, share a counter too: raise the value if they meet it at the start of a class.
+Past a limit the request is refused with `429 Too Many Requests` and a `Retry-After` header until the minute ends, and the sign-in page says *Too many attempts. Wait a minute and try again.* The first refusal each minute for an address, account or provider is audited as `auth.rate_limited` (the address, the account tried, the endpoint and which limit refused), so a flood of refused requests does not flood the audit log too. Refused requests never reach the sign-in code, so they are not also recorded as failed sign-ins. Signing out and reading the session are not counted.
 
-Before v0.10 this setting had no effect.
+Ten wrong passwords in a minute refuse that account for the rest of the minute, wherever the attempts come from, so anyone who knows an account's email can lock it out briefly; it lifts on its own. Counts use fixed one-minute windows, so up to twice a limit can pass across a window boundary.
+
+The counters live in Redis and are shared by every API replica; without Redis each replica counts on its own. The client address is the one the web container reports: behind a load balancer or ingress, set [`TRUSTED_PROXIES`](/docs/self-hosting/reverse-proxy#behind-another-proxy-or-an-ingress), or everybody shares the proxy's address and its one allowance. Better Auth's own built-in limiter is off from v0.11; these are the only limits.
+
+Before v0.11, this setting counted every attempt, successful or not, per address and per account; before v0.10 it had no effect.
 
 ## Storage allowance
 

@@ -1,6 +1,6 @@
 ---
 title: Instance settings
-description: General settings and features, email delivery, file storage, and System health with background jobs and storage reconciliation.
+description: General settings and features, email delivery, file storage, and System health with its checks, replicas, upgrades, background jobs and migrations, and storage reconciliation.
 ---
 
 ## General
@@ -42,14 +42,14 @@ Uploads reserve their allowance before the object is written; deleting a file re
 
 ## System health
 
-**Data & storage → System health** (`/admin/health`). Whether what OCI depends on is working, the background jobs, storage in use and storage reconciliation. Open this first when something is reported. It refreshes every 30 seconds while open.
+**Data & storage → System health** (`/admin/health`). Whether what OCI depends on is working, [read-only maintenance mode](/docs/administration/maintenance), the replicas running, the background jobs, upgrades and background migrations, storage in use and storage reconciliation. Open this first when something is reported. The checks refresh every 30 seconds while it is open.
 
 <Screenshot slot="admin-health" />
 
 | Check | Warns when | Fails when |
 |---|---|---|
 | Database | Slow to respond | Not reachable |
-| Redis | Not configured | Configured but unreachable |
+| Redis | Not configured, with one replica | Configured but unreachable; or not configured while several replicas share the database |
 | Model providers | | None enabled |
 | Models | | None enabled |
 | Background jobs | Failures in the last day | One started over an hour ago and never finished |
@@ -58,14 +58,37 @@ Uploads reserve their allowance before the object is written; deleting a file re
 | Connectors | An enabled connector's latest exchange failed | |
 | Backups | On, but nothing completed in over a day, or objects missing | The latest backup failed |
 | Webhooks | An endpoint's latest delivery failed, or deliveries over 15 minutes overdue | |
+| Background workers | | No replica that runs background jobs (`OCI_ROLE=worker` or `all`) has checked in for a minute |
+| Provider capacity | Messages are waiting for a provider now, waited in the last hour, or a provider answered with rate-limit or overload errors in the last hour | |
+| Read-only mode | [Read-only mode](/docs/administration/maintenance) is on: by whom (an administrator, a window or `OCI_READ_ONLY`), until when and why | |
+| Cache invalidation | Redis is configured, but the replica answering does not hear other replicas' changes, so they reach it within 30 seconds instead of at once | |
+| Encryption keys | | A stored secret needs a key that is neither `ENCRYPTION_KEY` nor in `ENCRYPTION_KEYS_PREVIOUS` |
 
 It also shows *Meaning-based search*, *Compliance export* (with how many people are on legal hold) and *Observability* (whether metrics and traces are on). The summary takes the worst result, so a green banner above a failing row cannot happen.
 
-**Redis absent is a warning, not an error.** Replies still work, but reconnecting to a reply in progress is unavailable and rate limits fall back to each replica.
+**Without Redis, one replica is a warning and several are an error.** Replies still work, but reconnecting to a reply in progress is unavailable, and rate limits and provider capacity are counted by each replica on its own, so with several replicas every limit is multiplied by their number. From v0.11 Redis is required for more than one replica.
+
+**Encryption keys** names the current key's id, counts the stored secrets, and says how many still need a previous key (*Previous keys still in use: N values*). After a [key rotation](/docs/self-hosting/security#rotating-encryption_key), keep `ENCRYPTION_KEYS_PREVIOUS` until that reaches 0. Right after an upgrade to v0.11 it says re-encryption waits for `migrate --post`.
+
+### Maintenance
+
+Read-only mode: switch it on, or schedule a window with an announcement ahead of it, and choose which background jobs keep running meanwhile. See [Maintenance](/docs/administration/maintenance).
+
+### Replicas
+
+The API replicas heard from in the last minute, and whether each serves requests, runs background jobs, or both (**Web (API only)**, **Worker (background jobs)**, **API and background jobs**). Shown when Redis is configured. See [Process roles](/docs/self-hosting/high-availability#process-roles).
 
 ### Background jobs
 
-The latest run of each scheduled job: when it started, how long it took, how many items it processed, and any error. **Run** starts one now, which is useful after changing a setting it depends on, such as retention. Each job holds a PostgreSQL lock while it runs, so replicas never run the same job at once.
+The latest run of each scheduled job: when it started, how long it took, how many items it processed, and any error. **Run** starts one now, which is useful after changing a setting it depends on, such as retention. Each job holds a PostgreSQL lock while it runs, so replicas never run the same job at once. If the replica answering only serves requests (`OCI_ROLE=web`), **Run**, **Back up now** and **Export now** are handed to a worker, and refused while no worker is running.
+
+### Upgrades
+
+What upgrading this database involves, for the running release: the database schema, pending pre-deploy migrations and post-deploy steps with the indexes they build, unfinished work a later release needs, and any invalid indexes left by an interrupted build. It ends with a verdict: **Up to date**, **Rolling upgrade**, **Needs a window** or **Blocked**. Right after an upgrade it shows **Waiting for migrate --post** until that step has run. The same check runs from a new release's image before you deploy it; see [Upgrades](/docs/self-hosting/upgrades#check).
+
+### Background work
+
+Background migrations, which rewrite existing rows in small batches while the instance serves, such as the usage history backfill and secret re-encryption after an upgrade to v0.11. Each shows its status and progress. Administrators can **Pause** and **Resume** one, and change its **Rows per batch** and **Pause between batches (ms)**; auditors see it read-only. Batches wait by themselves while a database standby lags or a long transaction is open. A migration that fails five times in a row stops as failed with the error shown; resume it once the cause is fixed. See [Upgrades](/docs/self-hosting/upgrades#background-migrations).
 
 ### Storage reconciliation
 

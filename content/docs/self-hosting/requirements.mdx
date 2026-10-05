@@ -7,9 +7,9 @@ description: PostgreSQL 17, optional pgvector, Redis, S3-compatible storage, the
 
 | Service | Required | Notes |
 |---|---|---|
-| **PostgreSQL 17** | Yes | Everything durable. `DATABASE_URL` must be a **direct connection or a session-mode pooler**: background jobs use session-level advisory locks, which transaction-mode pooling breaks. |
+| **PostgreSQL 17** | Yes | Everything durable. `DATABASE_URL` may be a direct connection, a session-mode pooler or, from v0.11, a **transaction-mode** pooler such as PgBouncer; migrations, background jobs' advisory locks and backups then need `CONTROL_DATABASE_URL`, direct or session-mode. See [Database connections](/docs/self-hosting/configuration#database-connections). |
 | **pgvector** | No | Only for [meaning-based search](/docs/administration/embeddings-and-reranking) of project files. OCI detects it but never creates it. The bundled `postgres:17-alpine` image does not include it; see [Upgrades → pgvector](/docs/self-hosting/upgrades#pgvector-for-meaning-based-search). |
-| **Redis** | Recommended; needed for several replicas | Resumable replies, shared rate limits, cancellation. The bundled stack uses `redis:7-alpine`. Without it, live replies still work but cannot be resumed after a disconnect, and rate limits are per replica. |
+| **Redis** | Recommended; **required for more than one API replica** | Resumable replies, shared rate limits and provider capacity, cancellation, replica heartbeats, settings changes reaching every replica at once. One server, Sentinel or Cluster. The bundled stack uses `redis:7-alpine`. Without it, live replies still work but cannot be resumed after a disconnect, and limits are per replica; with several replicas, System health shows an error. |
 | **File storage** | Yes | A local volume for one API replica, or **S3-compatible** storage (AWS S3, MinIO and similar) for more than one. Configured in the dashboard. |
 | **SMTP** | For invitations, password resets, verification and reports | Configured in the dashboard. |
 | **A TLS reverse proxy** | For production | In front of the web container. See [Reverse proxy](/docs/self-hosting/reverse-proxy). |
@@ -21,15 +21,17 @@ description: PostgreSQL 17, optional pgvector, Redis, S3-compatible storage, the
 | `ghcr.io/ncecere/open-chat-interface/web:<version>` | Caddy with the browser app; forwards `/api/*` to the API | 8080 |
 | `ghcr.io/ncecere/open-chat-interface/api:<version>` | Node.js 22 API, as the non-root `oci` user; includes the PostgreSQL 17 client tools for backups and about 10 MB of Noto fonts for PDF export | 3000 |
 
-Each release is tagged `vX.Y.Z` (such as `v0.10.2`), and `latest` follows the newest stable release. Pin both images to the same version; `latest` is for evaluation only. Published images are **`linux/amd64` only**.
+Each release is tagged `vX.Y.Z` (such as `v0.11.0`), and `latest` follows the newest stable release. Pin both images to the same version; `latest` is for evaluation only. From v0.11 each tag has a **`linux/amd64`** and a **`linux/arm64`** image, and Docker or Kubernetes pulls the one for the machine; earlier releases are `linux/amd64` only.
+
+The API image also runs background-job workers (`OCI_ROLE=worker`), and a [Helm chart](/docs/self-hosting/kubernetes) is published with each release from v0.11.
 
 ## Database connections
 
-Budget, per API replica, the application pool (ten connections by default) plus one private connection per background job running at once. Include that headroom in PostgreSQL's connection limit.
+Budget, per API or worker replica, the application pool (`DATABASE_POOL_MAX`, ten connections by default) plus control connections while they are used: one per background job running at that moment, one for `LISTEN` on a worker or `all` replica, and one or two during a migration or backup. With a read replica, `READ_DATABASE_POOL_MAX` (five) more to it. Include that headroom in PostgreSQL's connection limit, or put PgBouncer in transaction mode in front of `DATABASE_URL`.
 
 ## Sizing
 
-OCI has not been measured at large scale yet; test your own install. Points to plan for:
+OCI's scale harness (`tools/scale` in the repository) has measured it with 6,000 people and 4 million messages, on one shared laptop rather than dedicated hardware; run it on hardware like yours before settling on numbers. [High availability](/docs/self-hosting/high-availability#sizing-starting-points) has starting points for pods, workers and connections. Points to plan for:
 
 - **File exports** (Word, PDF, PowerPoint, Excel) run in a worker thread with a 512 MB heap limit and a 60-second time limit. A replica runs at most two at once. Budget up to two CPU cores and about 1.2 GB of extra memory per API replica for exports at peak.
 - **Imports** of ChatGPT and Claude exports accept uploads up to 512 MB by default (`IMPORT_MAX_UPLOAD_BYTES`), processed in the background.

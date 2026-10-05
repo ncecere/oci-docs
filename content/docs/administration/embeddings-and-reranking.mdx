@@ -25,9 +25,22 @@ It needs two things:
 Once both are in place, OCI creates its embeddings table and a background job (`projects.embed-passages`) embeds existing passages, a batch every five minutes; new uploads embed their opening passages straight away. The tab shows how many passages are embedded and any files waiting to be retried. **System health** has a *Meaning-based search* row with the same.
 
 - **Relevance floor.** Passages with a cosine similarity below 0.2 to the question are left out. With OpenAI's `text-embedding-3` or Cohere's embed-v3, unrelated text scores below that; with models such as `nomic-embed-text` or `bge-m3` it scores above 0.3, so the floor removes little and keyword search and reranking do the filtering.
-- **Changing the model** re-embeds everything in the background; until a project is done, its searches are keyword-only. Switching it off keeps the stored embeddings.
+- **Switching it off** keeps the stored embeddings, so switching it back on with the same model needs no re-embedding.
 - **Cost.** Calls are usage under `embedding:<model id>`: passages are charged to the file's owner, questions to the person asking. They count tokens (and cost, if you set a **price** per million tokens), no messages, and count towards budgets that cover every model.
 - **Failures.** A failed or slow embeddings call never fails a reply: it is searched by keyword instead, and the failure is logged.
+
+### Changing the model
+
+From v0.11, changing the embeddings model (or its size) leaves no gap in search. The new model gets storage of its own, a *generation*, and a background job (`embeddings.rebuild`, on a worker or `all` replica) fills it while searches keep using the current model, questions included. Passages uploaded meanwhile are embedded with both models. When the new generation covers every passage, searches switch to it at once; the previous embeddings are kept for a grace period (a day by default, `EMBEDDING_GENERATION_GRACE_MINUTES`) and then removed.
+
+**Before you save** a different model, the tab shows what it will cost: the number of passages, their estimated tokens (about four characters to a token) and, if you entered a price, the cost at that price. Ask your operator to check free disk first: the database holds one more generation during the rebuild, about 8.7 KiB per passage at 1,536 dimensions.
+
+**While the rebuild runs** the tab shows passages embedded with the new model, the rate per minute, the time left at that rate, and files that failed and are waiting to be retried (each is retried with a growing delay; the current model's failures are shown separately). Two actions go with it:
+
+- **Switch now** moves searches to the new model before it covers every passage. The dialog says how many passages it does not cover yet: until the rebuild reaches them, they are found by keyword only. Use it when a file keeps failing with the new model, or the old model is no longer available.
+- **Cancel rebuild** abandons the new model: searches stay where they are, and what was embedded with it is removed. Choosing the current model again on the form does the same.
+
+Choosing a model again within the grace period after leaving it reuses its embeddings, so only passages added since are embedded. The rebuild pauses while meaning-based search is switched off and while the database is busy, and spaces its calls to the provider (`EMBEDDING_REBUILD_PAUSE_MS`). During the upgrade to v0.11 the switch waits until the upgrade is complete (`migrate --post`), and the tab says so. A model that cannot embed the sample cannot replace the one in use, even while meaning-based search is off.
 
 ## Reranking
 
@@ -49,4 +62,4 @@ OCI calls the Cohere-compatible API at the provider's base URL with `/rerank` ap
 
 ## Audit
 
-Changes are audited as `embeddings.update` and `reranking.update` (with the previous and new setting), and tests as `embeddings.test` and `reranking.test`. Auditors can see the tab, including the resolved endpoint, but not change it.
+Changes are audited as `embeddings.update` and `reranking.update` (with the previous and new setting, and for a model change the rebuild and its cost estimate), and tests as `embeddings.test` and `reranking.test`. Moving searches to a new embeddings generation is audited as `embeddings.generation.switch` (by the administrator who forced it, or as automatic, with how many passages the new model covered), a cancelled rebuild as `embeddings.generation.cancel`, and removing a replaced generation as `embeddings.generation.drop`. Auditors can see the tab, including the resolved endpoint, but not change it.

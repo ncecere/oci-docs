@@ -1,7 +1,17 @@
 ---
 title: Upgrades
-description: The upgrade procedure, migrations with several replicas, rollback, and what each version needs.
+description: The three-phase upgrade procedure, the preflight, draining replicas, background migrations, upgrades that need a window, rollback, and what each version needs.
 ---
+
+From v0.11 an upgrade changes the database in three phases, so a deployment with several replicas can upgrade from the previous minor release without downtime:
+
+| Phase | When | What |
+|---|---|---|
+| **Pre-deploy** migrations | Before replicas are replaced | Fast, transactional schema changes the previous release keeps working with (`migrate`). |
+| **Post-deploy** steps | After every replica runs the new release | Index builds (`CONCURRENTLY`, so reads and writes continue), validations, drops (`migrate --post`). |
+| **Background** migrations | Afterwards, while OCI serves | Rewrites of existing rows in small, throttled batches, with progress on System health. |
+
+The [Helm chart](/docs/self-hosting/kubernetes) runs the same procedure as hooks around its rolling update.
 
 ## The procedure
 
@@ -10,7 +20,7 @@ description: The upgrade procedure, migrations with several replicas, rollback, 
 
 ### Read the release notes
 
-Read every [release](/docs/releases) between the version you run and the target, especially their upgrade notes. Some releases have migrations that take time on a large instance, and some cannot be applied as a rolling upgrade.
+Read every [release](/docs/releases) between the version you run and the target, especially their upgrade notes.
 
 </Step>
 <Step>
@@ -29,36 +39,182 @@ Set both `OCI_API_IMAGE` and `OCI_WEB_IMAGE` to the target version and pull them
 </Step>
 <Step>
 
-### Migrate
+### Check
 
-With **one API replica**, leave `RUN_MIGRATIONS=true`: the API applies migrations on start, under a PostgreSQL advisory lock.
-
-With **several replicas**, run migrations once before replacing them:
+Run the target image's preflight against the production database. It changes nothing:
 
 ```sh
-docker compose --profile tools run --rm migrate
-RUN_MIGRATIONS=false docker compose up -d --no-build
+# Compose, with OCI_API_IMAGE set to the target image
+docker compose --profile tools run --rm migrate node dist/scripts/upgrade-check.js
+# Any container runtime
+docker run --rm -e DATABASE_URL=postgres://... ghcr.io/ncecere/open-chat-interface/api:vX.Y.Z \
+  node dist/scripts/upgrade-check.js            # --json for the report as JSON
 ```
 
-With `RUN_MIGRATIONS=false`, a replica refuses to start unless the latest migration it ships with is recorded.
+It lists the pending pre-deploy migrations with the rows and size of every table each touches, the post-deploy steps with the indexes they build and roughly how much disk each needs (keep twice the estimate free; OCI cannot read free disk space), the background migrations, any unfinished work an earlier release left that this one requires, and a verdict:
+
+| Exit code | Verdict |
+|---|---|
+| `0` | A rolling upgrade (or nothing to do). |
+| `2` | Needs a window: a pre-deploy statement grows with a large table, or the database is more than one minor release behind. See [Upgrades that need a window](#upgrades-that-need-a-window). |
+| `3` | Cannot run yet: required work from an earlier release is unfinished, or a newer release has migrated the database. |
+| `1` | The check itself failed. |
+
+**Admin → System health → Upgrades** shows the same report for the running release.
 
 </Step>
 <Step>
 
-### Verify
+### Pre-deploy
 
-Wait for `/api/health/ready`, then check sign-in, a conversation, web search and a file download, and open **System health**.
+With **one API replica**, leave `RUN_MIGRATIONS=true`: the API applies migrations on start, under a PostgreSQL advisory lock, and later applies its own post-deploy steps from a background job.
+
+With **several replicas**, run the migrations once before replacing any of them:
+
+```sh
+docker compose --profile tools run --rm migrate
+```
+
+and run the replicas with `RUN_MIGRATIONS=false`. A replica started that way refuses to serve unless the latest migration it ships with is recorded. `migrate` refuses, changing nothing, if the release requires an earlier release's background migration or post-deploy step that has not finished; the message names it. Finish it on the release you are running, then upgrade.
+
+</Step>
+<Step>
+
+### Replace replicas
+
+Replace the API replicas one at a time (and workers, if you run them), then the web containers. Each v0.11 replica [drains](#replacing-replicas-draining) as it stops. Wait for `/api/health/ready` on each, then check sign-in, a conversation, search and a file download.
+
+</Step>
+<Step>
+
+### Post-deploy
+
+Once **every** replica runs the new release:
+
+```sh
+docker compose --profile tools run --rm migrate-post
+# or, with any runtime: node dist/migrate.js --post
+```
+
+It refuses to run until every pre-deploy migration of the release is applied. It is safe to run again at any time: finished steps are skipped, an interrupted one is repeated, and an index an interrupted build left `INVALID` is dropped and rebuilt. Then it schedules the release's background migrations. Until it has run, the release works, without the new indexes' speed-up.
+
+With several replicas, keep `RUN_POST_MIGRATIONS=false` (the default when `RUN_MIGRATIONS=false`) and run this step yourself: nothing in the database tells OCI that every replica runs the new release, and a post-deploy step may drop something the previous release still reads.
+
+</Step>
+<Step>
+
+### Let background migrations finish
+
+They run on their own, on worker (or `all`) replicas, and show on **System health → Background work** with their progress. Nothing needs to wait for them, except the next upgrade if its release requires them; the preflight says so.
 
 </Step>
 </Steps>
 
-Releases keep the previous minor version working against the new schema where they can, so replicas can usually be replaced one at a time. The per-version notes below say when not.
+## Replacing replicas: draining
+
+From v0.11 an API replica drains when it is stopped (`SIGTERM`), so replacing replicas one at a time does not cut off replies:
+
+1. `/api/health/ready` answers `503` at once (`/api/health/live` stays `200`, so nothing restarts it mid-drain).
+2. New chat turns are refused with `503` and `Retry-After: 1` before anything is stored. The web app sends the turn again, up to twice, to another replica; people see nothing unless every attempt is refused. Other requests are answered as usual, with `Connection: close`.
+3. Background jobs start no new runs on it; a running job stops after the batch in hand.
+4. Replies in progress may finish for up to `SHUTDOWN_DRAIN_TIMEOUT_MS` (25 s).
+5. A reply still running after that is saved with what it has, marked **interrupted**; the person sees the reason and **Retry**.
+6. The replica closes its connections and exits `0`. A second signal exits at once.
+
+Set `SHUTDOWN_DRAIN_TIMEOUT_MS` below the orchestrator's grace period (the time between `SIGTERM` and `SIGKILL`), leaving about five seconds for the final saves and, on Kubernetes, the `preStop` delay. The bundled Compose file gives the `api` service `stop_grace_period: 30s`; the Helm chart uses a 40-second grace period and a 5-second `preStop` sleep.
+
+A replica that is killed instead (`SIGKILL`, out of memory, a crashed node) cannot drain; its replies are saved as interrupted by another replica within about 20 seconds. A replica on a release before v0.11 cannot drain either: during an upgrade from v0.10, stopping a v0.10 replica still cuts the replies it is writing, which the v0.11 replicas then save as interrupted.
+
+The bundled web container's Caddy takes a draining or stopped replica out of rotation by itself (a `503`, or a refused or slow connection, marks it down for 10 seconds). For your own load balancer, see [Health checks and draining](/docs/self-hosting/reverse-proxy#health-checks-and-draining).
+
+## Background migrations
+
+Each worker (or `all`) replica looks for background migration work every 30 seconds. One replica at a time works on a migration, in batches, each batch committed with its progress, so a crash, a restart or a failover loses or repeats at most one batch. Batches wait while the database is under pressure:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `BACKGROUND_MIGRATIONS_ENABLED` | `true` | Whether this replica runs batches at all. |
+| `BACKGROUND_MIGRATION_MAX_REPLICATION_LAG_MS` | `10000` | Wait while any standby's replay lag is over this; `0` turns the check off. Needs `GRANT pg_monitor TO <oci user>`, without which PostgreSQL hides the lag. |
+| `BACKGROUND_MIGRATION_MAX_TRANSACTION_AGE_MS` | `300000` | Wait while a transaction in the database has been open longer (a long report, a `pg_dump`); `0` turns it off. |
+| `BACKGROUND_MIGRATION_BATCH_TIMEOUT_MS` | `30000` | Statement timeout for one batch. |
+
+On **System health → Background work**, administrators can pause and resume a migration and change its batch size and the pause between batches; auditors see the page read-only. A migration whose batches fail five times in a row stops as `failed` with the error shown; resume it once the cause is fixed.
+
+## Migration timeouts
+
+Every migration statement runs with a lock timeout and a statement timeout:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `MIGRATION_LOCK_TIMEOUT_MS` | `3000` | How long a statement may wait for a lock (100 to 600000). |
+| `MIGRATION_STATEMENT_TIMEOUT_MS` | `900000` (15 minutes) | How long one pre-deploy statement may run; `0` means no limit. |
+| `POST_MIGRATION_STATEMENT_TIMEOUT_MS` | `14400000` (four hours) | How long one post-deploy step may run; `0` means no limit. |
+
+Without a lock timeout, a migration that needs a table another session is using (a long report, an open `psql` transaction, a `pg_dump`) waits as long as that session does, and every later query on the table queues behind it. Now the attempt gives up after the lock timeout, rolls back, and is retried with backoff, up to ten attempts over about three minutes, so readers and writers are held up for at most about one lock timeout at a time. If the lock never frees, the migration fails with a message naming the table and the blocking session (pid, state, application and query). Let that session finish or end it (`select pg_terminate_backend(<pid>)`), then run the migration again.
+
+Set these on whatever runs migrations: the `migrate` and `migrate-post` jobs, or the API when `RUN_MIGRATIONS=true`. The bundled Compose file passes them through from `docker/.env`. Raise the statement timeout only for a migration known to scale with data; the release notes say when one does.
+
+## Upgrades that need a window
+
+When the preflight answers "needs a window" (exit code `2`), or the change is outside OCI (moving the database, a major PostgreSQL upgrade, a restore), put the instance in [read-only mode](/docs/administration/maintenance) instead of taking it down: people keep reading, searching, exporting and signing in, and every change is refused on every replica at once.
+
+1. A day or so ahead, schedule the window on **System health → Maintenance** with **Announce it now**, or switch read-only on by hand when you start.
+2. Take a backup (backups keep running while read-only by default).
+3. At the start, writes stop and background jobs that write pause after the batch in hand; replies already being written finish. Check **Health checks → Read-only mode**, and that the `oci_read_only` metric is 1 on every replica.
+4. Do the work: run the migrations, move or upgrade the database, replace replicas. A replica started meanwhile reads the switch from the database; if the database itself is being replaced, set `OCI_READ_ONLY=true` on the new replicas.
+5. Turn read-only off, or let the window end. Jobs resume on their next tick.
+
+If the admin pages cannot be reached, `OCI_READ_ONLY=true` (and optionally `OCI_READ_ONLY_REASON`) on every replica and worker does the same; it can only be undone by unsetting it and restarting.
 
 ## Rollback
 
-Images can be rolled back by setting `OCI_API_IMAGE` and `OCI_WEB_IMAGE` to the previous versions. **Migrations are forward-only**: if a release's migration is incompatible with the previous version, restore the pre-upgrade database backup and the matching file snapshot before starting the old images. Never rotate `ENCRYPTION_KEY` as part of a rollback.
+Images can be rolled back by setting `OCI_API_IMAGE` and `OCI_WEB_IMAGE` to the previous versions. **Migrations are forward-only**: if a release's migration is incompatible with the previous version, restore the pre-upgrade database backup and the matching file snapshot before starting the old images. Pre-deploy migrations are written so the previous minor release keeps working on them; post-deploy steps may not be (the per-version notes say). Never rotate `ENCRYPTION_KEY` as part of a rollback.
 
 ## Per-version notes
+
+### To v0.11.0
+
+From v0.10.x, with no downtime, in the order above: back up and run the preflight, `migrate`, replace the replicas one at a time, then `migrate --post`. A single instance with `RUN_MIGRATIONS=true` does all of it on its own; the Helm chart does it with hooks. See [v0.11.0](/docs/releases/v0-11-0).
+
+<Callout type="warn" title="Rolling back after migrate --post needs the backup">
+  Once `migrate --post` has finished, every v0.11 replica writes stored secrets in a new format, which names the key that encrypted it and which v0.10 cannot read. From then on, rolling back to v0.10 means restoring the pre-upgrade backup. Before `migrate --post`, v0.10 images still run on the new schema.
+</Callout>
+
+**Pre-deploy migrations**, all fast:
+
+| Migration | What it does |
+|---|---|
+| `0039_three_phase_migrations` | Two new tables, `oci_post_migration` and `background_migration`, that track post-deploy steps and background migrations. |
+| `0040_usage_rollups` | A nullable column `usage_event.in_rollup` (no default, so no rewrite), three tables of hourly usage totals and their change log, and triggers on `usage_event` that record every change, including writes by v0.10 replicas still running. Creating the triggers takes a brief lock on `usage_event`; the lock timeout and retries apply. |
+| `0041_embedding_generations` | Two small tables, `embedding_generation` and `embedding_generation_failure`. The existing embeddings table becomes generation 1 under its current name, so v0.10 replicas keep using it. |
+
+**Post-deploy steps**, after every replica runs v0.11:
+
+| Step | What it builds |
+|---|---|
+| `0001`, `0002` | `message_created_at_idx` (the admin overview's per-day counts) and a small partial index for failed replies, concurrently. At 500,000 messages they took 0.4 s and 0.1 s and the first is about 11 MB; at 20 million messages expect a minute or two and about 450 MB. |
+| `0003` to `0005` | Partial indexes on `message(created_at)` for sent messages, web searches and cancelled replies: at 4 million messages about 41 MB, 1.4 MB and 160 kB. |
+| `0006` | An index on `thread(created_at)` that also carries two columns the Usage page reads: about 15 MB at 4 million messages. |
+
+Steps `0003` to `0006` serve the Usage page's Overview tab. Until the steps have run, the admin overview and Usage pages are as slow as in v0.10.
+
+**Background migrations**, scheduled by `migrate --post`:
+
+- **`0.11.usage-rollups`** adds the usage recorded before the upgrade to the hourly totals, 2,000 events a batch (measured: 126,000 events in 10 seconds). Until it finishes, the Usage pages, scheduled reports and budget checks read the individual records as v0.10 did, with the same results. It rewrites each `usage_event` row once, so expect WAL and dead tuples in proportion; autovacuum handles them. A later release that drops the fallback will require it to be finished.
+- **`0.11.reencrypt-provider-keys`, `-connector-credentials`, `-connector-tokens`, `-webhook-secrets`, `-settings`** rewrite the stored secrets in the new format, with the same key. A few hundred rows each on most instances.
+
+What else changes:
+
+- **Do not change the embeddings model during the upgrade**, least of all on a v0.10 replica: v0.10 would re-create generation 1's table at the new size, and search is keyword-only until the model is chosen again on a v0.11 replica. A rebuild started on v0.11 during the upgrade fills meanwhile; switching to it waits for `migrate --post`. Before changing the model afterwards, have free disk for one more generation: about 8.7 KiB per passage at 1,536 dimensions. See [Embeddings](/docs/administration/embeddings-and-reranking#changing-the-model).
+- **Do not change `ENCRYPTION_KEY` during the upgrade.** To rotate it, finish the upgrade first; see [Rotating `ENCRYPTION_KEY`](/docs/self-hosting/security#rotating-encryption_key).
+- **Sign-in limits.** `RATE_LIMIT_AUTH_PER_MINUTE` now counts **failed** sign-ins per account; before, it counted every attempt per account and per address. The address has its own limit, `RATE_LIMIT_AUTH_ADDRESS_PER_MINUTE` (300), and single sign-on one per identity provider, `RATE_LIMIT_AUTH_SSO_PROVIDER_PER_MINUTE` (3,000). Better Auth's own limiter is off. During the rolling upgrade v0.10 replicas keep their own limits. See [Sign-in attempts](/docs/administration/budgets-and-limits#sign-in-attempts).
+- **Sessions are read from the database on every request**, so a role change, ban or revoked session applies on the next request on every replica, for about one indexed read per request.
+- **Redis is required for more than one replica**: System health shows an error, and each replica logs a warning, when several replicas share the database without it.
+- **Metrics.** `oci_http_request_duration_seconds` gains a `0.3` bucket, and `route` now names the handler that answered: `GET /api/threads/search` was counted as `/api/threads/:id`. Dashboards that filter on `/api/threads/:id` see search leave it.
+- **The web image drops its file capability.** Caddy still listens on 8080 and the published port is unchanged; the container may now run with every capability dropped. Kubernetes manifests that added `NET_BIND_SERVICE` for Caddy can remove it.
+- **Images are multi-architecture**: each tag is one index with `linux/amd64` and `linux/arm64` images. Releases before v0.11 are `linux/amd64` only.
+
+New environment variables, all optional: see [Configuration](/docs/self-hosting/configuration). None is required to upgrade.
 
 ### To v0.10.2
 

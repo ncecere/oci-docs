@@ -18,7 +18,7 @@ Requirements for your proxy:
 
 OCI records a client address on sessions (a person's active sessions under **People**) and in the audit log, and the [sign-in limit](/docs/administration/budgets-and-limits#sign-in-attempts) counts attempts per address. The web container's Caddy decides that address and passes exactly one to the API, as `X-Forwarded-For`; the API believes nothing else. Caddy also drops `X-Real-IP`, `CF-Connecting-IP`, `True-Client-IP` and `Forwarded`, so a client cannot choose its own address by sending them.
 
-By default Caddy trusts nothing in front of it, so the address is whatever connected to the web container. Exposed directly, that is the client. Behind a load balancer, another reverse proxy or a Kubernetes ingress, it is that proxy, so everybody appears to come from one address and shares one sign-in limit.
+By default Caddy trusts nothing in front of it, so the address is whatever connected to the web container. Exposed directly, that is the client. Behind a load balancer, another reverse proxy or a Kubernetes ingress, it is that proxy, so everybody appears to come from one address and shares one address limit for failed sign-ins.
 
 Set `TRUSTED_PROXIES` on the **web** container to the addresses of the proxies in front of it, separated by spaces (not commas). Each entry is an IP address or a CIDR range; `private_ranges` stands for all private and loopback ranges:
 
@@ -39,6 +39,17 @@ After deploying, sign in and check the address on your own session under **Peopl
 <Callout title="Changed in v0.9.2">
   Before v0.9.2 the web container passed `CF-Connecting-IP` and `X-Real-IP` from the browser through to the API, which trusted them, so any client could choose the address it was recorded and rate-limited under. Upgrade to v0.9.2 or later. See [v0.9.2](/docs/releases/v0-9-2).
 </Callout>
+
+## Health checks and draining
+
+From v0.11 an API replica that is stopped [drains](/docs/self-hosting/upgrades#replacing-replicas-draining): `/api/health/ready` answers `503` at once, new chat turns are refused with `503`, and replies in progress finish for up to `SHUTDOWN_DRAIN_TIMEOUT_MS` (25 s). The bundled web container's Caddy handles this by itself. If a proxy or load balancer of yours health-checks or balances OCI's containers:
+
+- **Health checks**: point active checks at `/api/health/ready` with a short interval (2 to 5 seconds) and one failure to mark a target down. HAProxy: `option httpchk GET /api/health/ready` with `default-server inter 2s fall 1 rise 2`. AWS ALB: the same path, and a deregistration delay of at least `SHUTDOWN_DRAIN_TIMEOUT_MS`, so the balancer does not cut replies in progress.
+- **Keep-alive**: keep the proxy's idle timeout for upstream connections below 65 seconds, the API's keep-alive (nginx `keepalive_timeout` in the `upstream` block, HAProxy `timeout http-keep-alive`).
+- **Retries**: retrying a failed *connection* on another target is safe for every method. A drain refusal (`503` with the header `X-OCI-Draining: 1`) is also safe to retry, since the API refuses it before reading it; the web app retries it itself, so a proxy need not.
+- **Streaming**: keep response buffering off for `/api`, as above.
+
+The API answers `503` only when a replica cannot serve: it is draining, or (readiness only) its database has been unreachable for more than 30 seconds. A request that fails because a database connection dropped answers `500` marked retryable instead, so a database failover does not take every replica out of rotation at once.
 
 ## The headers OCI sends
 

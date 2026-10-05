@@ -1,0 +1,69 @@
+---
+title: Maintenance (read-only mode)
+description: Keep OCI open for reading while nothing can be changed, for a maintenance window or an emergency. Scheduling a window with an announcement, the jobs that keep running, and the OCI_READ_ONLY switch.
+---
+
+Read-only mode, new in v0.11, keeps Open Chat Interface open for reading while nothing can be changed. Use it when a change to the database or its host needs a window: a database move or restore, a major PostgreSQL upgrade, an OCI upgrade whose preflight answers "needs a window" ([Upgrades](/docs/self-hosting/upgrades#upgrades-that-need-a-window)), or an incident where you want to stop writes without taking the service down.
+
+It applies on every API replica at once, and to the background workers.
+
+## What keeps working
+
+| Keeps working | Refused while read-only |
+|---|---|
+| Opening conversations, projects and files | Sending a message, regenerating, editing, forking |
+| Search, project search, meaning-based search | Uploading files, importing conversations |
+| Exporting a conversation, a reply or all your data | Changing personal settings, memory, share links |
+| Signing in (password, single sign-on) and signing out | Signing up, password resets, changing a password |
+| Signing other devices out; an administrator ending someone's sessions | Every administration change, apart from the switch itself |
+| Stopping a reply in progress | **Run now** for background jobs (apart from those kept running) |
+| Hiding an announcement | |
+| Replies already being written when it starts: they finish and are saved | |
+
+A refused change is answered before the server does anything with it, so nothing is half-saved. People see a banner saying why and until when, in the chat, in Settings and in administration ([what people see](/docs/using/chat#when-oci-is-read-only)). The message box and the upload, edit, fork and retry buttons are off, with the reason, and so are the controls and **Save** buttons of administration pages. Somebody who sends just as read-only starts gets the same explanation, not an error.
+
+A person signing in for the first time can still accept the [acceptable use policy](/docs/administration/acceptable-use-and-announcements), which is part of signing in, and single sign-on can still create an account for someone new.
+
+## Turning it on and off
+
+**Data & storage → System health → Maintenance.**
+
+- **Turn on read-only mode**, with an optional reason (shown to everyone) and an expected end. You confirm before every change is refused. The expected end is shown to people and sent to API clients as `Retry-After`; it does not end read-only mode by itself, so turn it off when you are done.
+- **Turn off read-only mode** is the one administration control that stays usable while read-only. Changes are accepted again on every replica at once.
+- **Scheduled window**: a start and an end. From the start until the end the instance is read-only without anybody at the switch, and it ends by itself. With **Announce it now**, everybody sees an ordinary [announcement](/docs/administration/acceptable-use-and-announcements#announcements) from now until the window starts, saying when and what will not work; the read-only banner takes over at the start. Changing the window updates its announcement and shows it again to people who had hidden it; **Cancel window** removes it.
+
+Every change is in the audit log as `maintenance.read_only.update`, with who made it, the reason, the expected end or window, and the jobs kept running. Auditors see the section without its controls.
+
+While read-only is on, **Health checks** shows a **Read-only mode** warning saying by whom (an administrator, a window or `OCI_READ_ONLY`), until when and why, and the `oci_read_only` metric is 1 on each replica that refuses writes.
+
+## Background jobs
+
+Jobs that write pause while read-only: retention, imports, embeddings and summaries, storage cleanup, reports, background migrations and the rest. A job running when read-only starts finishes the batch in hand and stops; an import in progress goes back in the queue and continues afterwards from where it was. Jobs pick up again on their next tick after read-only ends.
+
+A job ticked under **Background jobs while read-only** keeps running. By default:
+
+| Job | Why it keeps running |
+|---|---|
+| `backups.run` | A backup is what you want before the risky part. Start a manual backup from [Backups](/docs/administration/backups) before turning read-only on. |
+| `compliance.export` | Compliance exports are not interrupted by maintenance. |
+| `webhooks.deliver` | Audit events, including the switch itself, still reach your SIEM. |
+| `chat.recover-interrupted-replies` | A reply whose replica stopped is saved as interrupted, so its conversation is not left waiting. |
+
+Untick them, or tick others, and **Save jobs**.
+
+## The emergency switch: `OCI_READ_ONLY`
+
+For an emergency, or when the administration pages cannot be reached, your operator sets these on **every** API replica and worker and restarts them:
+
+```sh
+OCI_READ_ONLY=true
+OCI_READ_ONLY_REASON="Restoring the database"   # optional, shown to people
+```
+
+It wins over everything on System health and **cannot be turned off from administration**: the Maintenance section says the environment holds it. Unsetting it on every replica and restarting ends it. With Docker Compose both variables are passed to the `api` and `worker` services from `docker/.env`; with the Helm chart, add them to the API's and the worker's environment.
+
+## What API clients see
+
+A refused request answers **`423 Locked`** with the error code `READ_ONLY` and a message giving the reason and the expected end, with `Retry-After` (in seconds) when the end is known and an `X-OCI-Read-Only` header naming the source (`environment`, `administrator` or `schedule`). `GET /api/maintenance` returns the current state to anyone, signed in or not.
+
+OCI does not use `503` for this: proxies take a replica that answers `503` out of rotation, and every replica would answer it at once. A `503` from OCI means only that a replica is shutting down; `423` is a refusal no proxy treats as an unhealthy server.

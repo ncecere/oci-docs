@@ -9,6 +9,7 @@
     "docker-compose",
     "reverse-proxy",
     "kubernetes",
+    "high-availability",
     "---Operating---",
     "upgrades",
     "backups-and-restore",

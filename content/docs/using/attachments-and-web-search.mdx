@@ -41,11 +41,11 @@ A model knows what it was trained on, up to a cut-off date. Turning on **Search*
 How the search runs depends on the model:
 
 - **A model that can call tools** gets a web search [tool](/docs/using/tools-and-connectors). It decides whether to search, what to search for, and may search several times. The searches sit in the reply's work block, summarised as for example **Searched the web twice** (see [How a reply shows the model's work](/docs/using/chat#how-a-reply-shows-the-models-work)); expanded, each search is a step such as "Searched the web for 'library opening hours' · 5 results"; select it to see the query and results.
-- **Any other model** gets one search run before it starts writing, using your message as the query. The panel above the reply shows the query and the results the model was given.
+- **Any other model** gets one search run before it starts writing, using your message as the query. That search is the first step in the reply's work block, **Searched the web · 5 sources**; expand it to see the query, the search provider and every source the model was given, with its snippet.
 
-Either way the model is asked to link the sources it relies on, and the sources are listed above the reply. Open the steps or the panel when the answer matters, to judge whether the searches and sources were good ones.
+Either way the model is asked to link the sources it relies on. Links returned by its tool calls are a **Sources** step in the same work block, so a reply has at most one collapsed block above its answer. Open the steps when the answer matters, to judge whether the searches and sources were good ones.
 
-If a search fails, for example because the search provider rejected your institution's key, you still get an answer: the reply shows **Web search failed** with the reason, and the model is told to say that current sources could not be checked. A search that times out, cannot reach the provider or meets a server error is tried once more first. If your institution has set up a second, fallback provider, the search then goes to it, and the reply's search details name the provider that answered. A rejected key or a rate limit is reported straight away, since trying again would not help. A search gives up within about 25 seconds.
+If a search fails, for example because the search provider rejected your institution's key, you still get an answer: the search step in the reply's work block shows **Web search failed** with the reason, and the model is told to say that current sources could not be checked. A search that times out, cannot reach the provider or meets a server error is tried once more first. If your institution has set up a second, fallback provider, the search then goes to it, and the reply's search details name the provider that answered. A rejected key or a rate limit is reported straight away, since trying again would not help. A search gives up within about 25 seconds.
 
 ### When it helps
 

@@ -30,7 +30,7 @@ const sections = [
     href: '/docs/self-hosting',
     icon: <Server />,
     description:
-      'Requirements, configuration, Docker Compose, the reverse proxy, upgrades, backups and restore, monitoring and security.',
+      'Requirements, configuration, Docker Compose, Kubernetes with Helm, high availability, upgrades without downtime, backups and restore, monitoring and security.',
   },
   {
     title: 'Releases',

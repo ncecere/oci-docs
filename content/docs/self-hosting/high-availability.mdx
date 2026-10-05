@@ -1,0 +1,297 @@
+---
+title: High-availability deployment
+description: A layout of Open Chat Interface that keeps serving through upgrades, node drains and PostgreSQL or Redis failovers, what each layer survives in OCI's own tests, example values for the Helm chart, and what is not covered yet.
+---
+
+This page describes one way to run Open Chat Interface so that replacing a pod, draining a node, upgrading from the previous minor release or failing over the database does not interrupt people. It builds on the [Helm chart](/docs/self-hosting/kubernetes); the same layout works with other orchestrators, using the variables named here.
+
+Nothing here is required for a small instance. One API replica with `RUN_MIGRATIONS=true`, PostgreSQL and Redis, as in [Docker Compose](/docs/self-hosting/docker-compose), is a supported deployment.
+
+## The layout
+
+```text
+                         people (HTTPS)
+                               |
+                 ingress controller / load balancer (TLS)
+                               |
+                     Service <release>-web
+                     /                   \
+             web (Caddy)             web (Caddy)                  2 or more
+                     \                   /
+        headless Service <release>-api-headless (ready pods only)
+              /                  |                  \
+     api (OCI_ROLE=web)   api (OCI_ROLE=web)   api (OCI_ROLE=web)   3 or more
+                                                    worker (OCI_ROLE=worker) x2
+              |                  |                  |
+   +----------+------------------+------------------+--------------------------+
+   | DATABASE_URL          -> PgBouncer (transaction mode) -> PostgreSQL primary |
+   | CONTROL_DATABASE_URL  -> PostgreSQL primary, directly                        |
+   | READ_DATABASE_URL     -> one streaming replica                               |
+   |                          (Patroni or an operator: 3 nodes)                   |
+   | REDIS_SENTINELS       -> Redis under Sentinel (or REDIS_CLUSTER_NODES)       |
+   | S3-compatible storage    attachments, backups, compliance export            |
+   +-----------------------------------------------------------------------------+
+        Prometheus scrapes /metrics on every api and worker pod
+```
+
+| Layer | Runs | Notes |
+|---|---|---|
+| Ingress | Your controller or load balancer | Terminates TLS and sends **everything**, `/api` included, to the web Service. No buffering, long read timeouts. |
+| Web | Caddy from the web image, 2 or more pods | Serves the app, decides the client address (`web.trustedProxies`), and balances `/api` across ready API pods found through the headless Service, re-resolved every 2 seconds. |
+| API | 3 or more pods, `OCI_ROLE=web` | Serves requests and streams replies. No background jobs, so traffic alone decides how many. |
+| Worker | 2 pods, `OCI_ROLE=worker` | Every background job. One is enough for throughput; the second keeps jobs running through a node drain or an upgrade. |
+| PostgreSQL | A three-node cluster managed by Patroni or an operator | `DATABASE_URL` through PgBouncer in transaction mode; `CONTROL_DATABASE_URL` straight to the primary; `READ_DATABASE_URL` to one replica. |
+| Redis | Sentinel (a primary, a replica, three sentinels) or Redis Cluster | Reply streams, shared limits, provider capacity, replica heartbeats and settings changes. **Required with more than one replica.** |
+| S3-compatible storage | Your object store | Every API and worker pod reads and writes attachments. |
+| Prometheus | With the Prometheus Operator, or any Prometheus | The chart's ServiceMonitor and PrometheusRule. |
+
+## Process roles
+
+One API image runs in one of three roles, set with `OCI_ROLE` (the chart sets it):
+
+| `OCI_ROLE` | Serves | Runs background jobs |
+|---|---|---|
+| `all` (default) | The API | Yes |
+| `web` | The API | No: work its requests start is queued for a worker |
+| `worker` | Only `/api/health/live`, `/api/health/ready` and `/metrics` | Yes |
+
+Background jobs are everything scheduled or queued: imports, embedding project files, summaries, webhook deliveries, backups, compliance exports, retention, storage cleanup, usage reports, background migrations, and the sweep that saves replies whose replica died. A `web` replica still does what a request needs on the spot, such as storing and streaming replies or indexing an uploaded project file so it is searchable at once; it hands the rest to a worker straight away with a PostgreSQL notification. If no worker hears it, nothing is lost: the job's next tick (one to five minutes) finds the queued work.
+
+**A deployment of `web` replicas only runs no background work.** Every replica writes a heartbeat to Redis every 15 seconds, and **System health → Background workers** turns red, and each `web` replica logs a warning, when no `worker` or `all` replica has checked in for a minute. Jobs hold a PostgreSQL advisory lock while they run, so any number of workers can run side by side; each job runs on one at a time.
+
+## What each layer survives
+
+OCI's CI and drills test each of these. The figures come from the runs recorded in the OCI repository (`docs/dev/failover.md`, `docs/dev/rolling-upgrades.md`, `docs/dev/v0.11-design.md`), on one machine running everything in Docker, not on a production cluster.
+
+| Event | What happens | Tested |
+|---|---|---|
+| **An API pod is stopped** (upgrade, rolling restart, node drain) | It reports not ready, refuses new turns with `503` before storing anything (the web app sends them again to another pod), lets replies finish for up to 25 s and saves anything left as interrupted. See [draining](/docs/self-hosting/upgrades#replacing-replicas-draining). | Rolling-upgrade test: v0.11 replicas stopped under load with 3 to 7 replies in flight exited cleanly within 4 s, and every one of those replies completed. |
+| **An API pod dies** (killed, out of memory, node lost) | Caddy stops sending to it; its replies are saved as interrupted by another replica within about 20 seconds, with **Retry**. | The same test's negative control: the release before draining left cut replies `streaming`; v0.11 recovers them. |
+| **An upgrade from the previous minor release** | `migrate`, a rolling update, `migrate --post`, then background migrations, while OCI serves. | Rolling upgrade from v0.10.2 under load with 300,000 messages and 240,000 usage events: 2,392 requests outside the moments a v0.10.2 replica (which cannot drain) was stopping, none failed; 223 replies, all complete; no lock waits; the usage backfill exact. `helm upgrade` on kind under load: 3,156 requests, none failed. |
+| **A PostgreSQL failover** (Patroni switches primary) | Reads caught by it are retried once; writes answer `500` marked retryable (`"retryable": true`, `X-OCI-Retryable`); a new message and a reply's final save are retried; replies keep streaming through Redis; jobs stop after the batch in hand and resume on the next tick. Readiness stays `200` for the first 30 s, so every pod is not taken out of rotation at once. | Weekly drill on a three-node Patroni cluster with HAProxy, two `web` replicas and a worker, under load and during an 8,000-conversation import: two failovers a minute apart, a new primary promoted in about 2.5 s each time; **1,173 requests, 0 failed**; 180 replies, all complete; the import finished with none failed. |
+| **A slow PostgreSQL failover** (no primary for longer than a request's one retry) | Requests caught by it fail with a retryable `500`. | An earlier build's slow run, 12.8 s without a primary: 8 of 635 requests failed, all retryable. |
+| **A Redis failover** (Sentinel promotes a replica) | Commands fail fast (`REDIS_COMMAND_TIMEOUT_MS`, 2 s) instead of waiting; a reply in progress keeps its frames for up to 30 s and stores them once Redis is back, so following and resuming it continue. | Drill: the Redis primary killed twice under load: **1,439 requests, 0 failed**; 210 replies, all stored complete; of 70 replies read partly and resumed across the failovers, 67 resumed to the end and 3 had nothing left to resume, each stored complete. |
+| **Redis down altogether** | Replies keep streaming and are saved, but new ones cannot be resumed; rate limits and provider capacity count per replica; settings changes reach other replicas within 30 s instead of at once. | Documented behaviour; [System health](/docs/administration/instance-settings#system-health) and the `OciRedisUnavailable` alert report it. |
+| **A worker is stopped or lost** | A stopping worker finishes the batch in hand and exits; another worker's tick picks the job up. | Covered by the failover drill (jobs resumed, none left running). |
+| **A web pod is lost** | The other web pods keep serving; replies streaming through it are resumed by the browser through another one. | The `helm upgrade` test replaces every web pod. |
+
+With asynchronous replication, the last moments of committed work can be lost in an unplanned PostgreSQL failover. OCI's jobs and the final save are safe to repeat, but a message or setting saved in those moments may need saving again.
+
+## PostgreSQL
+
+Three connection strings, three jobs:
+
+| Variable | Used for | Point it at |
+|---|---|---|
+| `DATABASE_URL` | The application pool: every request and every job's work (`DATABASE_POOL_MAX`, 10 per pod) | PgBouncer in **transaction mode**, in front of the primary |
+| `CONTROL_DATABASE_URL` | Migrations, the advisory locks jobs hold for their whole run, a worker's `LISTEN`, `pg_dump` for backups | The primary **directly** (or a session-mode pooler); never transaction mode |
+| `READ_DATABASE_URL` | The admin overview and Usage reports | **One** streaming replica, or a pooler in front of one |
+
+A minimal PgBouncer for the application pool:
+
+```ini
+[databases]
+oci = host=postgres-primary port=5432 dbname=oci
+
+[pgbouncer]
+listen_port = 6432
+auth_type = scram-sha-256
+auth_file = /etc/pgbouncer/userlist.txt
+pool_mode = transaction
+; Server connections to PostgreSQL: size for (pods x DATABASE_POOL_MAX)
+; client connections at the concurrency PostgreSQL handles well.
+default_pool_size = 40
+max_client_conn = 2000
+; OCI does not use protocol-level prepared statements.
+max_prepared_statements = 0
+server_reset_query =
+```
+
+- **Follow the primary.** Whatever PgBouncer and `CONTROL_DATABASE_URL` connect to must move to the new primary and close connections to the old one: an operator's read-write Service, a pooler that does, or HAProxy checking Patroni's REST API on `/primary` with `on-marked-down shutdown-sessions` and `init-state down` (the failover drill's `tools/failover-drill/haproxy.cfg` is a working example). A connection that silently vanishes is otherwise noticed only by TCP keepalive, after minutes.
+- **The read replica** is used only while it has replayed what the primary had written a second ago (`READ_DATABASE_MAX_LAG_MS`, 1000); otherwise those reads go to the primary. The `oci_read_replica_in_use` gauge shows which. Point it at one replica: behind a load balancer over several, each lag check may reach a different one.
+- **Grant `pg_monitor`** to OCI's database user, so background migrations and embedding rebuilds can see replication lag and wait while a standby falls behind (`BACKGROUND_MIGRATION_MAX_REPLICATION_LAG_MS`, 10 s).
+- **Connection budget.** Each pod opens up to `DATABASE_POOL_MAX` application connections (through PgBouncer), plus control connections only while used: one per job running at that moment, one for `LISTEN` on a worker, one or two during a migration or backup. `READ_DATABASE_POOL_MAX` (5) connections to the replica per pod.
+
+OCI's own live test runs requests, job locks, `LISTEN`, post-deploy steps and background migrations through PgBouncer 1.25 in transaction mode and checks that no pooled server connection is left holding a lock, a setting or a `LISTEN`. The failover drill connects through HAProxy without PgBouncer; the two have each been tested, not yet together.
+
+## Redis
+
+| Variables | Redis |
+|---|---|
+| `REDIS_SENTINELS=s1:26379,s2:26379,s3:26379`, `REDIS_SENTINEL_NAME` (default `mymaster`) | Sentinel: OCI asks the sentinels for the primary and follows a failover |
+| `REDIS_CLUSTER_NODES=c1:6379,c2:6379,c3:6379` | Redis Cluster |
+| `REDIS_URL` | One server |
+
+With Sentinel or Cluster, `REDIS_USERNAME`, `REDIS_PASSWORD` and `REDIS_TLS=true` apply to the data nodes, and `REDIS_SENTINEL_USERNAME`, `REDIS_SENTINEL_PASSWORD` and `REDIS_SENTINEL_TLS=true` to the sentinels; `REDIS_TLS_CA_FILE` names a PEM file of certificate authorities. If more than one is configured, Cluster wins over Sentinel over `REDIS_URL`. Moving an existing instance from one server to Cluster is a new Redis: replies streaming at that moment cannot be resumed (they are still saved), and counters start again.
+
+## Example Secret and values
+
+The runtime Secret, as your secret manager would create it (External Secrets, Sealed Secrets, Vault). Host names are examples; use your operator's Services:
+
+```yaml title="oci-runtime.yaml"
+apiVersion: v1
+kind: Secret
+metadata:
+  name: oci-runtime
+  namespace: oci
+type: Opaque
+stringData:
+  # Application pool: PgBouncer in transaction mode.
+  DATABASE_URL: postgres://oci:CHANGE_ME@pgbouncer.db.svc:6432/oci
+  # Control connections: always the current primary, directly.
+  CONTROL_DATABASE_URL: postgres://oci:CHANGE_ME@oci-pg-primary.db.svc:5432/oci
+  # Admin overview and usage reports: one streaming replica.
+  READ_DATABASE_URL: postgres://oci:CHANGE_ME@oci-pg-replica-1.db.svc:5432/oci
+  # Redis under Sentinel (the sentinels themselves are in the values).
+  REDIS_PASSWORD: CHANGE_ME
+  REDIS_SENTINEL_PASSWORD: CHANGE_ME
+  AUTH_SECRET: CHANGE_ME   # openssl rand -base64 48
+  ENCRYPTION_KEY: CHANGE_ME   # openssl rand -base64 48; losing it loses every stored credential
+  METRICS_TOKEN: CHANGE_ME   # openssl rand -hex 24
+  INITIAL_ADMIN_EMAIL: morgan.lee@example.edu
+```
+
+The values, every key as in the chart's `values.yaml` for 0.11.0:
+
+```yaml title="values-ha.yaml"
+secrets:
+  existingSecret: oci-runtime
+
+config:
+  appUrl: https://chat.example.edu
+  # How long a stopping API pod lets replies finish (the default).
+  shutdownDrainTimeoutMs: 25000
+  env:
+    REDIS_SENTINEL_NAME: mymaster   # your Sentinel master group
+
+# Redis under Sentinel. Passwords are in the Secret.
+redis:
+  sentinels: redis-sentinel-0.redis:26379,redis-sentinel-1.redis:26379,redis-sentinel-2.redis:26379
+
+api:
+  replicaCount: 3        # OCI_ROLE=web, because the worker is enabled
+
+worker:
+  enabled: true
+  replicaCount: 2        # the second is for availability, not throughput
+
+web:
+  replicaCount: 2
+  # The ingress controller's pod range, space-separated.
+  trustedProxies: "10.244.0.0/16"
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    nginx.ingress.kubernetes.io/proxy-body-size: 512m
+  hosts:
+    - host: chat.example.edu
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: chat-example-edu-tls
+      hosts: [chat.example.edu]
+
+networkPolicy:
+  enabled: true
+  webFrom:
+    - namespaceSelector:
+        matchLabels: { kubernetes.io/metadata.name: ingress-nginx }
+
+migrations:
+  post:
+    # Index builds on a large message table can take a while; reruns resume.
+    activeDeadlineSeconds: 21600
+    backoffLimit: 3
+
+metrics:
+  serviceMonitor:
+    enabled: true
+  prometheusRule:
+    enabled: true
+    labels:
+      release: kube-prometheus-stack
+```
+
+```sh
+kubectl create namespace oci
+kubectl apply -f oci-runtime.yaml
+helm install oci oci://ghcr.io/ncecere/charts/open-chat-interface --version 0.11.0 \
+  -n oci -f values-ha.yaml
+```
+
+Notes:
+
+- The chart's PodDisruptionBudgets (one pod of each kind down at a time) and its default spread across nodes and zones (best effort) are on without any value.
+- The network policy lets metrics scrapers from the `monitoring` namespace reach the API and worker pods; set `networkPolicy.metricsFrom` if your Prometheus runs elsewhere.
+- Configure S3-compatible storage under **Admin → Data & storage → Storage** before people upload files.
+- To pin images by content, set `image.api.digest` and `image.web.digest`; remember to change them with each upgrade.
+
+## Upgrading without downtime
+
+<Steps>
+<Step>
+
+### Check
+
+Run the target release's preflight against the database (it changes nothing). Exit code `0` means a rolling upgrade; `2` means it needs a window; `3` means unfinished work from an earlier release must finish first. See [Check](/docs/self-hosting/upgrades#check) and [Upgrading with Helm](/docs/self-hosting/kubernetes#upgrading-with-helm) for the `kubectl run` command.
+
+</Step>
+<Step>
+
+### Back up
+
+Take a database backup and keep your secrets. For v0.11.0 in particular, rolling back to v0.10 after `migrate --post` needs the pre-upgrade backup.
+
+</Step>
+<Step>
+
+### Upgrade
+
+```sh
+helm upgrade oci oci://ghcr.io/ncecere/charts/open-chat-interface --version X.Y.Z \
+  -n oci -f values-ha.yaml --timeout 30m
+```
+
+The pre-upgrade hook runs `migrate`; the API, worker and web pods are replaced one at a time, each API pod draining; the post-upgrade hook waits until no old pod is left and runs `migrate --post`. Give `--timeout` at least the preflight's estimate for index builds.
+
+</Step>
+<Step>
+
+### Watch
+
+**System health → Upgrades** shows nothing pending, and **Background work** shows the release's background migrations as they run on the workers. Nothing has to wait for them.
+
+</Step>
+</Steps>
+
+When the preflight says the upgrade needs a window, or the work is outside OCI (a major PostgreSQL upgrade, moving the database), use [read-only mode](/docs/administration/maintenance) instead of taking the instance down: schedule the window on **System health → Maintenance** with an announcement, and people keep reading, searching, exporting and signing in while every change is refused. See [Upgrades that need a window](/docs/self-hosting/upgrades#upgrades-that-need-a-window).
+
+## Sizing: starting points
+
+These are starting points to adjust after measuring, not tested recommendations. OCI's scale harness (`tools/scale` in the repository) generates a realistic dataset and load and reports latency, job throughput and database cost; run it on hardware like yours, with `--replicas` set to your API replica count, before you settle on numbers.
+
+- **Pod resources.** The chart's defaults: API 250m CPU and 512 MiB requested, 3 GiB memory limit (document exports need up to about 1.2 GB at peak); worker 100m and 512 MiB, 3 GiB limit (backups and rendering need memory); web 25m and 64 MiB, 256 MiB limit.
+- **API replicas** scale with traffic. Each password sign-in costs about 60 ms of one CPU; one replica measured 60 sign-ins a second at p95 71 ms. Sign-in limits are shared across replicas, so more replicas add capacity for a sign-in storm.
+- **Workers**: two, for availability. Jobs run one batch at a time and mostly wait on the database or a provider.
+- **Database connections**: pods × `DATABASE_POOL_MAX` (10) client connections to PgBouncer, which keeps `default_pool_size` server connections per database and user; plus a few control connections per pod, directly.
+- **Disk for upgrades**: twice the preflight's index estimate free before `migrate --post`.
+- **Disk for an embeddings model change**: one more generation during the rebuild, about 8.7 KiB per passage at 1,536 dimensions, plus WAL; the old one is dropped after a day.
+- **Model providers** are usually what runs out first at scale. Set [provider capacity](/docs/administration/providers-and-models#provider-capacity) limits a little below what each provider allows, so messages queue instead of failing.
+
+For scale: the harness's `medium` profile is 6,000 people, 400,000 conversations and 4 million messages (a 13.4 GB database), and met the published latency objectives on one shared laptop with one API replica. Its `large` profile (30,000 people, 20 million messages) has not been run on dedicated hardware yet.
+
+## Monitoring
+
+Scrape every API and worker pod, and load the rules: with the chart, `metrics.serviceMonitor.enabled` and `metrics.prometheusRule.enabled`, as above. The rules cover the four service objectives and the operational alerts this layout needs: database pool saturation and replication lag, no background worker, stalled jobs and background migrations, queue backlogs, Redis unavailable, readiness flapping, replies interrupted by a drain, and provider throttling. See [Service objectives and alerts](/docs/self-hosting/health-and-monitoring#service-objectives-and-alerts).
+
+## Not covered yet
+
+- **Backups at scale.** OCI's [own backups](/docs/administration/backups) run `pg_dump`, which suits small and medium databases, not a multi-hundred-gigabyte cluster. For a large cluster, use its own physical backups and point-in-time recovery (pgBackRest, WAL-G, or your operator's), and keep attachment storage versioned. Support for clusters with their own backups is planned for the next release.
+- **More than one region.** OCI is designed and tested for one region: one PostgreSQL cluster with one primary, one Redis.
+- **PostgreSQL and Redis themselves.** The chart bundles neither, and OCI does not configure them. Use an operator (CloudNativePG, Crunchy, Zalando/Patroni; a Redis operator with Sentinel) or managed services, and test their failover in your environment.
+- **The failover drill runs on one machine** with Docker. Rehearse a failover on your own cluster, under load, before relying on it.

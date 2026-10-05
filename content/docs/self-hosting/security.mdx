@@ -6,9 +6,9 @@ description: Secrets, encryption at rest, the network, access control and harden
 ## Secrets
 
 - `AUTH_SECRET` signs sessions; `ENCRYPTION_KEY` encrypts stored credentials. Both at least 32 characters, different from each other, generated randomly (`openssl rand -base64 48`), and kept in a secret manager.
-- **Credentials are write-only.** Provider keys, SMTP passwords, S3 keys, search keys, single sign-on secrets and certificates, connector credentials, people's connector tokens and webhook secrets are encrypted with `ENCRYPTION_KEY` and never returned by the dashboard or the API.
+- **Credentials are write-only.** Provider keys, SMTP passwords, S3 keys, search keys, single sign-on secrets and certificates, connector credentials, people's connector tokens and webhook secrets are never returned by the dashboard or the API. All but the single sign-on client secrets (kept by the sign-in library) are encrypted with `ENCRYPTION_KEY`.
 - The audit log records whether a secret was set, cleared or replaced, never its value.
-- Rotating `ENCRYPTION_KEY` invalidates every stored credential. Do not rotate it casually, and never as part of a rollback.
+- From v0.11 `ENCRYPTION_KEY` can be replaced without downtime and without re-entering any credential: see [Rotating `ENCRYPTION_KEY`](#rotating-encryption_key). Replacing it any other way makes every stored credential unreadable. Never rotate it during an upgrade or as part of a rollback.
 
 ## Network
 
@@ -16,7 +16,7 @@ description: Secrets, encryption at rest, the network, access control and harden
 - The web container sends a strict Content Security Policy, `X-Frame-Options: DENY` and other headers; see [Reverse proxy](/docs/self-hosting/reverse-proxy). Keep the artifact frame's separate policy intact.
 - Keep PostgreSQL, Redis, the API port and `/metrics` off the public network. Only the web container needs to be reachable.
 - **Client addresses** in the audit log, on sessions and in the sign-in limit come from the web container, which trusts nothing in front of it unless you list your proxies in `TRUSTED_PROXIES`. Set it behind a load balancer or ingress, and never route `/api` around the web container. See [Reverse proxy](/docs/self-hosting/reverse-proxy#behind-another-proxy-or-an-ingress).
-- **Sign-in attempts are limited** per client address and per account (`RATE_LIMIT_AUTH_PER_MINUTE`, 10 a minute by default). See [Budgets and limits](/docs/administration/budgets-and-limits#sign-in-attempts).
+- **Sign-in attempts are limited**, with counts shared by every replica through Redis: failed sign-ins per account (`RATE_LIMIT_AUTH_PER_MINUTE`, 10 a minute by default), failed sign-ins per client address (`RATE_LIMIT_AUTH_ADDRESS_PER_MINUTE`, 300) with a ceiling of ten times that for every request, and single sign-on callbacks per identity provider (`RATE_LIMIT_AUTH_SSO_PROVIDER_PER_MINUTE`, 3,000). A successful sign-in is not counted, so a campus behind one address can sign in at once. Anyone who knows an account's email can lock it for the rest of a minute with ten wrong passwords; that lifts on its own. See [Budgets and limits](/docs/administration/budgets-and-limits#sign-in-attempts).
 - **Outbound requests are guarded.** Connectors and webhooks refuse private, loopback, link-local and other reserved addresses unless an administrator allows a private network for that one connector or endpoint, always refuse cloud metadata addresses, never follow redirects, and are size- and time-limited. Identity providers on private networks must be listed in `AUTH_TRUSTED_ORIGINS`.
 - Model provider and search addresses are set by administrators and are not restricted to public addresses.
 
@@ -26,8 +26,8 @@ description: Secrets, encryption at rest, the network, access control and harden
 - **Trust for account linking** only for a provider that really verifies email ownership.
 - Keep one verified local administrator with a known password for [break-glass access](/docs/administration/identity#break-glass-access), and test `/auth/login?local=1`.
 - Use the `auditor` role for compliance reviewers instead of `admin`.
-- Sessions are cached for up to five minutes per API replica, so revoking a session, banning or changing a role can take that long to reach every replica.
-- There is no multi-factor authentication for local accounts in v0.10.2; rely on your identity provider's MFA, and keep local accounts to break-glass administrators.
+- Sessions are read from the database on every request, so revoking a session, banning someone or changing a role applies on their next request, on every replica.
+- There is no multi-factor authentication for local accounts in v0.11.0; rely on your identity provider's MFA, and keep local accounts to break-glass administrators.
 
 ## Content
 
@@ -45,7 +45,63 @@ description: Secrets, encryption at rest, the network, access control and harden
 ## Images
 
 - The API image runs as the non-root `oci` user.
+- From v0.11 the web container needs no Linux capabilities: it may run with every capability dropped (`cap_drop: [ALL]`), and still listens on 8080. The [Helm chart](/docs/self-hosting/kubernetes#security) runs every pod under the Pod Security `restricted` profile.
 - Pin images to a version, or better a digest. Read [Releases](/docs/releases) before upgrading.
+
+## Rotating `ENCRYPTION_KEY`
+
+`ENCRYPTION_KEY` encrypts model provider API keys, connector shared credentials, OAuth client secrets and people's connector tokens, webhook signing secrets, and the credentials in instance settings (object storage, backup and compliance export destinations, web search providers, the SMTP password). From v0.11 it can be replaced without downtime and without re-entering any of them. Each value stored by v0.11 names the key that encrypted it (a 12-character id derived from the key, not the key); values written before v0.11 are tried with every configured key.
+
+**Before you start**, the upgrade to v0.11 must be complete, `migrate --post` included: **System health → Encryption keys** no longer says re-encryption waits for it. Never rotate during an upgrade: v0.10 replicas know only one key.
+
+<Steps>
+<Step>
+
+### Generate a new key
+
+`openssl rand -hex 32`. Keep the current key too: both go in your secret manager.
+
+</Step>
+<Step>
+
+### Configure both on every replica
+
+On every API and worker replica, set `ENCRYPTION_KEY=<new>` and `ENCRYPTION_KEYS_PREVIOUS=<old>` (several previous keys are separated by commas), and roll the replicas as for any configuration change. A replica with the new key encrypts with it and decrypts old values with the previous one; a replica still on the old configuration cannot read values the new key wrote, so finish the rollout promptly and do not change secrets in the admin pages until it is done.
+
+The bundled Compose file does not pass `ENCRYPTION_KEYS_PREVIOUS` through; add it to the `api` (and `worker`) service's `environment`, for example in a `compose.override.yaml`.
+
+</Step>
+<Step>
+
+### Wait for re-encryption
+
+Within a minute a background job on a worker (or `all`) replica schedules one background migration per table, `0.11.reencrypt-*`, which rewrites every value under the new key in batches. Follow it on **System health → Background work**, where it can be paused and resumed like any background migration.
+
+</Step>
+<Step>
+
+### Check
+
+**System health → Encryption keys** says *Previous keys still in use: N values*. When N is 0 it says so, and that `ENCRYPTION_KEYS_PREVIOUS` can be removed.
+
+</Step>
+<Step>
+
+### Retire the old key
+
+Remove `ENCRYPTION_KEYS_PREVIOUS` and roll the replicas again. Keep the old key in your secret manager until a backup taken after this step exists: older backups still need it (add it back to `ENCRYPTION_KEYS_PREVIOUS` after restoring one).
+
+</Step>
+</Steps>
+
+If a re-encryption migration fails, System health shows which table, column and row could not be decrypted (never the value) and the key id it names. Usually that value was written with a key that is not configured: add that key to `ENCRYPTION_KEYS_PREVIOUS`, or re-enter the credential in the admin pages, then resume the migration on **Background work**. The **Encryption keys** check is an error while any value needs a key that is not configured.
+
+Never:
+
+- rotate the key during an upgrade or as part of a rollback;
+- replace `ENCRYPTION_KEY` without putting the old value in `ENCRYPTION_KEYS_PREVIOUS`: every stored secret becomes unreadable;
+- remove a previous key while System health still counts values under it;
+- reuse a key as both current and previous (it is ignored as previous), or use a key shorter than 32 characters (refused at start-up).
 
 ## Reporting a vulnerability
 

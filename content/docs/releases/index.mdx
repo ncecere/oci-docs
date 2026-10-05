@@ -5,6 +5,7 @@ description: Open Chat Interface's releases, what to expect before 1.0, and how 
 
 | Release | Date | In short |
 |---|---|---|
+| [v0.11.0](/docs/releases/v0-11-0) | 2026-10-05 | Always on: upgrades from v0.10 with no downtime (three-phase migrations, a preflight, replicas that drain), PostgreSQL and Redis failover, a worker role, connection pooling, provider capacity with a fair queue, embeddings model changes without a gap, read-only maintenance mode, a Helm chart and `linux/arm64` images, each tested in CI. Migrations `0039` to `0041`, then post-deploy steps `0001` to `0006`. |
 | [v0.10.2](/docs/releases/v0-10-2) | 2026-10-03 | One send starts one conversation; a limit on starting conversations; unused conversations cleaned up after a day. No migrations. **Use this instead of v0.10.1.** |
 | [v0.10.1](/docs/releases/v0-10-1) | 2026-10-03 | One block for the model's work: a reply's reasoning and tool steps in one collapsible block, artifact cards and approvals kept in sight below it, artifact details inside the card. No migrations. |
 | [v0.10.0](/docs/releases/v0-10-0) | 2026-10-03 | Finish and harden: your shared links, a default model per person, optional self-service account deletion, Delete user, backups that copy files, legal hold over every deletion, deletions in the compliance export, a fallback search provider, PDF export in every script, a resizable artifact panel, branding everywhere. Migrations `0035` to `0038`, all pre-deploy safe. |
@@ -22,6 +23,7 @@ The full list of changes is in the [changelog](https://github.com/ncecere/open-c
 OCI follows semantic versioning, but before 1.0 a minor release may change behaviour; its notes say how to adapt.
 
 - **Upgrades** are forward-only. Migrations cannot be undone by reverting images; downgrading past a migration means restoring a backup. Read every release's upgrade notes between your version and the target. See [Upgrades](/docs/self-hosting/upgrades).
+- **Rolling upgrades are tested from the previous minor release.** From v0.11, CI upgrades from the previous release under load on every database change and every release tag; the [preflight](/docs/self-hosting/upgrades#check) says when an upgrade needs a window instead.
 - **The API and web images are a pair.** Deploy both from the same release.
 - **There is no public API.** The HTTP API serves OCI's own web app and may change in any release. A personal-key API is not planned.
 
@@ -29,12 +31,13 @@ OCI follows semantic versioning, but before 1.0 a minor release may change behav
 
 The [roadmap](https://github.com/ncecere/open-chat-interface/blob/main/ROADMAP.md) is a plan, not a promise:
 
-- **Now, v0.11, always on**: upgrading from the previous minor release with no downtime on large deployments, surviving a database failover partway through, and tested rather than promised. Planned: two-phase and lock-safe migrations, rolling-upgrade tests and an upgrade preflight, a scale test harness, connection pooling, a Kubernetes Helm chart, `linux/arm64` images, draining replies on shutdown and a separate worker role.
+- **Shipped, v0.11, always on**: see [v0.11.0](/docs/releases/v0-11-0). Two planned items did not ship: **backups at scale** (for clusters with their own backups, such as pgBackRest or WAL-G) moves to the next release, and an optional Qdrant vector store is not needed at the measured scale.
 - **Later, v1.0 and beyond**: assistants, code execution, deep research, image generation, voice, groups and finer roles, multi-factor authentication and interface translations.
 
 ## How releases are published
 
-- The container images are the release artifacts: `ghcr.io/ncecere/open-chat-interface/api` and `ghcr.io/ncecere/open-chat-interface/web`, for `linux/amd64`.
+- The container images are the release artifacts: `ghcr.io/ncecere/open-chat-interface/api` and `ghcr.io/ncecere/open-chat-interface/web`, for `linux/amd64` and, from v0.11, `linux/arm64` under the same tags.
+- From v0.11 the Helm chart is published with each release as `oci://ghcr.io/ncecere/charts/open-chat-interface`; chart `X.Y.Z` deploys images `vX.Y.Z`.
 - Each stable release is tagged `vX.Y.Z`. `latest` moves to the newest stable release once both images are published; use it only for evaluation.
 - Images are built and published by CI from the release tag, after checks.
 - Releases before v0.5.0 were first published to an earlier registry and may not be on GHCR.

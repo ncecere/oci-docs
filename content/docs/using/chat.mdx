@@ -42,6 +42,8 @@ Some models think before they answer, and some use [tools](/docs/using/tools-and
 
 - A reply that only thought once shows a **Reasoning** heading. Select it to read the thinking in full.
 - A reply that took more than one step, or used a tool, shows a one-line summary instead, for example **Thought · created an artifact**, **Thought · searched the web twice**, **Searched the web**, or **Worked · 3 steps** when it did several different things. Select it to see a timeline of every piece of reasoning and every tool step in the order they happened; each tool step expands to its inputs and result.
+- When you turn on **Search** and the model is not one that searches by itself, OCI searches the web before the model answers. From v0.11 that search is the block's first step, **Searched the web · 5 sources**, and the summary counts it (**Searched the web · thought**, or **Searched the web** alone). Expand the step to see the query, the search provider and every source with its snippet; each source opens through the usual check for links that leave OCI.
+- Links a connector returned are a **Sources · N links** step in the same block. A reply therefore has at most one collapsed block above its answer.
 
 <Screenshot slot="chat-reasoning-tool-step" />
 
@@ -87,6 +89,17 @@ You can retry and switch only on the latest reply, and not while a reply is bein
 
 A reply keeps being written on the server even if you reload, lose your connection or move to another conversation, and it reconnects when you come back. This works however long the reply is, including a long artifact. If it cannot (the live copy expires), OCI loads what was saved instead; **Reload saved messages** does the same by hand. A draft you were typing stays in the message box.
 
+When your institution restarts or upgrades the server, replies being written are allowed to finish first, and a message you send meanwhile is passed to another server without you noticing. A reply that cannot finish in time, or whose server stopped suddenly, is saved with what it had, marked as interrupted with the reason under it, and **Retry**. Rarely a reply says the server restarted before it started; your message is usually sent again by itself, and if not, use **Retry**.
+
+## When OCI is read-only
+
+During a maintenance window your institution can make OCI read-only for a while. A banner at the top of the page says so, why, and until when, for example *Read-only for maintenance until about 14:30: you can read, search and export, but changes can't be saved.*, followed by the reason your institution gave.
+
+- **Still works**: opening conversations, projects and files; search; exporting a conversation, a reply or all your data; signing in and out; signing out other devices; stopping a reply in progress. Replies already being written when it starts finish and are saved.
+- **Paused**: sending a message, retrying, editing and forking, uploading files and importing conversations, and changing your settings, memory and share links. The message box and those buttons are turned off, with the reason. A message you sent just as read-only started gets the same explanation, not an error.
+
+The banner goes away, and everything works again, as soon as the window ends. If your institution announced the window ahead, you saw an announcement before it started.
+
 ## Long conversations
 
 When a conversation grows long, OCI summarises its earlier messages in the background and from then on sends the model that summary followed by your most recent exchanges, word for word, instead of dropping the oldest part. A quiet line, **Earlier messages are summarised for the model**, appears above the first message the model still sees in full; select it to read the summary.
@@ -102,6 +115,8 @@ When a conversation grows long, OCI summarises its earlier messages in the backg
 - **If a summary you asked for fails**, a quiet note under the conversation says *The summary you asked for could not be made* and why: your usage allowance ran out, the model returned an error, the model took too long, or there was nothing to summarise yet. **Retry** asks again with the same instructions (not offered when there was nothing to summarise), and **Dismiss** hides the note. It goes away by itself when a later summary succeeds. Summaries OCI makes on its own are never reported: if one fails, the conversation carries on as before.
 
 If a reply is needed before a summary is ready and the conversation no longer fits, the reply gets the most recent exchanges that fit and a notice says earlier context was left out. Your administrator can turn automatic summaries off; you can still ask for one.
+
+In the browser, a very long conversation opens at its latest messages and loads earlier ones as you scroll up. See [Very long conversations](/docs/using/conversations#very-long-conversations).
 
 ### What the model can see
 

@@ -8,16 +8,16 @@ OCI is two container images and three services you provide:
 <Files>
   <Folder name="Your deployment" defaultOpen>
     <File name="web — ghcr.io/ncecere/open-chat-interface/web (Caddy: the browser app, and /api forwarded to the API)" />
-    <File name="api — ghcr.io/ncecere/open-chat-interface/api (Node.js: everything else, including background jobs and migrations)" />
+    <File name="api — ghcr.io/ncecere/open-chat-interface/api (Node.js: everything else, including background jobs and migrations; also runs as a worker)" />
     <File name="PostgreSQL 17 (pgvector optional)" />
-    <File name="Redis (recommended)" />
+    <File name="Redis (recommended; required for more than one API replica)" />
     <File name="File storage: a local volume, or S3-compatible" />
   </Folder>
 </Files>
 
 - **Same origin.** People reach the web container. It serves the app and forwards `/api/*` to the API, so session cookies need no CORS or cross-site settings. Put your TLS-terminating reverse proxy or load balancer in front of the web container.
-- **The API** applies database migrations on start (under a lock, so replicas can start together), runs the background jobs on every replica (each job runs on one at a time), and talks to model providers, search providers, connectors, SMTP and S3.
-- **State** lives in PostgreSQL (everything durable), file storage (uploads) and your secret manager (`AUTH_SECRET`, `ENCRYPTION_KEY`). Redis holds only rebuildable state: replies in progress, rate limits.
+- **The API** applies database migrations on start (under a lock, so replicas can start together), runs the background jobs (each job runs on one replica at a time), and talks to model providers, search providers, connectors, SMTP and S3. From v0.11 the same image can run as `web` (requests only) or `worker` (background jobs only) replicas; the default, `all`, does both. See [Process roles](/docs/self-hosting/high-availability#process-roles).
+- **State** lives in PostgreSQL (everything durable), file storage (uploads) and your secret manager (`AUTH_SECRET`, `ENCRYPTION_KEY`). Redis holds only rebuildable state: replies in progress, rate limits, provider capacity, replica heartbeats. It is required as soon as you run more than one API replica, because without it each replica counts limits on its own.
 - **Configuration** is almost all in the admin dashboard; environment variables cover connection strings, secrets, the first administrator, a few defaults and observability.
 
 ## Start here
@@ -27,7 +27,8 @@ OCI is two container images and three services you provide:
   <Card title="Configuration" href="/docs/self-hosting/configuration">Every environment variable.</Card>
   <Card title="Deploy with Docker Compose" href="/docs/self-hosting/docker-compose">The supported deployment.</Card>
   <Card title="Reverse proxy" href="/docs/self-hosting/reverse-proxy">TLS, headers, and the artifact frame.</Card>
-  <Card title="Kubernetes" href="/docs/self-hosting/kubernetes">What exists today.</Card>
+  <Card title="Kubernetes with Helm" href="/docs/self-hosting/kubernetes">The Helm chart, its values, and how upgrades are wired.</Card>
+  <Card title="High availability" href="/docs/self-hosting/high-availability">A layout that keeps serving through upgrades and failovers.</Card>
   <Card title="Upgrades" href="/docs/self-hosting/upgrades">The procedure, and notes per version.</Card>
   <Card title="Backups and restore" href="/docs/self-hosting/backups-and-restore">What to back up and how to restore it.</Card>
   <Card title="Health and monitoring" href="/docs/self-hosting/health-and-monitoring">Probes, metrics, traces and logs.</Card>

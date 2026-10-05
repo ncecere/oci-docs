@@ -11,13 +11,13 @@ The API checks its environment at start and refuses to run, listing every proble
 
 | Variable | What it is |
 |---|---|
-| `DATABASE_URL` | PostgreSQL connection string, such as `postgres://oci:…@postgres:5432/oci`. Direct or session-mode pooling only. `sslmode` is honoured. |
+| `DATABASE_URL` | PostgreSQL connection string, such as `postgres://oci:…@postgres:5432/oci`, for the application pool. PostgreSQL itself, a session-mode pooler or, from v0.11, a transaction-mode pooler such as PgBouncer; with a transaction-mode pooler, set `CONTROL_DATABASE_URL` too ([Database connections](#database-connections)). `sslmode` is honoured. |
 | `AUTH_SECRET` | Signs sessions. At least 32 characters: `openssl rand -base64 48`. Changing it signs everyone out. |
-| `ENCRYPTION_KEY` | Encrypts provider keys, SMTP and S3 credentials, connector secrets and tokens, and webhook secrets at rest. At least 32 characters, different from `AUTH_SECRET`. **Changing it makes every stored credential unreadable.** |
+| `ENCRYPTION_KEY` | Encrypts provider keys, SMTP and S3 credentials, connector secrets and tokens, and webhook secrets at rest. At least 32 characters, different from `AUTH_SECRET`. **Replacing it without putting the old value in `ENCRYPTION_KEYS_PREVIOUS` makes every stored credential unreadable**; see [Rotating `ENCRYPTION_KEY`](/docs/self-hosting/security#rotating-encryption_key). |
 | `APP_URL` | The public address people use, such as `https://chat.example.edu`. Used for sign-in callbacks, connector OAuth and links in email. Must match your reverse proxy's origin. |
 
 <Callout type="warn" title="Back up the two secrets">
-  Losing `ENCRYPTION_KEY` means re-entering every provider key and credential and asking everyone to reconnect their connectors. A restored database needs the same `ENCRYPTION_KEY` and `AUTH_SECRET`.
+  Losing `ENCRYPTION_KEY` means re-entering every provider key and credential and asking everyone to reconnect their connectors. A restored database needs the same `ENCRYPTION_KEY` and `AUTH_SECRET`, or, after a key rotation, the old key in `ENCRYPTION_KEYS_PREVIOUS`.
 </Callout>
 
 ## Server
@@ -28,12 +28,68 @@ The API checks its environment at start and refuses to run, listing every proble
 | `API_PORT` | `3000` | The API's port. |
 | `AUTH_TRUSTED_ORIGINS` | none | Comma-separated origins of identity providers on private networks, such as `https://idp.internal.example.edu`. Without it, OIDC and SAML discovery to private addresses is refused. |
 | `RUN_MIGRATIONS` | `true` | Apply migrations and seed defaults on start. Set `false` when a separate job runs migrations; the API then refuses to start unless the latest migration is recorded. |
-| `REDIS_URL` | none | Redis, for resumable replies and shared rate limits. |
+| `OCI_ROLE` | `all` | `all` serves the API and runs background jobs; `web` serves the API only; `worker` runs background jobs and serves only health and metrics. See [Process roles](/docs/self-hosting/high-availability#process-roles). |
+| `SHUTDOWN_DRAIN_TIMEOUT_MS` | `25000` | After `SIGTERM`, how long replies in progress may finish before the rest are saved as interrupted (0 to 3600000). Keep it below the orchestrator's grace period. See [draining](/docs/self-hosting/upgrades#replacing-replicas-draining). |
+| `REDIS_URL` | none | Redis, for resumable replies, shared rate limits and provider capacity, and settings changes that reach every replica at once. **Required for more than one replica.** See [Redis](#redis) for Sentinel and Cluster. |
 | `CHAT_STREAM_TTL_SECONDS` | `900` | How long a reply in progress can be resumed from Redis, 60 to 3600 seconds. |
 | `STORAGE_LOCAL_PATH` | `./data/storage` | Where files go with the local storage driver (`/data/storage` in the bundled stack). |
 | `LOG_LEVEL` | `info` | `fatal`, `error`, `warn`, `info`, `debug` or `trace`. |
 | `IMPORT_MAX_UPLOAD_BYTES` | `536870912` (512 MB) | Largest ChatGPT or Claude export a person may upload. |
 | `BACKUP_PG_BIN_DIR` | `PATH` | Directory holding `pg_dump` and `pg_restore`, if not on `PATH`. |
+| `UV_THREADPOOL_SIZE` | one per CPU, 4 to 16 | Node's thread pool, where password hashing runs. Set it only to override the API's own sizing. |
+
+## Database connections
+
+From v0.11 OCI keeps two kinds of database connection, so `DATABASE_URL` can go through a transaction-mode pooler. See [High availability](/docs/self-hosting/high-availability#postgresql) for an example.
+
+| Variable | Default | What it is |
+|---|---|---|
+| `DATABASE_POOL_MAX` | `10` | Connections in the application pool (`DATABASE_URL`), per replica. |
+| `CONTROL_DATABASE_URL` | `DATABASE_URL` | Control connections: migrations, background jobs' advisory locks, a worker's `LISTEN`, and `pg_dump` for backups. Must reach PostgreSQL directly or through a **session-mode** pooler, never transaction mode. |
+| `READ_DATABASE_URL` | unset | A streaming replica for **Admin → Overview** and **Admin → Usage**. Nothing a person reads about their own data uses it. |
+| `READ_DATABASE_MAX_LAG_MS` | `1000` | The replica is used only while it is at most this far behind the primary; otherwise reads go to the primary (100 to 60000). |
+| `READ_DATABASE_POOL_MAX` | `5` | Connections to the read replica, per replica. |
+
+## Redis
+
+Set one of `REDIS_URL` (one server), `REDIS_SENTINELS` or `REDIS_CLUSTER_NODES`. If more than one is set, Cluster wins over Sentinel over `REDIS_URL`.
+
+| Variable | Default | What it is |
+|---|---|---|
+| `REDIS_SENTINELS` | unset | Sentinels, `host:port` separated by commas. OCI asks them for the primary and follows a failover. |
+| `REDIS_SENTINEL_NAME` | `mymaster` | The Sentinel master group name. |
+| `REDIS_SENTINEL_USERNAME`, `REDIS_SENTINEL_PASSWORD` | unset | Credentials for the sentinels themselves. |
+| `REDIS_SENTINEL_TLS` | `false` | TLS to the sentinels. |
+| `REDIS_CLUSTER_NODES` | unset | Redis Cluster seed nodes, `host:port` separated by commas. |
+| `REDIS_USERNAME`, `REDIS_PASSWORD` | unset | Credentials for the data nodes under Sentinel or Cluster (`REDIS_URL` carries its own). |
+| `REDIS_TLS` | `false` | TLS to the data nodes under Sentinel or Cluster (with `REDIS_URL`, use `rediss://`). |
+| `REDIS_TLS_CA_FILE` | unset | A PEM file of certificate authorities to trust for Redis TLS. |
+| `REDIS_COMMAND_TIMEOUT_MS` | `2000` | Longest a single Redis command may take before it fails and Redis is treated as away (100 to 60000). |
+
+## Migrations
+
+Set these on whatever runs migrations: the `migrate` and `migrate-post` jobs, or the API when `RUN_MIGRATIONS=true`. See [Upgrades](/docs/self-hosting/upgrades#migration-timeouts).
+
+| Variable | Default | What it is |
+|---|---|---|
+| `MIGRATION_LOCK_TIMEOUT_MS` | `3000` | How long a migration statement may wait for a lock before the attempt rolls back and is retried (100 to 600000). |
+| `MIGRATION_STATEMENT_TIMEOUT_MS` | `900000` (15 minutes) | How long one pre-deploy statement may run; `0` means no limit. |
+| `POST_MIGRATION_STATEMENT_TIMEOUT_MS` | `14400000` (four hours) | How long one post-deploy step may run; `0` means no limit. |
+| `RUN_POST_MIGRATIONS` | `RUN_MIGRATIONS` | Whether the API applies post-deploy steps and schedules background migrations itself. With several replicas leave it `false` and run `migrate --post` once every replica runs the new release. |
+| `BACKGROUND_MIGRATIONS_ENABLED` | `true` | Whether this replica runs background migration batches. |
+| `BACKGROUND_MIGRATION_MAX_REPLICATION_LAG_MS` | `10000` | Batches wait while a standby's replay lag is over this; `0` turns the check off. |
+| `BACKGROUND_MIGRATION_MAX_TRANSACTION_AGE_MS` | `300000` | Batches wait while a transaction has been open longer than this; `0` turns the check off. |
+| `BACKGROUND_MIGRATION_BATCH_TIMEOUT_MS` | `30000` | Statement timeout for one batch. |
+
+## Maintenance, keys and embeddings
+
+| Variable | Default | What it is |
+|---|---|---|
+| `OCI_READ_ONLY` | `false` | Emergency read-only mode: every change is refused until it is unset, regardless of the administrator's setting, and it cannot be turned off from the admin pages. Set it on every replica and worker. See [Maintenance](/docs/administration/maintenance). |
+| `OCI_READ_ONLY_REASON` | unset | Shown to people while `OCI_READ_ONLY` is on. Up to 500 characters. |
+| `ENCRYPTION_KEYS_PREVIOUS` | unset | Earlier values of `ENCRYPTION_KEY`, separated by commas, each at least 32 characters, used only to decrypt values not yet re-encrypted. See [Rotating `ENCRYPTION_KEY`](/docs/self-hosting/security#rotating-encryption_key). |
+| `EMBEDDING_GENERATION_GRACE_MINUTES` | `1440` (a day) | How long a replaced embeddings generation is kept after search moves to the new one, before its table is dropped. |
+| `EMBEDDING_REBUILD_PAUSE_MS` | `250` | Pause after every 64 passages a rebuild embeds, to spread the provider's load. |
 
 ## First administrator
 
@@ -58,11 +114,20 @@ These only seed the values administrators see. A value saved in the dashboard wi
 | `RATE_LIMIT_MAX_CONCURRENT_STREAMS` | per role (admin 10, others 3, restricted 1) | Roles & access |
 | `RATE_LIMIT_CHAT_PER_MINUTE` | per role (admin 120, others 30, restricted 10) | Roles & access |
 | `RATE_LIMIT_UPLOAD_PER_MINUTE` | per role (admin 120, others 20, restricted 5) | Roles & access |
-| `RATE_LIMIT_AUTH_PER_MINUTE` | `10` | Roles & access → Instance-wide |
+| `RATE_LIMIT_AUTH_PER_MINUTE` | `10` | Roles & access → Instance-wide → Sign-in attempts per minute. From v0.11 it counts **failed** sign-ins per account. |
 | `QUOTA_RESERVE_COST_MICROS` | `250000` ($0.25) | Roles & access → Budget held per response |
 | `QUOTA_RESERVE_TOKENS` | `4000` | Roles & access → Tokens held per response |
 
 A rate-limit variable sets the value for every role.
+
+## Sign-in limits
+
+These two have no dashboard setting. See [Sign-in attempts](/docs/administration/budgets-and-limits#sign-in-attempts).
+
+| Variable | Default | What it is |
+|---|---|---|
+| `RATE_LIMIT_AUTH_ADDRESS_PER_MINUTE` | `300` | Failed sign-ins (and every sign-up, password reset and verification request) per client address per minute. Every limited request from one address, successful or not, is also capped at ten times this. |
+| `RATE_LIMIT_AUTH_SSO_PROVIDER_PER_MINUTE` | `3000` | Single sign-on callbacks per identity provider per minute, from all addresses together. |
 
 ## Observability
 
@@ -80,7 +145,7 @@ The web image (Caddy) reads a few variables of its own; the API reads none of th
 
 | Variable | Default | What it is |
 |---|---|---|
-| `API_UPSTREAM`, `API_UPSTREAM_HOST`, `API_UPSTREAM_PORT` | `api:3000`, `api`, `3000` | Where Caddy forwards `/api/*`; the host name is re-resolved every ten seconds to find API replicas. On Kubernetes, see [Kubernetes](/docs/self-hosting/kubernetes). |
+| `API_UPSTREAM`, `API_UPSTREAM_HOST`, `API_UPSTREAM_PORT` | `api:3000`, `api`, `3000` | Where Caddy forwards `/api/*`; the host name is re-resolved every 2 seconds to find API replicas. On Kubernetes, see [Kubernetes](/docs/self-hosting/kubernetes). |
 | `TRUSTED_PROXIES` | unset (trust nothing) | The addresses of a load balancer, reverse proxy or ingress in front of the web container, separated by spaces (not commas): IP addresses, CIDR ranges, or `private_ranges`. The real client address is then read from the `X-Forwarded-For` they send. See [Behind another proxy or an ingress](/docs/self-hosting/reverse-proxy#behind-another-proxy-or-an-ingress). The bundled Compose file passes it through from `docker/.env`. |
 
 ## Bundled Compose stack only
@@ -89,7 +154,10 @@ The web image (Caddy) reads a few variables of its own; the API reads none of th
 |---|---|---|
 | `POSTGRES_PASSWORD` | required | Password for the bundled PostgreSQL; used to build `DATABASE_URL`. |
 | `OCI_PORT` | `8080` | Host port for the web container. |
-| `OCI_API_IMAGE`, `OCI_WEB_IMAGE` | local builds | Released images to run, such as `ghcr.io/ncecere/open-chat-interface/api:v0.10.2`. Pin both to one release and start with `--no-build`. |
+| `OCI_API_IMAGE`, `OCI_WEB_IMAGE` | local builds | Released images to run, such as `ghcr.io/ncecere/open-chat-interface/api:v0.11.0`. Pin both to one release and start with `--no-build`. |
+| `OCI_API_ROLE` | `all` | The `api` service's `OCI_ROLE`. Set `web` when the optional `worker` service runs the background jobs. |
 | `MINIO_USER`, `MINIO_PASSWORD` | `oci`, `oci_dev_password` | The optional MinIO container (`--profile s3`). Change them if you use it. |
 
 In the bundled stack `APP_URL` defaults to `http://localhost:8080`, `REDIS_URL` points at the bundled Redis, and the web container reaches the API through `API_UPSTREAM` (`api:3000`).
+
+The bundled Compose file passes only the variables it lists to each container. To set one it does not list (`ENCRYPTION_KEYS_PREVIOUS`, `RATE_LIMIT_AUTH_ADDRESS_PER_MINUTE` or `REDIS_COMMAND_TIMEOUT_MS`, for example), add it to the `environment` of the `api` service (and `worker`, if you run it), for instance in a `compose.override.yaml` next to `compose.yaml`.
