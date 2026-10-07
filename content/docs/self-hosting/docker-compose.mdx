@@ -27,7 +27,7 @@ The repository's `docker/compose.yaml` is the supported deployment. It runs:
 ```sh
 git clone https://github.com/ncecere/open-chat-interface.git
 cd open-chat-interface
-git checkout v0.11.0
+git checkout v0.11.1
 cd docker
 ```
 
@@ -47,8 +47,8 @@ INITIAL_ADMIN_EMAIL=morgan.lee@example.edu
 # Leave INITIAL_ADMIN_PASSWORD out to get a one-time password in the API's log.
 # Behind a load balancer or another proxy: its addresses (see Reverse proxy).
 # TRUSTED_PROXIES=10.0.0.0/8
-OCI_API_IMAGE=ghcr.io/ncecere/open-chat-interface/api:v0.11.0
-OCI_WEB_IMAGE=ghcr.io/ncecere/open-chat-interface/web:v0.11.0
+OCI_API_IMAGE=ghcr.io/ncecere/open-chat-interface/api:v0.11.1
+OCI_WEB_IMAGE=ghcr.io/ncecere/open-chat-interface/web:v0.11.1
 ```
 
 `APP_URL` must be the address people use, through your proxy. See [Configuration](/docs/self-hosting/configuration) for everything else. Without `INITIAL_ADMIN_PASSWORD`, the API prints a one-time password for the first administrator to its log (`docker compose logs api`) the first time it starts; a password you do set must be at least 12 characters. Unset variables are left out of the containers, and an empty optional variable counts as unset.

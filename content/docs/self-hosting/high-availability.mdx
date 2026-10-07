@@ -151,7 +151,7 @@ stringData:
   INITIAL_ADMIN_EMAIL: morgan.lee@example.edu
 ```
 
-The values, every key as in the chart's `values.yaml` for 0.11.0:
+The values, every key as in the chart's `values.yaml` for 0.11.1:
 
 ```yaml title="values-ha.yaml"
 secrets:
@@ -220,7 +220,7 @@ metrics:
 ```sh
 kubectl create namespace oci
 kubectl apply -f oci-runtime.yaml
-helm install oci oci://ghcr.io/ncecere/charts/open-chat-interface --version 0.11.0 \
+helm install oci oci://ghcr.io/ncecere/charts/open-chat-interface --version 0.11.1 \
   -n oci -f values-ha.yaml
 ```
 

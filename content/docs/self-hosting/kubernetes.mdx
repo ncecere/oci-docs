@@ -3,7 +3,7 @@ title: Kubernetes with Helm
 description: Install Open Chat Interface on Kubernetes with its Helm chart, the values that matter, how upgrades and draining are wired, and what the chart leaves to you.
 ---
 
-From v0.11, Open Chat Interface has a Helm chart, released with the application: chart `0.11.0` deploys images `v0.11.0`. It is published to GHCR as an OCI artifact, `oci://ghcr.io/ncecere/charts/open-chat-interface`, and lives in the repository at `deploy/helm/open-chat-interface`.
+From v0.11, Open Chat Interface has a Helm chart, released with the application: chart `0.11.1` deploys images `v0.11.1`. It is published to GHCR as an OCI artifact, `oci://ghcr.io/ncecere/charts/open-chat-interface`, and lives in the repository at `deploy/helm/open-chat-interface`.
 
 <Callout title="PostgreSQL, Redis and S3 are yours">
   The chart bundles no database and no Redis. Run them with an operator (CloudNativePG, Crunchy, Zalando/Patroni; a Redis operator with Sentinel) or use managed services. For a layout with several replicas of everything, see [High-availability deployment](/docs/self-hosting/high-availability).
@@ -52,7 +52,7 @@ kubectl -n oci create secret generic oci-runtime \
 ### Install the chart
 
 ```sh
-helm install oci oci://ghcr.io/ncecere/charts/open-chat-interface --version 0.11.0 -n oci \
+helm install oci oci://ghcr.io/ncecere/charts/open-chat-interface --version 0.11.1 -n oci \
   --set secrets.existingSecret=oci-runtime \
   --set config.appUrl=https://chat.example.edu \
   --set web.trustedProxies='10.244.0.0/16' \
@@ -60,7 +60,7 @@ helm install oci oci://ghcr.io/ncecere/charts/open-chat-interface --version 0.11
   --set 'ingress.hosts[0].host=chat.example.edu'
 ```
 
-`helm show values oci://ghcr.io/ncecere/charts/open-chat-interface --version 0.11.0` prints every value with its comment. From a checkout of the repository, use the path `deploy/helm/open-chat-interface` instead. The images are public, so no pull secret is needed.
+`helm show values oci://ghcr.io/ncecere/charts/open-chat-interface --version 0.11.1` prints every value with its comment. From a checkout of the repository, use the path `deploy/helm/open-chat-interface` instead. The images are public, so no pull secret is needed.
 
 With `INITIAL_ADMIN_PASSWORD` unset, a one-time password for the first administrator is printed to the API log on the first start: `kubectl -n oci logs deploy/oci-open-chat-interface-api`.
 

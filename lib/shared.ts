@@ -16,7 +16,7 @@ export const gitConfig = {
 export const productRepo = 'https://github.com/ncecere/open-chat-interface';
 
 /** The OCI release these docs describe. */
-export const ociVersion = 'v0.11.0';
+export const ociVersion = 'v0.11.1';
 
 export const docsRepoUrl = `https://github.com/${gitConfig.user}/${gitConfig.repo}`;
 

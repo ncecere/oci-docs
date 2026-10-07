@@ -172,6 +172,35 @@ Images can be rolled back by setting `OCI_API_IMAGE` and `OCI_WEB_IMAGE` to the 
 
 ## Per-version notes
 
+### To v0.11.1
+
+From v0.11.0, with no downtime, in the order above: back up, `migrate`, replace the replicas one at a time, then `migrate --post`. A single instance with `RUN_MIGRATIONS=true` does all of it on its own; the Helm chart does it with hooks (chart `0.11.1`). See [v0.11.1](/docs/releases/v0-11-1).
+
+**Pre-deploy migrations**, all fast and none of which rewrites a large table:
+
+| Migration | What it does |
+|---|---|
+| `0042` | Marks existing SSO providers as domain-verified (one `UPDATE` on a small table), so sign-in works with account linking off: OCI now enforces linking itself. |
+| `0043` | Adds the *code* artifact kind. |
+| `0044` | Two columns that let a failed scheduled report be tried again. |
+| `0045` | A delete trigger that keeps a stored file while another conversation still uses it. No schema change. |
+
+**Post-deploy steps**, after every replica runs v0.11.1:
+
+| Step | What it builds |
+|---|---|
+| `0007`, `0008`, `0010` | Indexes on the audit log. |
+| `0009` | Turns on code artifacts. Until it has run, code stays in the reply, so a replica of the previous release never sees the new kind. |
+| `0011`, `0012` | Indexes on stored files, for the delete trigger. Until they have run, deleting a file scans the attachments table. |
+
+**Background migration.** `migrate --post` schedules `0.11.attachment-own-rows`, which gives forks and edits that share their original's files their own copies. It runs on the API replicas (or the worker) and shows on **System health → Background work**. Nothing waits for it, and until it finishes every delete protects those files anyway.
+
+<Callout type="warn" title="Rolling back after the background migration">
+  Rolling back to v0.11.0 after it has run makes new forks share their files again. The reset SQL is in the repository's `docs/dev/database.md`, under "Files in forks and edits". Take the usual backup first.
+</Callout>
+
+**The optional accent index** for message-text search is not built by `migrate --post`; see [v0.11.1](/docs/releases/v0-11-1#known-limitations).
+
 ### To v0.11.0
 
 From v0.10.x, with no downtime, in the order above: back up and run the preflight, `migrate`, replace the replicas one at a time, then `migrate --post`. A single instance with `RUN_MIGRATIONS=true` does all of it on its own; the Helm chart does it with hooks. See [v0.11.0](/docs/releases/v0-11-0).

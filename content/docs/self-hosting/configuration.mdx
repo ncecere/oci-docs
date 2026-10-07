@@ -154,7 +154,7 @@ The web image (Caddy) reads a few variables of its own; the API reads none of th
 |---|---|---|
 | `POSTGRES_PASSWORD` | required | Password for the bundled PostgreSQL; used to build `DATABASE_URL`. |
 | `OCI_PORT` | `8080` | Host port for the web container. |
-| `OCI_API_IMAGE`, `OCI_WEB_IMAGE` | local builds | Released images to run, such as `ghcr.io/ncecere/open-chat-interface/api:v0.11.0`. Pin both to one release and start with `--no-build`. |
+| `OCI_API_IMAGE`, `OCI_WEB_IMAGE` | local builds | Released images to run, such as `ghcr.io/ncecere/open-chat-interface/api:v0.11.1`. Pin both to one release and start with `--no-build`. |
 | `OCI_API_ROLE` | `all` | The `api` service's `OCI_ROLE`. Set `web` when the optional `worker` service runs the background jobs. |
 | `MINIO_USER`, `MINIO_PASSWORD` | `oci`, `oci_dev_password` | The optional MinIO container (`--profile s3`). Change them if you use it. |
 

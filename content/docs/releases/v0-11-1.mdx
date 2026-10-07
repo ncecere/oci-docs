@@ -1,0 +1,41 @@
+---
+title: v0.11.1
+description: Fixes from nine QA walks of v0.11.0, including a data-loss bug in forks and edits, four small migrations, and a background migration that gives forks their own copies of files.
+---
+
+Released 2026-10-07. v0.11.1 fixes the 331 issues that nine rounds of testing found in v0.11.0: 10 serious ones (P1), 62 important (P2) and 259 smaller (P3). There are no new features. Upgrading from v0.11.0 is recommended, mainly for the first fix below.
+
+## The one that lost data
+
+**Deleting a conversation deleted the files of the forks and edits made from it.** In v0.11.0 a fork or an edit pointed at the same stored files as the conversation it came from, so removing the original removed the files from every copy. Now each fork and edit has its own file records, and a stored file is kept while any conversation still uses it. A background migration, `0.11.attachment-own-rows`, gives the forks and edits you already have their own copies; **System health → Background work** shows its progress, and until it finishes every delete protects them anyway.
+
+## What else changed
+
+The full list is in the [changelog](https://github.com/ncecere/open-chat-interface/blob/v0.11.1/CHANGELOG.md). In short:
+
+- **Acceptable-use policy.** It is now enforced on the server: while a policy is published, a person who has not accepted it is refused writes with `403 POLICY_ACCEPTANCE_REQUIRED`, not only hidden behind the browser's dialog.
+- **Audit log.** Banning and unbanning are recorded as `user.ban` and `user.unban`.
+- **Sign-in and accounts.** Password reset ends every session; emailed invitations refuse existing accounts and duplicates; failed reset and verification emails are retried.
+- **Database outages.** A message sent while the database is unreachable waits up to 10 seconds, and if it still cannot be saved your text goes back to the composer. Stop during an outage is retried.
+- **Chat.** Editing a question keeps its files, a removed file shows as removed and the model is told, mathematics no longer swallows currency amounts, and short HTML and Markdown answers stay in the reply.
+- **Forms and dialogs.** Focus rings show on filled buttons, read-only dialogs disable their controls, and form and error messages were made consistent.
+- **Security.** Log lines no longer carry query parameters or session tokens, and Better Auth's own admin endpoints (`/api/auth/admin/*`) answer 404, so administrators cannot open a session as another person.
+
+## Behaviour changes to know about
+
+- **API clients and the acceptable-use policy.** An API-only client whose person never accepted the published policy now gets `403` on writes. Sign in once in the browser and accept it.
+- **Webhooks subscribed to exactly `user.update`** no longer receive bans and unbans; those are now `user.ban` and `user.unban`.
+- **Storage.** A fork's or edit's copy of a file counts against the person's storage allowance, and Settings lists one line per owning conversation.
+- **Publishing a policy** now asks first, and "Publish immediately" starts off.
+- **Administrators cannot impersonate.** There is no longer a way to open a session as another person.
+
+## Upgrading
+
+From v0.11.0, with no downtime. See the [v0.11.1 upgrade notes](/docs/self-hosting/upgrades#to-v0111): back up, run `migrate` (migrations `0042` to `0045`, all fast and none of which rewrites a large table), replace the replicas one at a time, then run `migrate --post` once every replica runs v0.11.1. A single instance with `RUN_MIGRATIONS=true`, and the Helm chart with its hooks, do all of it on their own. The Helm chart `0.11.1` deploys images `v0.11.1`; it differs from `0.11.0` only in its version.
+
+## Known limitations
+
+- **Message-text search is exact about accents** unless you build an optional index by hand; conversation titles always ignore accents. Building that index took 339 seconds on 300,000 messages in the upgrade test, so it is not part of `migrate --post`. The repository's operations guide, "Accent-insensitive conversation search", has the steps.
+- **SAML.** The service-provider metadata says `WantAssertionsSigned="false"` even for a provider that requires signed assertions (an upstream bug), and a provider's certificate and credentials cannot be edited after it is created.
+- **Emailed invitations** still ask the person to verify their address.
+- **A project search that matches nothing** can still send the model some passages, and a conversation open in a second tab keeps showing a deleted file until it is reloaded.
