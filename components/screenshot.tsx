@@ -1,5 +1,6 @@
 import slots from '@/lib/screenshot-slots.json';
 import imported from '@/lib/screenshots.json';
+import { ScreenshotZoom } from './screenshot-zoom';
 
 type SlotName = keyof typeof slots;
 type Slot = { alt: string; files?: string[]; phone?: boolean; hold?: string };
@@ -11,6 +12,8 @@ type Imported = Record<string, { src: string; width: number; height: number }>;
  * renders a clearly marked placeholder, so a page never shows a broken image.
  * Screenshots come only from the fictional "Example University" demo instance.
  * Phone screenshots (`"phone": true`) are shown narrower and centred.
+ * An imported image opens enlarged on click (ScreenshotZoom, the only client
+ * component here); the <img> itself is still rendered on the server.
  */
 export function Screenshot({ slot, caption }: { slot: SlotName; caption?: string }) {
   const meta = slots[slot] as Slot;
@@ -20,16 +23,18 @@ export function Screenshot({ slot, caption }: { slot: SlotName; caption?: string
   if (img) {
     return (
       <figure className={`not-prose my-6 ${phone ? 'mx-auto max-w-[22rem]' : ''}`}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- static export, pre-optimised WebP */}
-        <img
-          src={img.src}
-          alt={meta.alt}
-          width={img.width}
-          height={img.height}
-          loading="lazy"
-          decoding="async"
-          className="h-auto w-full rounded-card border border-fd-border bg-fd-card shadow-brand-2"
-        />
+        <ScreenshotZoom src={img.src} width={img.width} height={img.height} alt={meta.alt} caption={caption}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- static export, pre-optimised WebP */}
+          <img
+            src={img.src}
+            alt={meta.alt}
+            width={img.width}
+            height={img.height}
+            loading="lazy"
+            decoding="async"
+            className="h-auto w-full rounded-card border border-fd-border bg-fd-card shadow-brand-2"
+          />
+        </ScreenshotZoom>
         {caption ? (
           <figcaption className="mt-2 text-center text-sm text-fd-muted-foreground">{caption}</figcaption>
         ) : null}

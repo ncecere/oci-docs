@@ -55,6 +55,11 @@ html > body[data-scroll-locked] {
   color: var(--oci-link-hover);
 }
 
+/* Lock page scroll while a screenshot is enlarged (components/screenshot-zoom.tsx); the gutter stays, so nothing shifts. */
+html:has(dialog[data-zoom][open]) {
+  overflow: hidden;
+}
+
 /* A visible focus indicator everywhere (WCAG 2.4.7). */
 :focus-visible {
   outline: 2px solid var(--oci-focus-ring);
