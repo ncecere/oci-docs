@@ -229,13 +229,13 @@
     "files": [
       "admin-overview"
     ],
-    "alt": "Admin → Overview: the setup checklist with \"5 of 6 required steps complete\", Set up email delivery marked Needs attention, optional items Not set up, and totals for users, threads, messages and storage below."
+    "alt": "Admin → Overview: the setup checklist with \"5 of 6 required steps complete\", Set up email delivery marked Needs attention, optional items Not set up, and totals for users, conversations, messages and storage below."
   },
   "admin-providers": {
     "files": [
       "admin-providers"
     ],
-    "alt": "Providers & Models, Providers tab: configured providers with their kind, whether a key is set, and Discover models."
+    "alt": "Providers & Models, Providers tab: configured providers with their kind, whether a key is set and Discover models, and the Capacity table of waiting and streaming replies below."
   },
   "admin-models": {
     "files": [
@@ -247,7 +247,7 @@
     "files": [
       "admin-model-limits"
     ],
-    "alt": "The Edit model dialog for \"Chat model\": provider, lab, upstream model ID, display name, slug and description above Context window 131072 and Max output 16384, then sort order, prices and capabilities."
+    "alt": "The Edit model dialog for \"Chat model\": provider, lab, upstream model ID, display name, slug and description above Context window 131072 and Max output 16384, then sort order and prices."
   },
   "admin-embeddings": {
     "files": [
@@ -331,7 +331,7 @@
     "files": [
       "admin-acceptable-use"
     ],
-    "alt": "Sign-in & security → Acceptable use: version 2 of \"Example University acceptable use of AI chat\" in force with its acceptances, version 1 superseded, and New version."
+    "alt": "Sign-in & security → Acceptable use: version 2 of \"Acceptable use of the AI assistant\" in force with the number of people who accepted it, version 1 superseded, and New version."
   },
   "admin-announcements": {
     "files": [
@@ -379,7 +379,7 @@
     "files": [
       "admin-reports"
     ],
-    "alt": "Insights → Reports: a monthly usage summary with its recipients, last send and Send due now."
+    "alt": "Insights → Reports: a monthly usage summary with its recipients, the next and last send, and the Send now, Edit, Pause and Delete buttons, with Send due now above the list."
   },
   "admin-compliance": {
     "files": [
@@ -415,7 +415,7 @@
     "files": [
       "admin-general-settings"
     ],
-    "alt": "Appearance & features → General: the default system prompt, default reasoning level, tool step limit, Summarise long conversations, Editorial diagrams and the feature switches."
+    "alt": "Appearance & features → General: the default system prompt, default reasoning level, tool step limit and the Summarise long conversations switch."
   },
   "admin-storage": {
     "files": [
