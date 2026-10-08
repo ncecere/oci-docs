@@ -301,19 +301,19 @@
     "files": [
       "admin-invitations"
     ],
-    "alt": "People → Invitations: pending invitations with their role and expiry, and a form to create one."
+    "alt": "People → Invitations: pending invitations with their role, expiry and when each was emailed, and the Create invitation button."
   },
   "admin-authentication": {
     "files": [
       "admin-authentication"
     ],
-    "alt": "Sign-in & security → Authentication: registration mode, email verification, local sign-in, session length, and the Single sign-on section listing providers."
+    "alt": "Sign-in & security → Authentication, scrolled: the local sign-in switch, session length, and the Single sign-on section with one OpenID Connect provider, its application redirect details and its role mappings."
   },
   "admin-sso-provider-form": {
     "files": [
       "admin-sso-provider-form"
     ],
-    "alt": "The form for a single sign-on provider: provider type and ID, OIDC settings, default role, allowed email domains, just-in-time provisioning, trust for account linking, role mappings and Require a matching role."
+    "alt": "The Edit dialog for an OpenID Connect provider, scrolled to its switches (Provider enabled, Just-in-time provisioning, Trust for account linking), three group mappings from claims to roles, and Require a matching role with its message."
   },
   "admin-usage-budgets": {
     "files": [
