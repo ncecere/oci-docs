@@ -26,7 +26,7 @@ The API checks its environment at start and refuses to run, listing every proble
 |---|---|---|
 | `NODE_ENV` | `development` | `production` in deployments (the images set it). |
 | `API_PORT` | `3000` | The API's port. |
-| `AUTH_TRUSTED_ORIGINS` | none | Comma-separated origins of identity providers on private networks, such as `https://idp.internal.example.edu`. Without it, OIDC and SAML discovery to private addresses is refused. |
+| `AUTH_TRUSTED_ORIGINS` | none | Comma-separated origins of identity providers on private networks, such as `https://idp.internal.example.edu`. Without it, OIDC discovery to private addresses is refused. |
 | `RUN_MIGRATIONS` | `true` | Apply migrations and seed defaults on start. Set `false` when a separate job runs migrations; the API then refuses to start unless the latest migration is recorded. |
 | `OCI_ROLE` | `all` | `all` serves the API and runs background jobs; `web` serves the API only; `worker` runs background jobs and serves only health and metrics. See [Process roles](/docs/self-hosting/high-availability#process-roles). |
 | `SHUTDOWN_DRAIN_TIMEOUT_MS` | `25000` | After `SIGTERM`, how long replies in progress may finish before the rest are saved as interrupted (0 to 3600000). Keep it below the orchestrator's grace period. See [draining](/docs/self-hosting/upgrades#replacing-replicas-draining). |
@@ -154,7 +154,7 @@ The web image (Caddy) reads a few variables of its own; the API reads none of th
 |---|---|---|
 | `POSTGRES_PASSWORD` | required | Password for the bundled PostgreSQL; used to build `DATABASE_URL`. |
 | `OCI_PORT` | `8080` | Host port for the web container. |
-| `OCI_API_IMAGE`, `OCI_WEB_IMAGE` | local builds | Released images to run, such as `ghcr.io/ncecere/open-chat-interface/api:v0.11.1`. Pin both to one release and start with `--no-build`. |
+| `OCI_API_IMAGE`, `OCI_WEB_IMAGE` | local builds | Released images to run, such as `ghcr.io/ncecere/open-chat-interface/api:v0.12.0`. Pin both to one release and start with `--no-build`. |
 | `OCI_API_ROLE` | `all` | The `api` service's `OCI_ROLE`. Set `web` when the optional `worker` service runs the background jobs. |
 | `MINIO_USER`, `MINIO_PASSWORD` | `oci`, `oci_dev_password` | The optional MinIO container (`--profile s3`). Change them if you use it. |
 

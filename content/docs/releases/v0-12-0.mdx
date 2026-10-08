@@ -1,0 +1,36 @@
+---
+title: v0.12.0
+description: SAML sign-in is removed (OpenID Connect stays), and an invitation that was emailed verifies the address when it is accepted. One small migration.
+---
+
+Released 2026-10-07. Two changes, both to how people sign in. Read the SAML notes first if your instance has a SAML provider.
+
+## SAML sign-in is removed
+
+OCI no longer supports SAML 2.0. OpenID Connect stays, and most identity providers (Microsoft Entra ID, Okta, Google Workspace, Keycloak, AD FS) offer it as well, so a move is a matter of registering OCI as an OIDC application. SAML's service-provider metadata declared `WantAssertionsSigned="false"` because of a bug in the sign-in library, a provider's certificate could not be edited, and the protocol was hard to test and had a long list of defects.
+
+What happens to an instance that has a SAML provider:
+
+- **The provider stays in the database, untouched.** It is not offered on the sign-in page, cannot be enabled or edited, and shows a notice on **Authentication** with only a **Delete** action. Because nothing is removed, rolling back to v0.11.1 restores it.
+- **Adding one is refused**, and every `/api/auth/sso/saml2/*` address answers 404.
+- **`migrate` refuses to upgrade, changing nothing, when SAML is the only way anybody can sign in**: an enabled SAML provider, local sign-in off and no enabled OIDC provider. Nobody would be able to sign in afterwards. Turn on local sign-in, or add an OIDC provider, on the release you are running, then run `migrate` again.
+
+[Identity and sign-in](/docs/administration/identity#saml-is-not-supported) has the steps for moving a SAML provider to OIDC.
+
+## An emailed invitation verifies the address
+
+When you invite an address and the email is delivered, the person who accepts the invitation for that address gets an account whose email is already verified, and is not sent a verification email: the email that carried the link showed they read that mailbox.
+
+- **The link is no longer shown to you** when the email was delivered. If you could see it, you could accept it yourself for somebody else's address and get a verified account for it. `POST /api/admin/invites` returns `{ id, emailDelivered: true }` without `url` in that case, and the dialog says the link was sent only to that address. If the email does not arrive, revoke the invitation and create a new one.
+- **Everything else is as before.** An invitation with no address, one whose email was not delivered (including when email is not configured; its link is shown to share by hand), and one created before this release all still ask the person to verify.
+- The Invitations list shows **Emailed** with the time it was sent, and `GET /api/admin/invites` includes `emailedAt`.
+
+## Upgrading
+
+From v0.11.x, with no downtime. See the [v0.12.0 upgrade notes](/docs/self-hosting/upgrades#to-v0120): back up, run `migrate` (migration `0046`, one nullable column, no table rewrite), replace the replicas one at a time. There is no post-deploy step and no background migration. A single instance with `RUN_MIGRATIONS=true`, and the Helm chart with its hooks, do all of it on their own. The Helm chart `0.12.0` deploys images `v0.12.0`.
+
+## Known limitations
+
+- **A SAML provider created earlier cannot be disabled or edited, only deleted.**
+- **The read-only preflight (`upgrade-check`) does not report the SAML situation.** Only `migrate` refuses.
+- **The v0.11.1 limitations about message-text search and project search still apply.**

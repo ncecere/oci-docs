@@ -82,6 +82,10 @@ Select rows and the action bar appears: apply a role, sign the selection out, or
 
 Links expire, and an unused one can be revoked. Invitations are emailed when [email delivery](/docs/administration/instance-settings#email-delivery) is set up; without SMTP you can still create one and deliver the link yourself.
 
+When you create an invitation for an address and the email is delivered, the link goes only to that address and is **not shown to you**. Accepting it for that address shows the person reads that mailbox, so the account is created with its email already verified, and no verification email is sent. The list shows **Emailed** with the time it was sent. The link is withheld on purpose: if you could see it, you could accept it yourself for somebody else's address and get a verified account for it. If the email does not arrive, revoke the invitation and create a new one.
+
+In every other case the person verifies their address as any other account does (when email verification is required): an invitation with no address, one whose email was not sent or failed (then you are shown the link to share by hand, with a warning), and any invitation created before v0.12.0.
+
 ## Sessions after a change
 
 A role change, ban or sign-out applies on the person's next request, on every replica: from v0.11 sessions are read from the database on every request rather than cached. (Before v0.11 it could take up to five minutes.)

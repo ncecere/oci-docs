@@ -1,9 +1,9 @@
 ---
 title: Identity and sign-in
-description: Local accounts and registration, email verification, sessions, OIDC and SAML providers, just-in-time accounts, domain allowlists, claim-to-role mapping and break-glass access.
+description: Local accounts and registration, email verification, sessions, OIDC providers, just-in-time accounts, domain allowlists, claim-to-role mapping and break-glass access.
 ---
 
-Every way of signing in is on one page, **Sign-in & security → Authentication** (`/admin/settings/authentication`): registration, local email and password sign-in, email verification, session length and, under **Single sign-on**, OIDC and SAML providers.
+Every way of signing in is on one page, **Sign-in & security → Authentication** (`/admin/settings/authentication`): registration, local email and password sign-in, email verification, session length and, under **Single sign-on**, OIDC providers.
 
 <Screenshot slot="admin-authentication" />
 
@@ -19,20 +19,31 @@ Failed sign-ins are limited to **Sign-in attempts per minute** per account (10 b
 
 When required, a new local account gets no session until its address is verified. Missing or failing SMTP does **not** switch the requirement off: new accounts simply stay unverified and cannot sign in. Set up and test [email delivery](/docs/administration/instance-settings#email-delivery) before requiring it. After delivery recovers, people can use **Resend verification email**; they do not need a new account or invitation.
 
+An account made from an invitation that was **emailed** to an address, and accepted for that address, is created already verified and is sent no verification email: the email that carried the link showed the person reads that mailbox. Every other account verifies as above, including one made from an invitation with no address, one that could not be emailed (its link is then shared by hand), and one created before v0.12.0. See [Invitations](/docs/administration/people#invitations).
+
 Turning verification off lets local accounts sign in without proof of their address, and marks new accounts verified. Turning it on later does not revoke accounts or sessions created meanwhile.
 
 ## Single sign-on
 
-OIDC and SAML 2.0 are both supported. Add a provider under **Single sign-on**; once saved, the provider shows the callback URL (and, for SAML, the metadata URL) to register with your identity provider:
+OpenID Connect (OIDC) is the supported protocol; SAML was removed after v0.11.1 (see [SAML is not supported](#saml-is-not-supported)). Add a provider under **Single sign-on**; once saved, the provider shows the callback URL to register with your identity provider, `APP_URL/api/auth/sso/callback/<provider ID>`. The form asks for the issuer URL, client ID and secret, scopes and PKCE; discovery defaults to the issuer's `/.well-known/openid-configuration`.
 
-| Protocol | Callback | Also |
-|---|---|---|
-| OIDC | `APP_URL/api/auth/sso/callback/<provider ID>` | Issuer URL, client ID and secret, scopes, PKCE; discovery defaults to the issuer's `/.well-known/openid-configuration`. |
-| SAML | `APP_URL/api/auth/sso/saml2/sp/acs/<provider ID>` | IdP entity ID, single sign-on URL, signing certificate, signed assertions, algorithms. Metadata at `APP_URL/api/auth/sso/saml2/sp/metadata?providerId=<provider ID>`. |
-
-The **Provider ID** (lowercase letters, numbers and dashes) and the protocol cannot be changed later. Client secrets and certificates are submitted once and never returned. An identity provider on a private network must be listed in `AUTH_TRUSTED_ORIGINS` ([Configuration](/docs/self-hosting/configuration)), or discovery is refused.
+The **Provider ID** (lowercase letters, numbers and dashes) cannot be changed later. Client secrets are submitted once and never returned. An identity provider on a private network must be listed in `AUTH_TRUSTED_ORIGINS` ([Configuration](/docs/self-hosting/configuration)), or discovery is refused.
 
 <Screenshot slot="admin-sso-provider-form" />
+
+### SAML is not supported
+
+SAML 2.0 sign-in was removed after v0.11.1. OCI cannot add a SAML provider, and the SAML addresses (`/api/auth/sso/saml2/*`) answer 404. Most identity providers (Microsoft Entra ID, Okta, Google Workspace, Keycloak, Shibboleth with its OIDC plugin, AD FS) offer OpenID Connect too, so moving over is a matter of registering OCI there as an OIDC application.
+
+A SAML provider created earlier **stays in the list** with a notice, but it is inert: it is not offered on the sign-in page, cannot be enabled or edited, and only **Delete** is available. Nothing is removed from the database, so rolling back to v0.11.1 restores it.
+
+To move over:
+
+1. Add an OIDC provider for the same identity provider, with the same **Allowed email domains** and role mappings, and **Trust for account linking** set as it was.
+2. Sign in through it as a real person and check the role they get (see [Verifying a provider](#verifying-a-provider)). Accounts that signed in through SAML keep their data; because the new provider is a different sign-in method, people whose address matches an existing account are linked only if **Trust for account linking** is on.
+3. Delete the SAML provider.
+
+If SAML was the only way anybody could sign in (local sign-in off and no OIDC provider), `migrate` refuses to upgrade and changes nothing, so nobody is locked out. Its message says what to do: turn on local sign-in on the **Authentication** page, or add an OIDC provider on the release you are running, then run `migrate` again.
 
 ### Sign-in limits for single sign-on
 
@@ -63,7 +74,7 @@ Claim: attributes.dept   Value: contractors     Role: restricted
 ```
 
 - **Group membership usually arrives as a list**; a rule matches if any entry does.
-- **A dotted path reaches a nested claim**, which SAML and some OIDC providers need.
+- **A dotted path reaches a nested claim**, which some OIDC providers need.
 - **Matching ignores case.**
 - **Where several rules match, the most privileged role wins.** Row order does not matter.
 

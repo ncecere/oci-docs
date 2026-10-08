@@ -21,7 +21,7 @@ description: PostgreSQL 17, optional pgvector, Redis, S3-compatible storage, the
 | `ghcr.io/ncecere/open-chat-interface/web:<version>` | Caddy with the browser app; forwards `/api/*` to the API | 8080 |
 | `ghcr.io/ncecere/open-chat-interface/api:<version>` | Node.js 22 API, as the non-root `oci` user; includes the PostgreSQL 17 client tools for backups and about 10 MB of Noto fonts for PDF export | 3000 |
 
-Each release is tagged `vX.Y.Z` (such as `v0.11.1`), and `latest` follows the newest stable release. Pin both images to the same version; `latest` is for evaluation only. From v0.11 each tag has a **`linux/amd64`** and a **`linux/arm64`** image, and Docker or Kubernetes pulls the one for the machine; earlier releases are `linux/amd64` only.
+Each release is tagged `vX.Y.Z` (such as `v0.12.0`), and `latest` follows the newest stable release. Pin both images to the same version; `latest` is for evaluation only. From v0.11 each tag has a **`linux/amd64`** and a **`linux/arm64`** image, and Docker or Kubernetes pulls the one for the machine; earlier releases are `linux/amd64` only.
 
 The API image also runs background-job workers (`OCI_ROLE=worker`), and a [Helm chart](/docs/self-hosting/kubernetes) is published with each release from v0.11.
 
@@ -39,7 +39,7 @@ OCI's scale harness (`tools/scale` in the repository) has measured it with 6,000
 
 ## Outbound network
 
-The API makes outbound requests to: your model providers, your web search provider, connector MCP servers and their authorization servers, rerank and embedding endpoints, SMTP, S3 (files, backups and compliance export), webhook endpoints, your OIDC/SAML identity provider, and your OpenTelemetry collector. Allow that egress where it is filtered.
+The API makes outbound requests to: your model providers, your web search provider, connector MCP servers and their authorization servers, rerank and embedding endpoints, SMTP, S3 (files, backups and compliance export), webhook endpoints, your OIDC identity provider, and your OpenTelemetry collector. Allow that egress where it is filtered.
 
 ## Browsers
 

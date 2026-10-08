@@ -2,7 +2,7 @@
 
 The user, administrator and operator documentation for [Open Chat Interface (OCI)](https://github.com/ncecere/open-chat-interface), the self-hosted, multi-model AI chat application for institutions. It's published at <https://docs.oci.bitop.dev>; the product's website is <https://oci.bitop.dev>.
 
-These pages are for the people who use OCI, the administrators who run an instance, and the operators who host it. The OCI repository's own `docs/` folder stays the engineering record (design notes, research and the original guides). The docs describe **OCI v0.11.1**.
+These pages are for the people who use OCI, the administrators who run an instance, and the operators who host it. The OCI repository's own `docs/` folder stays the engineering record (design notes, research and the original guides). The docs describe **OCI v0.12.0**.
 
 A static site: [Fumadocs](https://fumadocs.dev) on Next.js with `output: "export"`, TypeScript and Tailwind CSS v4, served by nginx in a container. Search is Fumadocs' built-in static index, searched in the browser. No tracking, no cookies, no external fonts or CDNs: Inter is self-hosted. OCI has no public API, so there is no API reference.
 

@@ -5,6 +5,7 @@ description: Open Chat Interface's releases, what to expect before 1.0, and how 
 
 | Release | Date | In short |
 |---|---|---|
+| [v0.12.0](/docs/releases/v0-12-0) | 2026-10-07 | SAML sign-in removed (OpenID Connect stays; `migrate` refuses only if SAML is the sole way in); an invitation that was emailed verifies the address, and its link is no longer shown to the administrator. One small migration. |
 | [v0.11.1](/docs/releases/v0-11-1) | 2026-10-07 | Fixes from nine QA walks of v0.11.0 (331 issues), including a data-loss bug: deleting a conversation deleted the files of its forks and edits. Four small migrations and one background migration. **Use this instead of v0.11.0.** |
 | [v0.11.0](/docs/releases/v0-11-0) | 2026-10-05 | Always on: upgrades from v0.10 with no downtime (three-phase migrations, a preflight, replicas that drain), PostgreSQL and Redis failover, a worker role, connection pooling, provider capacity with a fair queue, embeddings model changes without a gap, read-only maintenance mode, a Helm chart and `linux/arm64` images, each tested in CI. Migrations `0039` to `0041`, then post-deploy steps `0001` to `0006`. |
 | [v0.10.2](/docs/releases/v0-10-2) | 2026-10-03 | One send starts one conversation; a limit on starting conversations; unused conversations cleaned up after a day. No migrations. **Use this instead of v0.10.1.** |

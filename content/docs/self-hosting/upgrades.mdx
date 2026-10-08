@@ -172,6 +172,26 @@ Images can be rolled back by setting `OCI_API_IMAGE` and `OCI_WEB_IMAGE` to the 
 
 ## Per-version notes
 
+### To v0.12.0
+
+From v0.11.x, with no downtime, in the order above: back up, `migrate`, replace the replicas one at a time. A single instance with `RUN_MIGRATIONS=true` does it on its own; the Helm chart does it with hooks (chart `0.12.0`). See [v0.12.0](/docs/releases/v0-12-0).
+
+**Pre-deploy migration**, fast and not a table rewrite:
+
+| Migration | What it does |
+|---|---|
+| `0046` | Adds the nullable column `invitation.emailed_at`, which records when an invitation's email was delivered. Existing invitations keep NULL and behave as before. |
+
+**Post-deploy steps:** none. **Background migrations:** none.
+
+<Callout type="warn" title="Check for SAML providers before you upgrade">
+  SAML sign-in is removed. If **Authentication → Single sign-on** lists a SAML provider, move it to OpenID Connect first (see [SAML is not supported](/docs/administration/identity#saml-is-not-supported)). The provider is not deleted by the upgrade, but it stops working. If SAML is the only way anybody can sign in (an enabled SAML provider, local sign-in off, no enabled OIDC provider), `migrate` refuses and changes nothing; turn on local sign-in or add an OIDC provider on the release you are running, then run it again.
+</Callout>
+
+**API change.** `POST /api/admin/invites` no longer returns `url` when the invitation email was delivered; the response is `{ id, emailDelivered: true }`. A script that read the link from that response must read it from the email instead. When no email was sent the response carries `url` as before. The provider list's `metadataUrl` field is gone, and `callbackUrl` is `null` for a SAML provider.
+
+**Rolling back** to v0.11.1 is safe: the new column is ignored by the old release, and SAML providers are still in the database, so SAML sign-in works again.
+
 ### To v0.11.1
 
 From v0.11.0, with no downtime, in the order above: back up, `migrate`, replace the replicas one at a time, then `migrate --post`. A single instance with `RUN_MIGRATIONS=true` does all of it on its own; the Helm chart does it with hooks (chart `0.11.1`). See [v0.11.1](/docs/releases/v0-11-1).
