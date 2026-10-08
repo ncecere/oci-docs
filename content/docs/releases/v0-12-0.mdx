@@ -1,9 +1,9 @@
 ---
 title: v0.12.0
-description: SAML sign-in is removed (OpenID Connect stays), and an invitation that was emailed verifies the address when it is accepted. One small migration.
+description: SAML sign-in is removed (OpenID Connect stays), an invitation that was emailed verifies the address when it is accepted, and two stuck-timer bugs are fixed. One small migration.
 ---
 
-Released 2026-10-07. Two changes, both to how people sign in. Read the SAML notes first if your instance has a SAML provider.
+Released 2026-10-07. Two changes to how people sign in, and two small fixes. Read the SAML notes first if your instance has a SAML provider.
 
 ## SAML sign-in is removed
 
@@ -24,6 +24,13 @@ When you invite an address and the email is delivered, the person who accepts th
 - **The link is no longer shown to you** when the email was delivered. If you could see it, you could accept it yourself for somebody else's address and get a verified account for it. `POST /api/admin/invites` returns `{ id, emailDelivered: true }` without `url` in that case, and the dialog says the link was sent only to that address. If the email does not arrive, revoke the invitation and create a new one.
 - **Everything else is as before.** An invitation with no address, one whose email was not delivered (including when email is not configured; its link is shown to share by hand), and one created before this release all still ask the person to verify.
 - The Invitations list shows **Emailed** with the time it was sent, and `GET /api/admin/invites` includes `emailedAt`.
+
+## Two stuck timers are fixed
+
+- **A scheduled-maintenance announcement could stay beside the read-only banner** after the window started, until the next five-minute refresh.
+- **Resend verification email could stay disabled** after its one-minute wait, until something else re-rendered the page.
+
+Both waited on a timer set once for an end time. A timer can fire a millisecond or so before the clock reaches that time; the check then found the time not yet reached, and nothing set another timer. Each now treats its timer, once it has fired, as having reached its time.
 
 ## Upgrading
 
