@@ -1,0 +1,20 @@
+---
+title: v0.12.1
+description: Housekeeping. A table unused since v0.11.0 is dropped by a post-deploy step, and the upgrade preflight words background migrations as System health does. No pre-deploy migration.
+---
+
+Released 2026-10-11. A small release with nothing new for people or administrators.
+
+## For operators
+
+- **The unused `project_file_embedding_failure` table is dropped** by post-deploy step `0013`. v0.11.0 replaced it with `embedding_generation_failure` and kept it only for v0.10 replicas during that upgrade; no release since reads or writes it. `migrate --post` drops it once every replica runs v0.12.1, in a few milliseconds.
+- **The upgrade preflight reads more clearly.** For a background migration whose table has no estimate yet, `upgrade-check` says "0 rows so far; size not known yet" instead of "0 of ~rows unknown", and a finished one says "404 rows processed" instead of "404 of ~577 rows", as System health already did.
+
+## Upgrading
+
+From v0.12.0 or v0.11.x, with no downtime. See the [v0.12.1 upgrade notes](/docs/self-hosting/upgrades#to-v0121): back up, run `migrate` (nothing to apply from v0.12.0), replace the replicas one at a time, then run `migrate --post` for step `0013`. A single instance with `RUN_MIGRATIONS=true`, and the Helm chart with its hooks, do all of it on their own. The Helm chart `0.12.1` deploys images `v0.12.1`. Rolling back to v0.12.0 or v0.11.x is unaffected: neither reads the dropped table.
+
+## Known limitations
+
+- **With the Helm chart's `migrations.enabled: false`, post-deploy steps never run** ([#385](https://github.com/ncecere/open-chat-interface/issues/385)), so step `0013` and earlier ones stay pending. Set `config.env.RUN_POST_MIGRATIONS: "true"` (with a single API replica, the only setup that value is for), or run `node dist/migrate.js --post` in the API image after replacing every replica.
+- **The v0.12.0 and v0.11.1 limitations still apply**, including message-text search that stays exact about accents unless you build the optional index (v0.13 will make it the default).

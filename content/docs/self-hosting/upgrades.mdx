@@ -172,6 +172,22 @@ Images can be rolled back by setting `OCI_API_IMAGE` and `OCI_WEB_IMAGE` to the 
 
 ## Per-version notes
 
+### To v0.12.1
+
+From v0.12.0 or v0.11.x, with no downtime, in the order above. See [v0.12.1](/docs/releases/v0-12-1).
+
+**Pre-deploy migrations:** none from v0.12.0 (`0046` from v0.11.x).
+
+**Post-deploy step:**
+
+| Step | What it does |
+|---|---|
+| `0013_drop_project_file_embedding_failure` | Drops `project_file_embedding_failure`, which v0.11.0 replaced and no release since reads, with its index and checks. Milliseconds; a brief exclusive lock on that table only. |
+
+**Background migrations:** none.
+
+**Rolling back** to v0.12.0 or v0.11.x is safe: neither reads the dropped table.
+
 ### To v0.12.0
 
 From v0.11.x, with no downtime, in the order above: back up, `migrate`, replace the replicas one at a time. A single instance with `RUN_MIGRATIONS=true` does it on its own; the Helm chart does it with hooks (chart `0.12.0`). See [v0.12.0](/docs/releases/v0-12-0).
