@@ -1,0 +1,20 @@
+---
+title: v0.13.1
+description: A fix for the upgrade preflight, which told v0.12 operators that upgrading to v0.13 needs a downtime window. No migration, no post-deploy step.
+---
+
+Released 2026-10-14. A small release with nothing new for people or administrators.
+
+## For operators
+
+- **The upgrade preflight no longer asks v0.12 operators for a window.** The file that tells the preflight which migration starts each minor release had no entry for 0.12.0 or 0.13.0, so a database at migration `0046` read as "0.11.0", two minors behind 0.13, and `upgrade-check` and **System health** said the upgrade needs a window ("more than one minor release behind"). It did not: the three v0.13 migrations are catalog changes, and v0.12.x to v0.13 is a rolling upgrade, as [v0.13.0](/docs/releases/v0-13-0) says. Nothing blocked on the verdict, and the advice was the only thing wrong. A test now fails when the file lacks the entry for the code's own minor release.
+
+If you saw **WINDOW** from v0.13.0's preflight on a v0.12 database, it was this; the upgrade was safe. On the same database, v0.13.1 reads the schema as 0.12.0 and the verdict as ROLLING.
+
+## Upgrading
+
+From v0.12.x, with no downtime, exactly as for v0.13.0: see the [v0.13.0 upgrade notes](/docs/self-hosting/upgrades#to-v0130), and install v0.13.1 instead. If you already run v0.13.0, replace the replicas one at a time; there is nothing to migrate and no post-deploy step. The Helm chart `0.13.1` deploys images `v0.13.1`. Rolling back to v0.13.0 is unaffected.
+
+## Known limitations
+
+The v0.13.0 limitations still apply.

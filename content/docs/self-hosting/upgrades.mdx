@@ -172,6 +172,10 @@ Images can be rolled back by setting `OCI_API_IMAGE` and `OCI_WEB_IMAGE` to the 
 
 ## Per-version notes
 
+### To v0.13.1
+
+From v0.13.0 or v0.12.x, with no downtime, in the order above. See [v0.13.1](/docs/releases/v0-13-1). From v0.12.x it brings everything in [To v0.13.0](#to-v0130), and the preflight now reads the schema as 0.12.0 and the verdict as ROLLING (v0.13.0's wrongly said WINDOW). From v0.13.0 there is nothing to migrate: replace the replicas.
+
 ### To v0.13.0
 
 From v0.12.x, with no downtime, in the order above: back up and run the preflight, `migrate`, replace the replicas one at a time, then `migrate --post`. A single instance with `RUN_MIGRATIONS=true` does all of it on its own; the Helm chart does it with hooks (chart `0.13.0`). From v0.11.x the preflight asks for a window, because the schema is more than one minor behind: go through v0.12.1 first. See [v0.13.0](/docs/releases/v0-13-0).
