@@ -1,0 +1,38 @@
+---
+title: v0.13.0
+description: Search ignores accents everywhere. An external database backup mode for clusters with their own backups. The Helm chart applies post-deploy steps when its hooks are off. Three migrations, two post-deploy steps and two background migrations.
+---
+
+Released 2026-10-13. Search that finds what people type, a backup mode for clusters that already protect their database, and a chart fix.
+
+## Search ignores accents everywhere
+
+`bibliotheque` finds "bibliothèque" in the text of messages (before, only in titles), and `strasse`, `oeuvre` and `aero` find "Straße", "œuvre" and "Ærø" in titles, messages and project files. It is on for everyone, with no setting. The keyword search of project files is folded too.
+
+How it works, for operators: a SQL function folds the text, a trigger keeps a stored folded search vector on each message and project passage (only where folding changes the text, so the extra disk is small), post-deploy step `0014` builds a partial index over it with `CREATE INDEX CONCURRENTLY`, and two background migrations fill the vectors of older rows. **Until they finish, search behaves exactly as v0.12 did**, and once on it finds everything it found before. Progress is on **System health**. The optional index that v0.11.1 and v0.12 let you build by hand is replaced; step `0015` drops it if you built it.
+
+## External database backup
+
+**Backups → Database backup** can be set to **Backed up outside OCI** for clusters that already back up PostgreSQL themselves (CloudNativePG, pgBackRest, WAL-G, volume snapshots). A run still copies and verifies attachments, applies retention and runs the sweep, but starts no `pg_dump` or `pg_restore` and does not need the client tools. The default stays **Dump the database** and is never inferred; there is no migration.
+
+- **System health** gets a *Database backup (external)* row read from `pg_stat_archiver` with an ordinary application role. It is red only for a WAL archiver that is failing now, and it always says that OCI cannot verify the backup restores.
+- New metrics `oci_wal_archive_last_success_timestamp_seconds` and `oci_wal_archive_failing`.
+- A run without a dump no longer shows "0 B database".
+
+The [External database backup](/docs/self-hosting/external-database-backup) guide covers what OCI does and does not do, recovery objectives, CloudNativePG, pgBackRest and WAL-G, what else must be backed up, and a restore drill. A pgBackRest point-in-time restore drill runs weekly in the project's CI and passes its 14 checks.
+
+## The Helm chart with its hooks off
+
+With `migrations.enabled: false`, post-deploy steps and background migrations used to never run ([#385](https://github.com/ncecere/open-chat-interface/issues/385)). The worker now gets `RUN_POST_MIGRATIONS=auto`, a new value: it applies the steps once every replica that sends a heartbeat reports its own release, and waits otherwise (it needs Redis). `true` and `false` work as before, and installs with the hooks on are unchanged.
+
+## Upgrading
+
+From v0.12.x, with no downtime. See the [v0.13.0 upgrade notes](/docs/self-hosting/upgrades#to-v0130): back up, run `migrate` (migrations `0047` to `0049`), replace the replicas one at a time, then run `migrate --post` for steps `0014` and `0015`. A single instance with `RUN_MIGRATIONS=true`, and the Helm chart with its hooks, do all of it on their own. The Helm chart `0.13.0` deploys images `v0.13.0`. From v0.11.x the preflight asks for a window: go through v0.12.1 first.
+
+**Rolling back** to v0.12.x is safe, and the previous release keeps the new columns current through the triggers, but message-text search is exact about accents again, because step `0015` dropped the optional index. A release before v0.13 ignores the external backup setting and dumps the database again at the next slot: turn automatic backups off first if you do not want that.
+
+## Known limitations
+
+- **The CloudNativePG restore guide has not been run against a cluster.** The pgBackRest drill has. The guide's CloudNativePG manifests are checked against the project's documentation only.
+- **The scale harness has not run the `medium` or `large` profile on a cluster.** v0.13 adds tooling for it, but the service objectives are still shown at `small` and, on the laptop, `medium`.
+- **The v0.12.0 and v0.11.1 limitations still apply**, except the accent-insensitive message search and the chart limitation above.

@@ -18,7 +18,7 @@ curl --fail https://chat.example.edu/api/health/ready
 
 ## System health
 
-**Admin → Data & storage → System health** checks what probes do not: Redis, providers and models, background jobs and workers, email, file storage, connectors, backups, webhooks, compliance export, meaning-based search, read-only mode, cache invalidation and encryption keys. It also lists the replicas it has heard from, pending upgrade work and background migrations. Open it first when something is reported. See [System health](/docs/administration/instance-settings#system-health).
+**Admin → Data & storage → System health** checks what probes do not: Redis, providers and models, background jobs and workers, email, file storage, connectors, backups, webhooks, compliance export, meaning-based search, the external database backup's WAL archiver (v0.13), read-only mode, cache invalidation and encryption keys. It also lists the replicas it has heard from, pending upgrade work and background migrations. Open it first when something is reported. See [System health](/docs/administration/instance-settings#system-health).
 
 ## Metrics and traces
 

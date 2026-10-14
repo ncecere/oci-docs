@@ -47,6 +47,10 @@ A bucket and prefix belong to one OCI instance. Do not point two instances' back
 
 **Test destination** writes, reads back and deletes a small object. The credential needs `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject`, `s3:ListBucket` (to find unused copies) and the multipart upload actions on the prefix.
 
+## Database backup: dump or outside OCI
+
+**Database backup** is **Dump the database** by default. If your cluster already backs up PostgreSQL itself (CloudNativePG, pgBackRest, WAL-G, volume snapshots, a managed service's point-in-time recovery), choose **Backed up outside OCI** (v0.13). A run then starts no `pg_dump` or `pg_restore` and does not need the client tools, but still copies and verifies attachments, applies retention and runs the sweep, on the same schedule. Choosing it asks for confirmation, because **OCI cannot tell whether your own backup works**: only a restore does. Nothing is inferred from the server's settings, and nothing changes on upgrade. **Days kept** must be at least your database recovery window, because copies are kept only while a retained run lists them. With the mode on, **System health** shows a *Database backup (external)* row read from `pg_stat_archiver`: red only for a WAL archiver that is failing now, and always saying that the backup is not verified by OCI. The guide, with recovery objectives and a restore drill, is [External database backup](/docs/self-hosting/external-database-backup).
+
 ## Schedule
 
 With **Back up automatically** on, a backup starts within ten minutes of the chosen hour (UTC) each day, or as soon as the API is back if it was down then. A failed scheduled backup is not retried until the next day: fix the cause and use **Back up now**. Only one backup runs at a time across all replicas.

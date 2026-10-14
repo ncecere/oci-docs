@@ -45,6 +45,7 @@ Type in the sidebar's search box, or press `Cmd/Ctrl + K`, to search your conver
 <Screenshot slot="conversation-search" />
 
 - Every word you type must appear, and each matches the start of a word: `migr plan` finds "migration planning". Punctuation is ignored.
+- Capitals and accents do not matter, in titles and in the text of messages: `bibliotheque` finds "bibliothèque", `busqueda` finds "Búsqueda", and `strasse` finds "Straße". This applies to Latin letters; words in other scripts match as written. After an upgrade to v0.13, older conversations can take a while to be searched this way (your administrator can see the progress); until then accents in message text still matter. Search of a [project's files](/docs/using/projects) ignores accents too.
 - Search covers titles, your messages and the replies you were shown. It does not search reasoning, web sources or the contents of attached files.
 - Archived conversations are included and marked **Archived**; project conversations show their project. Conversations in the trash and temporary chats are not included.
 - Choosing a result opens the conversation at the matching message, briefly highlighted, instead of at the end. **Jump to latest** takes you to the end.

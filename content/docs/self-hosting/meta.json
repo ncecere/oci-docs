@@ -13,6 +13,7 @@
     "---Operating---",
     "upgrades",
     "backups-and-restore",
+    "external-database-backup",
     "health-and-monitoring",
     "security"
   ]

@@ -19,7 +19,7 @@ Redis holds nothing that needs a backup.
 
 Copying is on for a new backup configuration. An instance that saved backup settings before v0.10 only lists files until an administrator turns copying on; while it is off, you still need bucket versioning (and ideally replication) or volume snapshots for files.
 
-A `pg_dump` suits small and medium databases. For a large PostgreSQL cluster, use the cluster's own physical backups and point-in-time recovery (pgBackRest, WAL-G, or your operator's) instead. With `CONTROL_DATABASE_URL` set, backups connect through it.
+A `pg_dump` suits small and medium databases. From v0.13, a cluster that already backs up PostgreSQL itself can switch the database dump off and keep OCI's attachment backups: see [External database backup](/docs/self-hosting/external-database-backup). For a large PostgreSQL cluster, use the cluster's own physical backups and point-in-time recovery (pgBackRest, WAL-G, or your operator's) instead. With `CONTROL_DATABASE_URL` set, backups connect through it.
 
 ## Option 2: your own
 

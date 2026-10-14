@@ -172,6 +172,31 @@ Images can be rolled back by setting `OCI_API_IMAGE` and `OCI_WEB_IMAGE` to the 
 
 ## Per-version notes
 
+### To v0.13.0
+
+From v0.12.x, with no downtime, in the order above: back up and run the preflight, `migrate`, replace the replicas one at a time, then `migrate --post`. A single instance with `RUN_MIGRATIONS=true` does all of it on its own; the Helm chart does it with hooks (chart `0.13.0`). From v0.11.x the preflight asks for a window, because the schema is more than one minor behind: go through v0.12.1 first. See [v0.13.0](/docs/releases/v0-13-0).
+
+**Pre-deploy migrations** (all additive, no rewrite, safe with v0.12 replicas still running):
+
+| Migration | What it does |
+|---|---|
+| `0047_fold_search_text` | The SQL function `oci_fold_search_text`, the one definition of the accent fold (including `ß`, `æ`, `œ`). |
+| `0048_message_search_folded` | `message.search_folded` (nullable) and a trigger that keeps it for every writer, the previous release included. |
+| `0049_project_file_chunk_search_folded` | The same for `project_file_chunk`. No index. |
+
+**Post-deploy steps:**
+
+| Step | What it does |
+|---|---|
+| `0014_message_search_folded_index` | A partial GIN index over `message.search_folded`, built with `CREATE INDEX CONCURRENTLY`. Seconds to minutes; it holds only messages that have letters to fold. |
+| `0015_drop_message_text_search_folded_index` | Drops `message_text_search_folded_idx`, the optional index v0.12 allowed, if you built it. A no-op otherwise. |
+
+**Background migrations:** `0.13.message-search-folded` and `0.13.chunk-search-folded` fill the vectors of messages and file passages written before the upgrade, in batches of 500 with a pause between them, under the usual throttle. Plain messages cost microseconds and ones with accents under a millisecond; on the project's rolling-upgrade test, 300,000 messages finished in 160 seconds. Progress and pause or resume are on **System health → Background work**. Until they and step `0014` finish, search behaves as v0.12 did.
+
+**The Helm chart with `migrations.enabled: false`** now applies post-deploy steps by itself (`RUN_POST_MIGRATIONS=auto` on the worker).
+
+**Rolling back** to v0.12.x is safe: it never reads the new columns, and its own writes keep them current through the triggers. Message-text search is then exact about accents (the optional index is gone). A release before v0.13 ignores the new external backup setting.
+
 ### To v0.12.1
 
 From v0.12.0 or v0.11.x, with no downtime, in the order above. See [v0.12.1](/docs/releases/v0-12-1).
@@ -235,7 +260,7 @@ From v0.11.0, with no downtime, in the order above: back up, `migrate`, replace 
   Rolling back to v0.11.0 after it has run makes new forks share their files again. The reset SQL is in the repository's `docs/dev/database.md`, under "Files in forks and edits". Take the usual backup first.
 </Callout>
 
-**The optional accent index** for message-text search is not built by `migrate --post`; see [v0.11.1](/docs/releases/v0-11-1#known-limitations).
+**The optional accent index** that v0.11.1 and v0.12 allowed is replaced in v0.13 by a stored vector for everyone; see [v0.13.0](/docs/releases/v0-13-0#search-ignores-accents-everywhere).
 
 ### To v0.11.0
 

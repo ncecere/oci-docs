@@ -75,7 +75,7 @@ Set these on whatever runs migrations: the `migrate` and `migrate-post` jobs, or
 | `MIGRATION_LOCK_TIMEOUT_MS` | `3000` | How long a migration statement may wait for a lock before the attempt rolls back and is retried (100 to 600000). |
 | `MIGRATION_STATEMENT_TIMEOUT_MS` | `900000` (15 minutes) | How long one pre-deploy statement may run; `0` means no limit. |
 | `POST_MIGRATION_STATEMENT_TIMEOUT_MS` | `14400000` (four hours) | How long one post-deploy step may run; `0` means no limit. |
-| `RUN_POST_MIGRATIONS` | `RUN_MIGRATIONS` | Whether the API applies post-deploy steps and schedules background migrations itself. With several replicas leave it `false` and run `migrate --post` once every replica runs the new release. |
+| `RUN_POST_MIGRATIONS` | `RUN_MIGRATIONS` | Whether post-deploy steps are applied and background migrations scheduled by a replica itself. `true` or `false`, or from v0.13 `auto`: apply them only once every replica that sends a heartbeat reports this release, and wait otherwise (needs Redis; the Helm chart sets it on the worker when its hooks are off). With several replicas and no Redis, leave it `false` and run `migrate --post` once every replica runs the new release. |
 | `BACKGROUND_MIGRATIONS_ENABLED` | `true` | Whether this replica runs background migration batches. |
 | `BACKGROUND_MIGRATION_MAX_REPLICATION_LAG_MS` | `10000` | Batches wait while a standby's replay lag is over this; `0` turns the check off. |
 | `BACKGROUND_MIGRATION_MAX_TRANSACTION_AGE_MS` | `300000` | Batches wait while a transaction has been open longer than this; `0` turns the check off. |
@@ -154,7 +154,7 @@ The web image (Caddy) reads a few variables of its own; the API reads none of th
 |---|---|---|
 | `POSTGRES_PASSWORD` | required | Password for the bundled PostgreSQL; used to build `DATABASE_URL`. |
 | `OCI_PORT` | `8080` | Host port for the web container. |
-| `OCI_API_IMAGE`, `OCI_WEB_IMAGE` | local builds | Released images to run, such as `ghcr.io/ncecere/open-chat-interface/api:v0.12.1`. Pin both to one release and start with `--no-build`. |
+| `OCI_API_IMAGE`, `OCI_WEB_IMAGE` | local builds | Released images to run, such as `ghcr.io/ncecere/open-chat-interface/api:v0.13.0`. Pin both to one release and start with `--no-build`. |
 | `OCI_API_ROLE` | `all` | The `api` service's `OCI_ROLE`. Set `web` when the optional `worker` service runs the background jobs. |
 | `MINIO_USER`, `MINIO_PASSWORD` | `oci`, `oci_dev_password` | The optional MinIO container (`--profile s3`). Change them if you use it. |
 

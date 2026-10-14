@@ -48,6 +48,8 @@ scrape_configs:
 | `oci_backup_runs_total` | counter | `outcome`: `succeeded`, `failed` |
 | `oci_backup_duration_seconds` | histogram | |
 | `oci_backup_last_success_timestamp_seconds` | gauge | Absent until a backup succeeds |
+| `oci_wal_archive_last_success_timestamp_seconds` | gauge | v0.13, with **Backed up outside OCI**: the last WAL segment archived. Absent until one is |
+| `oci_wal_archive_failing` | gauge | v0.13, with **Backed up outside OCI**: 1 when the newest archive attempt failed after the newest success |
 | `oci_provider_queue_waits_total` | counter | `provider`, `model`, `outcome`: `admitted`, `timeout`, `cancelled`, `handoff`. Messages that waited for [provider capacity](/docs/administration/providers-and-models#provider-capacity) |
 | `oci_provider_queue_wait_seconds` | histogram | `provider`, `model` |
 | `oci_provider_queue_waiting` | gauge | Messages waiting on this replica now |
