@@ -3,7 +3,7 @@ title: Sharing
 description: Publish a read-only link to a conversation, live or as a fixed snapshot, with an optional expiry; find every link you have made and revoke it.
 ---
 
-Sharing publishes a read-only copy of a conversation at a link anybody can open, without an account.
+Sharing publishes a read-only copy of a conversation at a link anybody can open, without an account. To give a colleague or a group access to a project's instructions and files instead, see [Sharing a project](/docs/using/projects#sharing-a-project).
 
 ## Creating a link
 
@@ -41,6 +41,13 @@ Not included:
 - **Anything about your account**, or which model wrote each reply.
 
 Text that looks like a password, API key or access token is replaced with `[REDACTED]` on the shared page. Do not rely on that to catch everything.
+
+## Conversations with data classes
+
+If your institution uses [data classes](/docs/using/conversations#data-classes) and the conversation carries one, a link is open to anyone who has it, which no model or service is ever approved to be. Depending on your institution's mode:
+
+- **Block**: the link cannot be made, and the dialog says which class the conversation carries. A link made earlier is **paused** while the conversation carries the class: it shows **paused** in the dialog, cannot be copied, and anyone opening it sees the page for a link that does not exist. Removing the label makes it work again; it was not revoked.
+- **Warn**: the link is made, with a notice of which class the conversation carries, and your administrator can see it.
 
 ## Revoking
 

@@ -36,6 +36,8 @@ Which models you see is decided by your institution, and may depend on your role
 
 You can change model at any point. The new model receives the recent conversation that fits what it can take in, including earlier attachments it can read. Starting with a fast, inexpensive model and moving to a more capable one when the question gets hard is a good way to work. Each reply records which model wrote it.
 
+If your institution uses [data classes](/docs/using/conversations#data-classes), the picker may show some models as **Not approved for** a class your conversation carries. They stay in the list, greyed out, and cannot be chosen: pick one that is approved.
+
 ## How a reply shows the model's work
 
 Some models think before they answer, and some use [tools](/docs/using/tools-and-connectors) (a web search, an artifact, a connector). Everything a reply did before its answer is gathered into **one collapsed block** at the top of the reply, so the answer reads cleanly however many steps it took.
@@ -121,6 +123,8 @@ In the browser, a very long conversation opens at its latest messages and loads 
 ### What the model can see
 
 Your latest message, the instance's instructions, your [customization](/docs/using/settings#customization), any project instructions and [memory](/docs/using/memory) notes, selected attachments and search results must fit together. If they cannot, the message is refused before it is saved: shorten it, remove a file, or choose a model that can take more. Choosing a larger model does not remove every limit; OCI has fixed safety ceilings of its own.
+
+A message can also be refused because your conversation carries a [data class](/docs/using/conversations#a-refused-message) that the model is not approved for. It is not sent, and its text goes back into the message box.
 
 ## Temporary chats
 

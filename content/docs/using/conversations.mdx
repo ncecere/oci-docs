@@ -64,6 +64,34 @@ Once a conversation is long, only the messages near what you are looking at are 
 
 Exports and share links always contain the whole conversation.
 
+## Data classes
+
+If your institution has set up [data classification](/docs/administration/data-classification), a conversation can carry **data classes**: names such as "Student records" for the kind of data it holds. They appear as chips under the top of the conversation, each with the reason it is there:
+
+- **from the project**: the conversation is in a [project](/docs/using/projects#data-classes-on-a-project) labelled with the class. A label an administrator set says **set by an administrator**.
+- **from the *name* connector**: the conversation has used that [connector](/docs/using/tools-and-connectors), whose results carry the class. Once used, always: the conversation holds that data from then on.
+- **added by you**: you labelled it with **Add label**. Only these have a remove button (an **×**).
+- **kept from its earlier project**, or **kept from the removed *name* connector**: the class came with the conversation when it was moved out of a project, or the project or connector was deleted. A label is never lost as a side effect, and forking a conversation copies its labels, so these cannot be removed here.
+
+If you are not sure why a label cannot be removed, the page says why.
+
+### Models that are not approved
+
+Your administrator approves each model for the classes it may receive. In the model picker, a model that is not approved for a class your conversation carries stays in the list, greyed out, with **Not approved for *class*** as text. You cannot choose it, but it can still be reached with the arrow keys, and a screen reader reads the reason. A new chat in a labelled project starts on an approved model. If the model you are on is not approved, a note above the message box says so before you send anything.
+
+### A refused message
+
+If a message is refused anyway, for example because a label was added in another tab, it is **not sent**. Its text goes back into the message box, and the page names the class that is missing and lists the approved models as **Use *model*** buttons. Choose one and send the same text again.
+
+While your institution is trying the feature out (**Warn** mode), nothing is refused. The message is sent, a note above the reply says the conversation carries a class the model is not approved for, and your administrator can see it.
+
+### What else a label changes
+
+- A label does not recall a message already sent: if you label a conversation after it went to a model that is not approved, the next message is refused, and the earlier one is not taken back.
+- Memory notes are never written from a conversation that carries a class.
+- In **Block** mode, [share links](/docs/using/sharing#conversations-with-data-classes) cannot be made for the conversation, and one made earlier is paused while it is labelled.
+- Labels are not part of a downloaded export.
+
 ## Downloading one conversation
 
 The download button at the top right of a conversation saves it as Markdown. To save everything at once, see [Your data](/docs/using/your-data).

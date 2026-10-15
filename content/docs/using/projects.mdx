@@ -1,11 +1,11 @@
 ---
 title: Projects
-description: Group conversations under shared instructions and files, and how OCI finds the right passages when a project's files are large.
+description: Group conversations under shared instructions and files, share a project with people or a group, label it with data classes, and how OCI finds the right passages when a project's files are large.
 ---
 
 A project groups conversations that belong together, such as a course, a thesis or a grant application, under **instructions** and **files** they all share. Every conversation in the project gets the instructions and can read the files, so you do not paste the same background into each new chat.
 
-Projects are private to you. If **Projects** is missing from the sidebar, they are off for your role.
+A project is yours until you [share it](#sharing-a-project) with a person or a group. If **Projects** is missing from the sidebar, they are off for your role.
 
 ## Creating a project
 
@@ -35,7 +35,9 @@ You can have up to 100 projects.
   - **Searchable · *n* passages**: its text was split into *n* passages.
   - **No text to search**: nothing could be read from it, such as an image or a scanned PDF. It is always given to the model whole, as far as it fits.
   - **Waiting to be indexed**: added before an upgrade and not prepared yet. This happens in the background, usually within minutes.
-- **Settings**: rename or delete the project.
+- **Settings**: rename the project, label it with [data classes](#data-classes-on-a-project) (when your institution uses them), transfer it, or delete it.
+
+The owner's **Share** button, on the project's page, opens the [sharing](#sharing-a-project) dialog.
 
 <Screenshot slot="project-files" />
 
@@ -44,6 +46,16 @@ You can have up to 100 projects.
 **New chat in project** opens the new-chat screen, marked "New chat in *project name*". Temporary chats cannot be in a project.
 
 To move an existing conversation, open it and select **Move to project** (the folder button at the top right). Choose a project, or **No project** to take it out. The change applies from the next reply. Forks and edits stay in the same project as the conversation they came from.
+
+## Data classes on a project
+
+If your institution uses [data classes](/docs/administration/data-classification), the project's **Settings** tab has **Data classes**. Use **Add label** to say what kind of data the project holds, for example "Student records". Every conversation in the project then carries the label, so only models your administrator has approved for it can answer, and a new chat in the project starts on one of them. Select the **×** on a label to remove it.
+
+An administrator can also label your project. That label is marked **set by an administrator** and you cannot remove it; ask an administrator to change it.
+
+Taking a conversation out of the project, or deleting the project, does not remove the labels from the conversations that were in it: they keep them. Moving a conversation into a labelled project gives it the project's labels. For what a label does inside a conversation, see [Data classes](/docs/using/conversations#data-classes).
+
+For a labelled project, search by meaning and reranking may be left out if the service they use is not approved for the label. The reply's note then says so, and the files are searched by keywords only.
 
 ## What the model receives
 
@@ -82,17 +94,65 @@ In a conversation whose project has at least one searchable file, the message bo
 
 Only that message is affected; the next one uses every file again. While a file is left out, the button shows, say, **Files 2/3**. The button appears once a conversation has started, so the first message of a new conversation uses every file. Regenerating a reply, or a reply that continues after you approve a tool step, uses every file.
 
+## Sharing a project
+
+Only the owner shares a project. On the project's page, select **Share** and choose **Share with**:
+
+- **A person**, by the exact email address they sign in with. OCI looks the address up as you typed it, ignoring capitals; it does not search or suggest names. Nobody is notified: the project appears under **Shared with me** in their sidebar.
+- **A group** you belong to, chosen from the list. Everyone in the group gets access, people who join later get it too, and people who leave lose it. See [Groups](/docs/using/groups).
+
+Each share is a **Viewer** or an **Editor**, set under **Permission**:
+
+| | Viewer | Editor | Owner |
+|---|:---:|:---:|:---:|
+| Read the name, instructions and files; download files | yes | yes | yes |
+| Use the project in their own conversations | yes | yes | yes |
+| Edit the instructions | | yes | yes |
+| Add and remove files | | yes | yes |
+| Rename, delete, share, change or remove a share, transfer | | | yes |
+
+A person who has more than one share, for example their own and a group's, gets the highest. A project can be shared with up to 50 people and groups (a group counts as one), and a person can have up to 100 projects shared with them directly.
+
+### What people you share with can and cannot see
+
+- They use the project's instructions and files in **their own** conversations. Those conversations are theirs alone: you cannot read them, and they cannot read yours or anyone else's. The conversations and counts a person sees under a shared project are their own.
+- They see your name as the owner and how many people and groups it is shared with, never who they are. They see by name who added each file. Only the owner sees the people and groups it is shared with, with their email addresses.
+- Files an editor adds count against the editor's storage, not the owner's, and follow the editor's upload limits.
+- Administrators and auditors are not part of a project: they cannot read its content unless you share it with them.
+
+### Shared with me
+
+A project shared with you is listed under **Shared with me**, in the sidebar and in a list of its own, with its owner and your access (**Viewer** or **Editor**). Its page shows **Shared by** the owner and what you may do.
+
+### Changing and ending access
+
+- **Change** a person's or group's permission, or **stop sharing**, in the same dialog, under **Who has access**. It takes effect on that person's very next request: the project leaves their sidebar, its files cannot be opened, and their next message in a conversation that was in the project carries no instructions and no passages. A reply already being written finishes with the context it started with.
+- **Leave** a project shared with you from its page with **Leave project**. If you have access through a group you cannot leave on your own; ask the owner or a manager of the group.
+- **Transfer** a project from its **Settings** tab, with **Transfer project…**. The new owner must already be a direct editor. They become the owner, and you stay on the project as an editor. Nothing is copied or moved.
+
+### When your access ends
+
+A share removed, a member leaving a group, a group deleted or a project left all end access the same way:
+
+- **Your conversations are kept.** They leave the project but stay in your history with every message. If you get access again you can move them back. What the model already said, including the note listing which passages it used, stays in the conversation: text you have already seen is not recalled.
+- **Files you added go to the owner**, so the project keeps its content. Your storage is freed and the owner's grows by the same amount.
+- If the owner's **account is deleted**, the project, its shares and all its files are deleted with it, and other people's conversations leave it. If an editor's account is deleted, the files they added are kept and become the owner's.
+
+Sharing is recorded in the administrators' audit log: who shared with whom and at what level, never the project's name or content.
+
+This page is about sharing a project. A read-only public link to a single conversation is a different feature: see [Sharing](/docs/using/sharing).
+
 ## Privacy and sharing
 
-Nothing from the project is written into the conversation. A shared conversation never includes the project's instructions or files, or the note on a searched reply. That note names the files, counts the passages and keeps only the first 200 or so characters of each passage used (at most 24), never the whole passage; it is kept with the reply in your own data export. Like any attachment, a project file's contents go to the provider of the model you chose.
+Nothing from the project is written into the conversation. A conversation shared through a [public link](/docs/using/sharing) never includes the project's instructions or files, or the note on a searched reply. That note names the files, counts the passages and keeps only the first 200 or so characters of each passage used (at most 24), never the whole passage; it is kept with the reply in your own data export. Like any attachment, a project file's contents go to the provider of the model you chose.
 
 ## Deleting
 
 - **Removing a file** deletes it at once, with its passages, and frees its storage. It does not go to the trash.
-- **Deleting a project** keeps its conversations (they leave the project) and deletes its files. This cannot be undone.
+- **Deleting a project** keeps its conversations (they leave the project) and deletes its files. This cannot be undone. If it is shared, the people it is shared with lose access, and their own conversations in it are kept but leave the project.
 
 While your institution has paused deletion for your account (a legal hold), deleting a project or a project file is refused.
 
 Your institution's retention applies to conversations, not projects: an inactive project conversation can still move to the trash, and restoring it puts it back in the project if the project still exists.
 
-If projects are turned off for your role, your projects are kept but cannot be opened or changed, and their instructions and files stop being used. Turned back on, everything is as you left it. Your [full export](/docs/using/your-data) includes your projects.
+If projects are turned off for your role, your projects are kept but cannot be opened or changed, and their instructions and files stop being used. Turned back on, everything is as you left it. Your [full export](/docs/using/your-data) includes your projects. For a project you own, that includes every file in it, including those an editor added. For a project shared with you, it includes only the files you added, under `shared-projects/<project name>/`; the owner's instructions and other files are not part of your data.
