@@ -45,7 +45,7 @@ Everything that moves a person's data to the trash, restores it or deletes it wr
 | `attachment.delete` | A project file is deleted, or a chat file in the trash is purged. |
 | `project.delete` | A project is deleted, with its files; its conversations are kept. |
 | `memory.delete` | A memory note is deleted by the person, by a model's `forget` tool or **Undo**, or by memory retention. One entry per note. |
-| `user.delete` | An administrator deletes an account, or a person deletes their own (`self: true`). Counts everything deleted with it. |
+| `user.delete` | An administrator deletes an account, or a person deletes their own (`self: true`). Counts everything deleted with it; since v0.14 also `sharedProjects`, `otherConversationsInProjects` (other people's conversations in those projects, kept but out of the project) and `filesHandedToOwners` (files it added to other people's projects, which go to their owners). |
 
 Every one has the same `metadata.deletion` object:
 
@@ -110,7 +110,7 @@ Under **Legal holds**, enter a person's email and a reason (a matter or case ref
 | Usage history is pruned after its window | Their usage events are kept (daily totals are always kept) |
 | Expired and revoked share links are removed after 30 days | Their links are kept (still unusable) |
 | They empty their trash or delete a conversation forever | Refused: *Permanent deletion is paused for this account by your organization.* Moving to the trash still works. |
-| They delete a project or a project file | Refused: projects have no trash, so this would destroy the files at once |
+| They delete a project or a project file | Refused: projects have no trash, so this would destroy the files at once. Since v0.14 the same refusal applies when the project holds a file added by a person on hold, and when a person on hold removes any file. Deleting an account that owns a project with a held person's files is refused too |
 | They delete memory notes (in Settings, with the `forget` tool, or by undoing a saved note) | Refused. Editing a note still works. |
 | They delete a chat file | Still works: it goes to the trash, which is kept |
 | They or an administrator delete the account | Refused, by the server and by a database trigger on any path |

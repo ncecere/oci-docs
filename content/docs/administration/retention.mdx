@@ -20,7 +20,7 @@ Retention runs as background jobs; **System health** lists their last runs, and 
 
 ## Always kept
 
-Access-control and security entries in the audit log are kept regardless of audit retention: account creation, edits and deletion; role changes, including bulk role, ban and unban; provider, connector and single sign-on changes; sign-in policy changes; webhook endpoint changes; backup and compliance export settings; and legal holds.
+Access-control and security entries in the audit log are kept regardless of audit retention: account creation, edits and deletion; role changes, including bulk role, ban and unban; provider, connector and single sign-on changes; sign-in policy changes; webhook endpoint changes; backup and compliance export settings; legal holds; and, from v0.14, group, group membership and group grant changes, and an administrator's [data classification](/docs/administration/data-classification#the-audit-log-and-the-metric) changes together with project labels. A person's own labels and the entries for refused or warned content follow the audit period.
 
 While the [compliance export](/docs/administration/compliance) is on, audit entries it has not exported yet are kept too, so a short audit retention never opens a gap.
 

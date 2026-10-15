@@ -23,6 +23,7 @@ and the model has the **Tool calling** capability.
 - **Server URL**: the MCP endpoint, such as `https://mcp.example.edu/mcp`. It must be `https://` (see [Private networks](#private-networks)). OCI does not follow redirects, so enter the final address.
 - **Short name** (optional): used in tool IDs, `mcp__<short name>__<tool>`. Chosen from the name if left empty, and fixed once saved.
 - **Authentication**: below.
+- **Carries** (v0.14): the [data classes](/docs/administration/data-classification) the connector's results contain, or **Carries no classified data** when it carries none. A conversation that has used the connector carries these classes from then on. A connector nobody has looked at shows **Not reviewed** while data classification is on, and with classification on a new connector cannot be saved without saying one or the other. Changing it applies at once, to conversations that used the connector earlier as well.
 
 Then **Refresh tools** asks the server for its tools and lists them; **Test connection** checks the MCP handshake and reports how many tools the server lists.
 
@@ -74,12 +75,13 @@ A tool's result reaches the model as untrusted content, never as an instruction.
 
 ## Status, deleting and audit
 
-Each connector shows its last successful contact and last failure; **System health** warns when an enabled connector's latest exchange failed. Deleting a connector removes its tools, everyone's connections and every role's allows; past replies keep their tool steps.
+Each connector shows its last successful contact and last failure; **System health** warns when an enabled connector's latest exchange failed. Deleting a connector removes its tools, everyone's connections and every role's allows; past replies keep their tool steps. Conversations that used it keep the classes it carried, as labels their owners cannot remove: deleting a connector is never a way to unlabel content.
 
-Audit actions: `connector.create`, `connector.update`, `connector.delete` (all kept regardless of retention), `connector.tools.refresh`, `connector.tool.update`, `connector.account.connect`, `connector.account.disconnect`, and `tool.call` for every call, never with inputs or results. Auditors see everything here except secrets.
+Audit actions: `connector.create`, `connector.update`, `connector.delete` (all kept regardless of retention), `connector.tools.refresh`, `connector.tool.update`, `connector.data_classes.update` (v0.14, also kept regardless of retention), `connector.account.connect`, `connector.account.disconnect`, and `tool.call` for every call, never with inputs or results. Auditors see everything here except secrets.
 
 ## Limits of the current design
 
+- Data classification judges what comes **back** from a connector, not what is sent to it: the arguments of a tool call are written by the model from the conversation. If a connector must not receive labelled content, do not enable its tools for the people who work with it ([What it does not control](/docs/administration/data-classification#what-it-does-not-control)).
 - A connection is opened per tool call and closed afterwards.
 - Refreshing a person's expiring token is coordinated across API replicas, so servers that rotate refresh tokens do not disconnect people. A replica that waits more than 30 seconds for another's refresh fails that call with "try again later".
 - Only Streamable HTTP servers are supported: not the older HTTP+SSE transport or local (stdio) servers.
