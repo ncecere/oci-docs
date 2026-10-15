@@ -18,6 +18,8 @@ Everyone who signs in has an account and exactly one **role**:
 
 A role decides which models someone sees, which features they get (web search, attachments, share links, temporary chats, branching, projects, memory, artifacts), which reasoning levels and tools they may use, their rate limits and storage allowance, and which usage budgets apply. Roles can be set by hand or mapped from your identity provider's groups. See [Roles and access](/docs/administration/roles-and-access).
 
+An administrator can also put people in **groups**. A group can add models and usage budgets to what a person's role gives them; it never takes anything away. See [Groups](/docs/using/groups).
+
 ## Providers and models
 
 A **provider** is an upstream AI service and the key used to reach it: OpenAI, Anthropic, Google, or any server that speaks the OpenAI API (a LiteLLM gateway, vLLM, Ollama). A **model** is a catalogue entry that maps a name people see, such as "Chat model", to one of a provider's models.
