@@ -37,6 +37,7 @@ scrape_configs:
 | `oci_chat_reply_duration_seconds` | histogram | `status` |
 | `oci_tool_calls_total` | counter | `tool`, `outcome`: `ok`, `error`, `denied`, `refused` |
 | `oci_tool_call_duration_seconds` | histogram | `tool` |
+| `oci_classification_decisions_total` | counter | v0.14. `point`: `send`, `approval`, `tool`, `compaction`, `web_search`, `embedding`, `rerank`, `share`; `outcome`: `allowed`, `warned`, `blocked`. Counted only for a conversation that carries at least one [data class](/docs/administration/data-classification); no class label, because names may be sensitive |
 | `oci_job_runs_total` | counter | `job`, `outcome`: `success`, `error` |
 | `oci_job_duration_seconds` | histogram | `job` |
 | `oci_job_last_success_timestamp_seconds` | gauge | `job`: when it last succeeded on this process |
@@ -45,6 +46,9 @@ scrape_configs:
 | `oci_webhook_deliveries_total` | counter | `outcome`: `succeeded`, `retrying`, `failed` |
 | `oci_webhook_deliveries_pending` | gauge | |
 | `oci_storage_deletions_pending` | gauge | |
+| `oci_mfa_verifications_total` | counter | v0.14. Second-step verifications: `method` (`totp`, `recovery_code`, `passkey`), `outcome` (`success`, `failure`) |
+| `oci_mfa_people` | gauge | v0.14. Unbanned accounts by `role` and `state`: `enrolled`, `not_enrolled`, `exempt` (no password, so never required to) |
+| `oci_mfa_limited_people` | gauge | v0.14. By `role`: people whose role requires two-step verification, who have not set it up and whose grace has passed |
 | `oci_backup_runs_total` | counter | `outcome`: `succeeded`, `failed` |
 | `oci_backup_duration_seconds` | histogram | |
 | `oci_backup_last_success_timestamp_seconds` | gauge | Absent until a backup succeeds |
@@ -98,6 +102,17 @@ From v0.11 OCI publishes service objectives on these metrics and ships a complet
   expr: sum by (provider) (increase(oci_provider_queue_waits_total{outcome="timeout"}[15m])) > 0
 ```
 
+Two-step verification: a burst of failures is a guessing attempt or a clock problem, and a count of limited people that does not fall after the grace period is people who need help setting up (or a reset):
+
+```yaml
+- alert: MfaVerificationFailuresHigh
+  expr: sum(rate(oci_mfa_verifications_total{outcome="failure"}[10m])) > 0.2
+  for: 15m
+- alert: MfaPeopleLimited
+  expr: sum(oci_mfa_limited_people) > 0
+  for: 1d
+```
+
 ## Traces
 
 Set `OTEL_EXPORTER_OTLP_ENDPOINT` to your collector's OTLP/HTTP base URL (such as `http://otel-collector:4318`; OCI appends `/v1/traces`) and restart the API. `OTEL_SERVICE_NAME` sets the service name (default `oci-api`). Without the endpoint the OpenTelemetry SDK is not loaded.
@@ -115,7 +130,7 @@ Spans: one per HTTP request (named by route template), `chat.reply`, `tool.call`
 **Add endpoint**, then:
 
 - **URL**: an `https://` address. Redirects are not followed.
-- **Audit actions**, one per line: `user.create` matches exactly; `user.*` matches every action starting `user.`. Or **Send every audit event**, which includes one `tool.call` per tool call.
+- **Audit actions**, one per line: `user.create` matches exactly; `user.*` matches every action starting `user.`. Or **Send every audit event**, which includes one `tool.call` per tool call. Group changes (v0.14) are `group.create`, `group.update`, `group.delete`, `group.member.add`, `group.member.remove`, `group.member.role` and `group.grants.update` (or `group.*`), described on [Groups](/docs/administration/groups#what-is-recorded). Project sharing is `project.share.create`, `project.share.update`, `project.share.delete`, `project.transfer` and `project.access.revoked`; `project.share.*` matches the first three, and they name the project's id, never its name.
 - **Allow private network**: as for [connectors](/docs/administration/connectors#private-networks), endpoints must be public HTTPS addresses unless this is on. Cloud metadata addresses are always refused.
 
 Saving shows the endpoint's **signing secret once**; OCI stores it encrypted. **Rotate secret** replaces it and shows the new one once. **Send test** posts a signed `webhook.test` event and shows the answer. **Show deliveries** lists the last 50 with status, attempts and last error. Endpoint changes are audited (`webhook.create`, `webhook.update`, `webhook.rotate`, `webhook.delete`) and kept regardless of retention.
