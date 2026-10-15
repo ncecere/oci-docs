@@ -5,10 +5,11 @@ description: Secrets, encryption at rest, the network, access control and harden
 
 ## Secrets
 
-- `AUTH_SECRET` signs sessions; `ENCRYPTION_KEY` encrypts stored credentials. Both at least 32 characters, different from each other, generated randomly (`openssl rand -base64 48`), and kept in a secret manager.
+- `AUTH_SECRET` signs sessions and, from v0.14, encrypts authenticator secrets and recovery codes; `ENCRYPTION_KEY` encrypts stored credentials. Both at least 32 characters, different from each other, generated randomly (`openssl rand -base64 48`), and kept in a secret manager.
 - **Credentials are write-only.** Provider keys, SMTP passwords, S3 keys, search keys, single sign-on secrets and certificates, connector credentials, people's connector tokens and webhook secrets are never returned by the dashboard or the API. All but the single sign-on client secrets (kept by the sign-in library) are encrypted with `ENCRYPTION_KEY`.
 - The audit log records whether a secret was set, cleared or replaced, never its value.
 - From v0.11 `ENCRYPTION_KEY` can be replaced without downtime and without re-entering any credential: see [Rotating `ENCRYPTION_KEY`](#rotating-encryption_key). Replacing it any other way makes every stored credential unreadable. Never rotate it during an upgrade or as part of a rollback.
+- **`AUTH_SECRET` is not rotated like `ENCRYPTION_KEY`.** The authenticators of people who use [two-step verification](/docs/administration/identity#two-step-verification) are encrypted with it, and rotating `ENCRYPTION_KEY` does not touch them. Changing `AUTH_SECRET` makes every authenticator and set of recovery codes unreadable (passkeys are not affected): run `node dist/scripts/reset-mfa.js --all --yes` once, and people sign in with their password and set the second step up again. A database backup carries the encrypted values, so keep the secret with it. See [Identity and sign-in](/docs/administration/identity#authsecret-the-server-clock-and-appurl).
 
 ## Network
 
@@ -27,7 +28,9 @@ description: Secrets, encryption at rest, the network, access control and harden
 - Keep one verified local administrator with a known password for [break-glass access](/docs/administration/identity#break-glass-access), and test `/auth/login?local=1`.
 - Use the `auditor` role for compliance reviewers instead of `admin`.
 - Sessions are read from the database on every request, so revoking a session, banning someone or changing a role applies on their next request, on every replica.
-- There is no multi-factor authentication for local accounts in v0.13.1; rely on your identity provider's MFA, and keep local accounts to break-glass administrators.
+- Local accounts can use two-step verification from v0.14 (an authenticator app with recovery codes, or passkeys), and an administrator can [require it per role](/docs/administration/identity#requiring-it-for-a-role). It is off until somebody sets it up. People who sign in through single sign-on are never held to it: their identity provider must enforce its own, so keep that on, and keep local accounts to break-glass administrators.
+- **Passkeys are bound to the host of `APP_URL`.** Set the final address before people register them; moving the instance to another address orphans them.
+- **Authenticator codes depend on the server clock.** Keep time synchronised on every replica; a clock more than about 30 seconds out refuses correct codes.
 
 ## Content
 
@@ -40,6 +43,7 @@ description: Secrets, encryption at rest, the network, access control and harden
 
 - Conversation content never enters the audit log, metrics, traces or webhooks.
 - The compliance export copies content only if an administrator turns that on.
+- From v0.14, [data classification](/docs/administration/data-classification) can refuse (or warn) when labelled content would reach a model or service that is not approved for it. It governs OCI's own paths only and is not data-loss prevention: copying text out of OCI is not controlled, and an approval is the administrator's statement about a provider, which OCI cannot verify.
 - Retention, legal hold and the trash are described under [Retention](/docs/administration/retention) and [Compliance](/docs/administration/compliance). Every deletion is recorded in the audit log (what, whose, by whom and why, never the content), and a legal hold pauses every deletion of a held person's records.
 
 ## Images

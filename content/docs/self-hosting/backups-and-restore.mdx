@@ -9,7 +9,7 @@ description: What to back up, how, and how to restore — with OCI's automated b
 |---|---|---|
 | **PostgreSQL** | The database | Accounts, sign-in state, settings, providers and models, conversations, budgets, file metadata, the audit log, embeddings. |
 | **Files** | The local storage volume or the S3 bucket | Uploads, project files, logos. Copying only the database's file metadata is not enough. |
-| **Secrets** | Your secret manager | `AUTH_SECRET`, `ENCRYPTION_KEY`, database credentials and deployment configuration. Without the same `ENCRYPTION_KEY`, stored credentials cannot be decrypted. |
+| **Secrets** | Your secret manager | `AUTH_SECRET`, `ENCRYPTION_KEY`, database credentials and deployment configuration. Without the same `ENCRYPTION_KEY`, stored credentials cannot be decrypted. From v0.14, without the same `AUTH_SECRET`, the authenticators of people who use [two-step verification](/docs/administration/identity#two-step-verification) cannot be read either. |
 
 Redis holds nothing that needs a backup.
 
@@ -104,7 +104,7 @@ If the backup did not copy files, check them instead: every key in `attachments.
 
 ### Start a test deployment
 
-Point it at the restored database with the **same `ENCRYPTION_KEY` and `AUTH_SECRET`** and the restored file storage. If you have [rotated `ENCRYPTION_KEY`](/docs/self-hosting/security#rotating-encryption_key) since the backup was taken, set the key current at the time in `ENCRYPTION_KEYS_PREVIOUS`. Run the same or a newer OCI version: startup applies any newer migrations.
+Point it at the restored database with the **same `ENCRYPTION_KEY` and `AUTH_SECRET`** and the restored file storage. If you have [rotated `ENCRYPTION_KEY`](/docs/self-hosting/security#rotating-encryption_key) since the backup was taken, set the key current at the time in `ENCRYPTION_KEYS_PREVIOUS`. From v0.14 the database also holds the authenticators of people who use two-step verification, encrypted with `AUTH_SECRET`: with a different secret they cannot be read (passkeys are not affected; see [Security](/docs/self-hosting/security#secrets)). Run the same or a newer OCI version: startup applies any newer migrations.
 
 </Step>
 <Step>
