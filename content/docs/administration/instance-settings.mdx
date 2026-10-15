@@ -18,7 +18,7 @@ description: General settings and features, email delivery, file storage, and Sy
 | **Editorial diagrams** | On | When a role allows artifacts, models are asked to draw diagrams as SVG artifacts in the [Diagram Design](https://github.com/cathrynlavery/diagram-design) style (MIT, Cathryn Lavery), in your [colour theme's accent](/docs/administration/branding#what-follows-branding). Off, only the general artifact guidance remains. |
 | **Features** | On, except user memory | Turn off share links, temporary chats, branching, file attachments and user memory for the whole instance. A role can narrow them further on [Roles & access](/docs/administration/roles-and-access#features-and-reasoning-levels). |
 
-Turning a feature off removes it from the interface rather than leaving a control that fails. Web search has its own switch on the [Web search](/docs/administration/web-search) page; the default model is chosen on [Providers & Models](/docs/administration/providers-and-models#the-default-model). User memory is described on [Memory](/docs/administration/memory).
+Turning a feature off removes it from the interface rather than leaving a control that fails. The language people see is not set here: the enabled languages and the default language are on [Branding](/docs/administration/branding#language). Web search has its own switch on the [Web search](/docs/administration/web-search) page; the default model is chosen on [Providers & Models](/docs/administration/providers-and-models#the-default-model). User memory is described on [Memory](/docs/administration/memory).
 
 ## Email delivery
 
@@ -88,7 +88,7 @@ What upgrading this database involves, for the running release: the database sch
 
 ### Background work
 
-Background migrations, which rewrite existing rows in small batches while the instance serves, such as the usage history backfill and secret re-encryption after an upgrade to v0.11. Each shows its status and progress. Administrators can **Pause** and **Resume** one, and change its **Rows per batch** and **Pause between batches (ms)**; auditors see it read-only. Batches wait by themselves while a database standby lags or a long transaction is open. A migration that fails five times in a row stops as failed with the error shown; resume it once the cause is fixed. See [Upgrades](/docs/self-hosting/upgrades#background-migrations).
+Background migrations, which rewrite existing rows in small batches while the instance serves, such as the usage history backfill and secret re-encryption after an upgrade to v0.11, and, after v0.14, the search for connectors that conversations used (`0.14.thread-connector-use`, scheduled by `migrate --post`; see [data classification](/docs/administration/data-classification#upgrading-and-the-mixed-version-window)). Each shows its status and progress. Administrators can **Pause** and **Resume** one, and change its **Rows per batch** and **Pause between batches (ms)**; auditors see it read-only. Batches wait by themselves while a database standby lags or a long transaction is open. A migration that fails five times in a row stops as failed with the error shown; resume it once the cause is fixed. See [Upgrades](/docs/self-hosting/upgrades#background-migrations).
 
 ### Storage reconciliation
 
