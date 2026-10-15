@@ -1,0 +1,46 @@
+---
+title: Accessibility
+description: What Open Chat Interface claims about accessibility, what its conformance report is and is not, one known problem, and how to report another.
+---
+
+Open Chat Interface (OCI) targets WCAG 2.2 Level AA. Since v0.14 the project publishes a conformance report against it. This page says what the report is, what it found and what it does not tell you.
+
+## The conformance report
+
+The report is a conformance report in the VPAT 2.5 layout for WCAG 2.2 Level A and AA. Read it on GitHub: [Accessibility Conformance Report for v0.14.0](https://github.com/ncecere/open-chat-interface/blob/v0.14.0/docs/accessibility/acr.md).
+
+**It is a self-assessment by the OCI project. It is not an audit by a third party.** The people who build OCI made it. If a contract needs independent assurance, commission an independent audit.
+
+It was produced by a repeatable review of every route: automated checks, scripted keyboard walkthroughs, the accessibility tree, and measurements of contrast, target size, text spacing and reflow. The final run covered 104 combinations of role, theme, accent colour, view (including 320 px, 400% zoom and text at 200%) and language (English, Arabic and a pseudo-language that tests right-to-left layout). It found no violation from the automated checker.
+
+### What it says
+
+Of the 55 Level A and AA criteria:
+
+| Status | Criteria |
+|---|---|
+| Supports | 11 |
+| Partially Supports | 1 |
+| Not Applicable | 7 |
+| Not Evaluated | 36 |
+
+A criterion is marked **Supports** only where a measurement or a written inspection decides it. Passing automated checks that test only part of a criterion do not turn it into Supports, so 36 criteria are **Not Evaluated**: nobody has yet inspected them. That is not a claim that they fail, and it is not a claim that they pass.
+
+### What it does not cover
+
+- No person has used a screen reader or voice control on OCI for this report. The accessibility tree was read as the browser computes it, which shows that a name, role and state exist, not that a screen reader says anything helpful.
+- Only one browser engine (Chromium) was used.
+- Content that people and models write, such as Markdown, HTML artifacts, diagrams and code, is only as accessible as its author or the model makes it. Logos and documents an administrator uploads, and files you attach, were not assessed.
+- Replies, tool approvals and artifacts were exercised against a stand-in that sends the same events, not a real model provider.
+
+## A known problem
+
+The model's name in the message box is cut off, with an ellipsis, when text is enlarged to 200%. The full name is available in the control's accessible name, in a tooltip and in the list the picker opens. Because the visible name is cut, the report marks criterion 1.4.4 (Resize Text) as **Partially Supports**. It is tracked as [issue 435](https://github.com/ncecere/open-chat-interface/issues/435); fixing it needs a design decision.
+
+## What changed in v0.14
+
+The review led to fixes in v0.14, including a stronger edge on form fields, larger conversation row buttons, a screen-reader announcement when a reply starts, finishes or is stopped, width buttons for the artifact panel as an alternative to dragging, loading animations that stop under reduced motion, and better contrast for white text on the emerald accent in the dark theme. See [v0.14.0](/docs/releases/v0-14-0) for the list.
+
+## Reporting a problem
+
+Open an issue at <https://github.com/ncecere/open-chat-interface/issues> and put "accessibility" in the title. For anything that is also a security matter, follow the project's `SECURITY.md` instead.
