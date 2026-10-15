@@ -12,6 +12,7 @@
     "---Organising---",
     "conversations",
     "projects",
+    "groups",
     "memory",
     "---Your data---",
     "sharing",
@@ -20,6 +21,9 @@
     "limits",
     "---Settings---",
     "settings",
-    "keyboard-shortcuts"
+    "two-step-verification",
+    "installing-the-app",
+    "keyboard-shortcuts",
+    "accessibility"
   ]
 }
