@@ -1,0 +1,124 @@
+---
+title: Groups
+description: Creating groups, members and managers, the budgets and models a group grants, project sharing as it affects administrators, what happens when access ends, and creating groups during an upgrade.
+---
+
+A group is a set of people who share a budget, some extra models, or both: a department, a course, a research team. **People → Groups** (`/admin/groups`). Added in v0.14.
+
+Groups **add**. A person's role still decides what they may do, and nothing a group does takes an access away. A group can give a budget and a model. It cannot change storage, rate limits, features or tools; those stay with the role ([Roles and access](/docs/administration/roles-and-access)). Roles remain the four fixed ones.
+
+People see how groups work for them in [Groups](/docs/using/groups).
+
+## Creating a group and adding people
+
+**New group** takes a name (up to 80 characters, unique ignoring case) and an optional description (up to 300). Open the group to add people.
+
+- **Members**: **Add by email** takes up to 200 addresses at once. The answer sorts each address into one of three lists: added, already in the group, and no account with this address. Nobody is added when a [limit](#limits) would be broken.
+- **Managers**: a manager is a member who can also add and remove members (see [Group managers](#group-managers)). Choose a member's role in the list; promote or demote there. A manager counts as a member for budgets and models.
+- **Removing** takes effect on the person's next request: the budgets and models the group gave them stop applying at once.
+
+The member list shows name, email and role, and can be searched by name or email. A person can be in any number of groups, up to 50. A person's own page under **People → Users** lists the groups they are in, and their role in each.
+
+Groups are made by hand. Single sign-on sets a person's role and nothing else: there is no group mapping from the identity provider, so a misconfigured provider cannot grant budgets or models at sign-in.
+
+<Callout type="warn" title="Do not create groups you rely on until every replica runs v0.14">
+  While a replica of an older release still serves, changing a group's grants is refused. See [Creating groups during an upgrade](#creating-groups-during-an-upgrade).
+</Callout>
+
+## What a group grants
+
+On the group's **Budgets and models** tab there are two checklists: the [usage budgets](/docs/administration/budgets-and-limits#usage-budgets) the group carries and the models it may use. Saving replaces both lists. Grants are written **only from the group**: the budget and model pages show a group as a read-only chip next to what it carries, and a request that sends groups through those forms is refused, so a form saved by an older page can never clear a group's grants.
+
+### Budgets
+
+A person's budgets are the distinct enabled budgets attached to their role **or** to any group they are in. Each one is then treated as any role budget is:
+
+- it applies if it covers the model being used;
+- a [per-person override](/docs/administration/budgets-and-limits#per-person-overrides), if the person has one, replaces its limit (an override can adjust a budget the person has through their role or through a group, and nothing else);
+- it is checked on its own against the person's own usage;
+- the person is refused when **any** of them is spent.
+
+So the **most restrictive budget applies and nothing is added up**:
+
+| The person has | What happens |
+|---|---|
+| A role budget of 500 messages a month and a group budget of 200 | 200 bites first. The group budget never raises the role budget to 700. |
+| A role budget of 200 and a group budget of 500 | 200 bites first. A group cannot make a budget looser than the role's. |
+| Two groups, with budgets of 300 and 400 | Both are enforced, each against the person's own usage. The person is stopped at 300. |
+| The same budget on their role and on their group, or on two of their groups | It counts once. |
+| A group budget that is disabled | Ignored. |
+| No group | Nothing changes: people outside every group are unaffected. |
+
+Budgets are **per person, not a pool**: a group budget of 200 messages gives each member their own 200, not 200 between them. To give a department more than the role's budget, raise it for them with a per-person override, or give the role a larger budget and use the group to hold some members to less.
+
+People never see a group's or a budget's name, only what a budget counts and its period, as for any budget. **People → Users → Limits** (administrators and auditors) names where each of a person's budgets comes from: the role, or the group.
+
+### Models
+
+A model is visible to a person if their **role** is listed under **Visible to roles** on [Providers and models](/docs/administration/providers-and-models), **or** any group they are in is granted the model. A disabled model, or a model on a disabled provider, stays unavailable to everyone. This is how a department gets an expensive model without opening it to a whole role. A group never hides a model the role can see.
+
+The per-role model counts on **Roles & access** stay role-only; the **Groups** section below them lists each group's extra models.
+
+## Group managers
+
+A group manager is a signed-in person who manages at least one group. They get **Settings → Groups** and can, for the groups they manage and no others:
+
+- see the member list (name, email, role);
+- add members by email (always as members);
+- remove a member, or remove themselves.
+
+They cannot see or change what the group grants, see usage, appoint or remove a manager (only an administrator does), rename or delete the group, or reach any administrator page. Looking people up by email is limited to 30 requests a minute per manager.
+
+The answers are chosen so a manager learns nothing about groups they have no part in: a person who is in no group and manages none gets "not found" for every managed-group address; a member who is not a manager, and a manager of another group, are refused.
+
+Administrators change members and managers on the group page. An auditor can read everything on it and change nothing.
+
+## Usage
+
+The group page has a **Usage** card: what the group's **current** members used in the last 30 days by default, up to 90 (messages, tokens, cost), and the busiest people. It lists at most the 100 busiest people and says when there are more. It is a view of who is in the group now, so someone who left is not counted, and someone who joined brings their history. A person in two groups appears in both. The [usage reports](/docs/administration/audit-and-reports#usage) have no group dimension on purpose: it would relabel history every time membership changed. Managers do not see this card.
+
+## Limits
+
+| What | Limit |
+|---|---|
+| Groups on the instance | 500 |
+| Members in a group | 5,000 |
+| Managers in a group | 20 |
+| Groups one person is in | 50 |
+| Email addresses in one "add" | 200 |
+
+A request that would break a limit changes nothing and says the number. Two people adding the last member at the same moment cannot both succeed.
+
+## Deleting a group
+
+The delete dialog says how many members, budgets and models are affected. People stay; they lose what the group gave them on their next request. Nothing that belonged to a person is deleted, so a person on [legal hold](/docs/administration/compliance#legal-hold) can be removed from a group, or the group deleted.
+
+## Shared projects
+
+People share a project with a person (by exact email) or with one of their groups, as **viewer** or **editor** ([Projects](/docs/using/projects)). Administrators and auditors stay outsiders to project content: they manage groups, not other people's projects. What this means for an administrator:
+
+- **Who may share.** Any person whose role has the **Projects** switch on; there is no separate setting. A person with projects off sees nothing shared with them.
+- **Limits** (fixed): 50 shares per project (a group counts as one), 100 projects shared directly with one person, and 30 email lookups and share changes a minute per person. Looking up an email tells any signed-in person whether an account exists, which is why it is rate limited.
+- **Files and storage.** Files an editor adds count against the editor's storage and follow their role's limits. When an editor loses access their files move to the owner and the allowance moves with them; this never refuses for lack of room.
+- **Data classes.** An owner, or an administrator, can label a project with [data classes](/docs/administration/data-classification#labelling-projects); every conversation in the project carries them.
+- **Legal hold.** Deleting a project, or a file in one, is refused while the person doing it, or the person who added the file, is on hold. Deleting an owner's account is refused while anyone who added files to their projects is on hold. Moving files to the owner is not a deletion and is allowed.
+- **Deleting accounts.** Deleting an editor's account hands the files they added to the owners first. Deleting the owner's account deletes the project and the files other people added to it; the dialog says how many shared projects and other people's conversations are affected, and the `user.delete` entry records `sharedProjects`. See [Deleting an account](/docs/administration/people#deleting-an-account).
+- **Audit.** Sharing is audited because it moves content between people: see [What is recorded](#what-is-recorded).
+
+### When access ends
+
+Access ends when a share is removed, a member leaves a group, or a group is deleted. In the same transaction, the person's own conversations leave the project (they stay conversations; nothing is deleted) and the files they added go to the owner. Access is always checked when a request arrives. As a safety net, the `projects.reconcile-access` job runs every minute on the replicas that run background jobs: it moves files whose uploader is no longer an editor to the owner, and takes the conversations of people who cannot read a project out of it. The job never decides who may see anything. When it has moved anything it records `project.access.revoked`, with counts only.
+
+## What is recorded
+
+Every group change is in the [audit log](/docs/administration/audit-and-reports) and is kept regardless of retention: `group.create`, `group.update` (what changed), `group.delete` (members, budgets and models removed), `group.member.add` and `group.member.remove` (every account, and whether a manager did it), `group.member.role`, and `group.grants.update` (the budget and model ids before and after). [Webhooks](/docs/administration/observability-and-webhooks#webhooks) carry them unchanged.
+
+Project sharing is recorded as `project.share.create`, `project.share.update`, `project.share.delete` (also when a person leaves), `project.transfer`, and the system's `project.access.revoked`. They name the project by id, the person or group and the permission, never the project's name or content. Unlike group changes, they follow the normal [audit retention](/docs/administration/retention).
+
+## Creating groups during an upgrade
+
+Groups, and the budgets and models they grant, exist only in v0.14. While an older replica is still serving during a rolling upgrade, it would not enforce a group's budget (a budget it does not know fails open) and would not offer a group's extra models. So **changing a group's grants answers "An upgrade is still in progress" while any live replica reports an earlier release**, and so do creating a share and transferring a project. Wait until the upgrade has finished, then set the grants. Members and managers can be edited at any time; they have no effect on a v0.13 replica.
+
+The guard reads the replicas' heartbeats, so with more than one replica it needs Redis, which more than one replica already requires. With one replica and no Redis there is nothing to compare, and requests are let through. The guard clears on its own after the last older replica is gone. It cannot see an account deletion, so **delete no accounts during the upgrade**: a v0.13 replica deleting an editor's account would also delete the files they added to other people's projects.
+
+See [To v0.14.0](/docs/self-hosting/upgrades#to-v0140).
