@@ -1,0 +1,102 @@
+---
+title: v0.14.0
+description: Two-step verification for local accounts, data classification, groups and shared projects, interface languages with right-to-left layout, an installable app and an accessibility conformance report. Six migrations, one background migration, no post-deploy step.
+---
+
+Released 2026-10-15. Governance and access, reach and compliance. **Read the upgrade notes: three of the features are not enforced by a v0.13 replica, so turn them on only after every replica runs v0.14.**
+
+## Two-step verification
+
+Local accounts, the ones that sign in with an email address and a password, can add a second step under **Settings → Account**:
+
+- **An authenticator app** (time-based one-time codes), with ten recovery codes that each work once.
+- **Passkeys.** A passkey signs in directly, counts as both factors and must verify the person (a PIN, fingerprint or face). A key that only checks it was touched is refused.
+
+Sign-in asks for a code after the password, or a passkey signs in with neither. An administrator can **require it per role** under Authentication, with a grace period (14 days by default). The requirement is enforced on the server on every request, and a person who is limited can reach only setup and sign-out. Saving a requirement is refused unless the administrator has used a second step and, for the administrator role, a local administrator is enrolled, so turning it on cannot lock everyone out. People who sign in through single sign-on are never held to it: their identity provider enforces it.
+
+An administrator can reset a person's second step under People → Users, and an operator can with `admin:reset-mfa <email> [--unlock]`, or `--all --yes` after changing `AUTH_SECRET`. There are metrics `oci_mfa_*`, audit events `auth.mfa.*`, `auth.passkey.*`, `user.mfa.reset` and `user.mfa_reset_cli`, and an email when a second step changes (when email delivery is set up).
+
+For people, see [Two-step verification](/docs/using/two-step-verification). For administrators, see [Identity and access](/docs/administration/identity).
+
+## Data classification
+
+Administrators define **data classes** (Administration → Models → Data classes), approve models for them and say which classes each connector carries. A new model is approved for nothing. Projects, connectors a conversation has used, and the person can label a conversation.
+
+With the mode on **Warn** or **Block**, content that carries a class is not sent to a model that is not approved for it. The send, a connector tool, web search, summarising earlier messages, project passage search and reranking, embeddings, saving a memory and creating a share link are all checked, and each check was proven to make no call to the provider when it blocks. The model picker shows why a model is unavailable, and a refused send keeps your text. **Warn** is a dry run: it sends anyway and records in the audit log what Block would have refused (`classification.warn`). The mode defaults to **Off**.
+
+Audit events carry ids and class names at the time, never content. The counter `oci_classification_decisions_total` has no class label.
+
+**It is not data-loss prevention.** Copying text out of OCI is not controlled, a connector's tool arguments are not judged (only what comes back), and an approval is the administrator's statement about a provider, which OCI cannot verify.
+
+See [Data classification](/docs/administration/data-classification) and, for what people see, [Data classes](/docs/using/conversations#data-classes) and [Data classes on a project](/docs/using/projects#data-classes-on-a-project).
+
+## Groups
+
+Administrators create groups of people (People → Groups). A group can carry usage budgets and grant models in addition to its members' roles. It only adds, never takes access away, and when a person has several budgets the most restrictive applies.
+
+Administrators appoint **group managers**, who add people by email and remove members of their own groups under **Settings → Groups**, and see nothing else. **Custom roles are not part of this release** ([#434](https://github.com/ncecere/open-chat-interface/issues/434)).
+
+See [Groups](/docs/administration/groups) and, for people, [Groups](/docs/using/groups).
+
+## Shared projects
+
+The owner of a project can share it from its page with a person (by exact email address) or with one of their groups, as a **viewer** or an **editor**. People you share with use the project's instructions and files in their own conversations, which stay private to them. An editor can also change the instructions and add or remove files. Only the owner renames, deletes, shares or transfers the project.
+
+There is a **Shared with me** list and sidebar section, and a person can leave a project or the owner can transfer it. When access ends (a share removed, a member leaving a group, a group deleted), the person's conversations leave the project and the files they added go to the owner, in the same transaction. The access rules are checked by a matrix of every actor against every action (198 cases, with mutation checks) and by a scan that fails when any code touching project data is not classified.
+
+See [Sharing a project](/docs/using/projects#sharing-a-project).
+
+## Interface languages and right-to-left layout
+
+OCI can be shown in English, Spanish and Arabic. **Spanish and Arabic are beta**: they are machine-drafted, and native review is welcome. A person chooses the language under **Settings → Customization**; administrators set the default and the enabled list. Right-to-left layout applies across the whole web app, administration included, with direction-aware icons, keyboard handling and user text kept in its own direction.
+
+The administration console and server text (emails, exports) stay in English. Languages default to English only, so nothing changes until an administrator turns one on. See [Settings](/docs/using/settings#language) and [Instance settings](/docs/administration/instance-settings).
+
+## Installable app
+
+The instance serves a web app manifest at `/api/manifest.webmanifest` with its name, short name, colours and icon (the bundled icons, or the uploaded logo when it is a square PNG of at least 512 px), and **Settings → Customization** has an **Install** button when the browser offers it. There is **no offline mode and no service worker**. See [Installing the app](/docs/using/installing-the-app).
+
+## Accessibility conformance report
+
+The OCI repository now has an [accessibility conformance report](https://github.com/ncecere/open-chat-interface/blob/v0.14.0/docs/accessibility/acr.md) in the VPAT 2.5 layout for WCAG 2.2 Level A and AA, generated from a repeatable review of every route (automated checks, keyboard walkthroughs, the accessibility tree, and measured contrast, target size, text spacing and reflow). **It is a self-assessment by the project, not a third-party audit.** No person used a screen reader or voice control for it.
+
+Of the 55 Level A and AA criteria, 11 are marked "Supports", 1 (1.4.4) "Partially Supports" and 36 "Not Evaluated", because automation covers only part of them and nobody has yet inspected them. The final run (104 combinations of role, theme, accent, view and language) found no violation from the automated checker. See [Accessibility](/docs/using/accessibility).
+
+The review led to fixes in this release: form controls have a clearer edge in both themes; conversation row buttons are 24 px and sit beside the title, which wraps to two lines before it is cut; Settings, Branding and Customization hold at 200% text; a streaming reply is announced to a screen reader as started, complete or stopped, never its words; the artifact panel's width can be changed with **Wider** and **Narrower** buttons, without dragging; the loading animations stop under reduced motion; and white text on the emerald accent in the dark theme now reaches 4.66:1 (it was 3.51:1).
+
+## Fixes
+
+- **The web container no longer lets `/` and the sign-in page be served from a heuristic cache.** It sent `Cache-Control: no-cache` only for `/index.html`, so an installed app could show a stale shell. Every page and icon now revalidates.
+- **Verifying an email address no longer signs in a person who has two-step verification turned on.**
+- **A recovery code could be accepted twice under concurrent requests.** They are now claimed atomically, as authenticator codes are.
+- **Arabic list and quote styling** did not apply on a page whose language differed from the text.
+
+## Upgrading
+
+From v0.13.x, with no downtime. See the [v0.14.0 upgrade notes](/docs/self-hosting/upgrades#to-v0140): back up, run the preflight (the verdict for a v0.13 database is ROLLING), run `migrate` (six migrations, `0050` to `0055`, all additive: new tables and columns, nothing rewritten), replace the replicas one at a time, then run `migrate --post`, which schedules the background migration `0.14.thread-connector-use`. There is no new post-deploy step. A single instance with `RUN_MIGRATIONS=true`, and the Helm chart, do all of it on their own. The Helm chart `0.14.0` deploys images `v0.14.0`.
+
+**Do not turn these on until every replica runs v0.14**, because a v0.13 replica ignores them:
+
+1. **Two-step verification.** Do not enrol, and do not require it for a role. A v0.13 replica does not ask for a second step.
+2. **Data classification Warn and Block.** The setting is refused until `migrate --post` has scheduled the background migration. A v0.13 replica does not enforce it and does not record which connectors a conversation used.
+3. **Groups, shares and group grants.** Creating them answers 409 while an older replica sends a heartbeat. Delete no accounts during the upgrade window either: a v0.13 replica that deletes an editor's account would also delete the files they added to other people's projects.
+
+Three other things to know:
+
+- **`AUTH_SECRET` now also encrypts authenticator secrets and recovery codes.** Changing it makes every authenticator unreadable (recover with `admin:reset-mfa --all --yes`), and backups need it to restore them.
+- **The host of `APP_URL` is bound to passkeys.** Set the final address before people register them.
+- **Authenticator codes depend on the server clock.** Keep it synchronised.
+
+Interface languages, the installable app and the accessibility report need nothing from you.
+
+**Rolling back** to v0.13 is safe: it ignores the new tables and columns, and triggers keep classification labels consistent. Two-step verification is not asked for, classification is not enforced, and people lose sight of projects shared with them until you upgrade again. Shares, groups and enrolments are kept for when you upgrade again.
+
+## Known limitations
+
+- **Custom roles are not included** ([#434](https://github.com/ncecere/open-chat-interface/issues/434)). The permission checks assume four fixed roles, and a role system needs its own specification.
+- **The model's name in the message box is cut at 200% text** ([#435](https://github.com/ncecere/open-chat-interface/issues/435)). The full name is in the control's accessible name, a tooltip and the list it opens. The conformance report marks criterion 1.4.4 as "Partially Supports" until a design decision is made.
+- **The accessibility report is a self-assessment, and 36 criteria are not yet evaluated** ([#436](https://github.com/ncecere/open-chat-interface/issues/436)). It is not a third-party audit, and no one has tested with a screen reader or voice control.
+- **The Spanish and Arabic translations are machine-drafted and marked beta** until a native speaker has reviewed them.
+- **Data classification governs OCI's own paths only.** It does not control copying text out of OCI, and in Warn mode only a send adds a note for the person; the other points are recorded in the audit log.
+- **Two-step verification is for local accounts.** People who sign in through single sign-on rely on their identity provider.
+- **The v0.13.0 limitations still apply.**

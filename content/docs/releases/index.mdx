@@ -5,6 +5,7 @@ description: Open Chat Interface's releases, what to expect before 1.0, and how 
 
 | Release | Date | In short |
 |---|---|---|
+| [v0.14.0](/docs/releases/v0-14-0) | 2026-10-15 | Governance and access, reach and compliance: two-step verification for local accounts (authenticator app, recovery codes, passkeys), data classification, groups and shared projects, interface languages (Spanish and Arabic in beta) with right-to-left layout, an installable app and an accessibility conformance report (a self-assessment). Six migrations and one background migration; three features are not enforced by a v0.13 replica, so turn them on only after every replica runs v0.14. |
 | [v0.13.1](/docs/releases/v0-13-1) | 2026-10-14 | Fixes the upgrade preflight, which wrongly asked v0.12 operators for a downtime window. No migration. |
 | [v0.13.0](/docs/releases/v0-13-0) | 2026-10-14 | Search ignores accents everywhere, including message text and project files. An external database backup mode for clusters with their own backups, with guides and a restore drill. The Helm chart applies post-deploy steps when its hooks are off. Three migrations, two post-deploy steps, two background migrations. |
 | [v0.12.1](/docs/releases/v0-12-1) | 2026-10-11 | Housekeeping: drops a table unused since v0.11.0 (post-deploy step `0013`), clearer wording in the upgrade preflight. No pre-deploy migration. |
@@ -36,8 +37,9 @@ OCI follows semantic versioning, but before 1.0 a minor release may change behav
 
 The [roadmap](https://github.com/ncecere/open-chat-interface/blob/main/ROADMAP.md) is a plan, not a promise:
 
-- **Shipped, v0.11, always on**: see [v0.11.0](/docs/releases/v0-11-0). Two planned items did not ship: **backups at scale** (for clusters with their own backups, such as pgBackRest or WAL-G) moves to the next release, and an optional Qdrant vector store is not needed at the measured scale.
-- **Later, v1.0 and beyond**: assistants, code execution, deep research, image generation, voice, groups and finer roles, multi-factor authentication and interface translations.
+- **Shipped, v0.11, always on**: see [v0.11.0](/docs/releases/v0-11-0). An optional Qdrant vector store is not needed at the measured scale, and backups at scale (for clusters with their own backups, such as pgBackRest or WAL-G) shipped in [v0.13.0](/docs/releases/v0-13-0).
+- **Shipped, v0.14, governance and access, reach and compliance**: see [v0.14.0](/docs/releases/v0-14-0). Custom roles were left out on purpose ([#434](https://github.com/ncecere/open-chat-interface/issues/434)), and the Spanish and Arabic translations stay beta until a native speaker has reviewed them.
+- **Later, v1.0 and beyond**: assistants, code execution, deep research, image generation, voice, model comparison, scheduled prompts and a prompt library.
 
 ## How releases are published
 
