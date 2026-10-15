@@ -1,6 +1,6 @@
 ---
 title: Identity and sign-in
-description: Local accounts and registration, email verification, sessions, OIDC providers, just-in-time accounts, domain allowlists, claim-to-role mapping and break-glass access.
+description: Local accounts and registration, email verification, two-step verification, sessions, OIDC providers, just-in-time accounts, domain allowlists, claim-to-role mapping and break-glass access.
 ---
 
 Every way of signing in is on one page, **Sign-in & security → Authentication** (`/admin/settings/authentication`): registration, local email and password sign-in, email verification, session length and, under **Single sign-on**, OIDC providers.
@@ -22,6 +22,66 @@ When required, a new local account gets no session until its address is verified
 An account made from an invitation that was **emailed** to an address, and accepted for that address, is created already verified and is sent no verification email: the email that carried the link showed the person reads that mailbox. Every other account verifies as above, including one made from an invitation with no address, one that could not be emailed (its link is then shared by hand), and one created before v0.12.0. See [Invitations](/docs/administration/people#invitations).
 
 Turning verification off lets local accounts sign in without proof of their address, and marks new accounts verified. Turning it on later does not revoke accounts or sessions created meanwhile.
+
+## Two-step verification
+
+People who sign in with an email and password can add a second step: a code from an authenticator app, ten one-use recovery codes for when the phone is lost, and passkeys. People set it up under Settings → Account; see [Two-step verification](/docs/using/two-step-verification). It is off for everybody until they set it up, and you can require it for chosen roles. Added in v0.14.
+
+<Callout type="warn" title="Do not enrol or require it until every replica runs v0.14">
+  A v0.13 replica has no second step. A person who enrolled on a v0.14 replica signs in with the password alone on a v0.13 one (during a rolling upgrade, or after a rollback), and a requirement is not applied there. Enrolling after the upgrade is complete is safe, and rolling back afterwards keeps the enrolments for when you upgrade again. See [To v0.14.0](/docs/self-hosting/upgrades#to-v0140).
+</Callout>
+
+### Who it covers
+
+- **Local accounts only.** The second step is asked for after the right password. A person who signs in through single sign-on is not asked for one here and cannot set one up: their **identity provider must enforce its own**, which is where multi-factor sign-in for them is configured. An account with a password *and* a single sign-on sign-in is held to the second step only when they sign in with the password.
+- **A passkey counts as both factors.** It is accepted only when the device verified the person with a PIN, fingerprint or face; a security key that only checked it was touched is refused. A passkey sign-in follows the same local rules as the password: it is off while local sign-in is off (a verified administrator keeps the [break-glass](#break-glass-access) path) and needs a verified address when verification is required.
+- **There is no "trust this device".** The second step is asked for at every password sign-in. Shared campus computers are a core use, and a browser cookie nobody can list or revoke would skip it.
+- **Codes cannot be replayed.** A code that was accepted is refused for the next two minutes, wrong codes are limited per sign-in attempt and per address (see [Sign-in attempts](/docs/administration/budgets-and-limits#sign-in-attempts)), five wrong codes end an attempt, and ten in a row lock the second step for 15 minutes.
+
+### Requiring it for a role
+
+**Require two-step verification** on the Authentication page has a checkbox for each role (administrator, auditor, user, restricted) and a **grace period** in days (14 by default). Beside the checkboxes the page says, for each role, how many people have it set up, how many do not, how many have no password and so are never required to, and when the first person would be limited.
+
+A person is **limited** when their role is required, the session was opened with the password alone, and their deadline has passed. The deadline is the later of the day the role was added and the day their account was made, plus the grace period, so a new account gets the grace too. Use 0 to limit people at their next request. Before the deadline the app shows a banner asking them to set it up by that date.
+
+A limited person gets `403 MFA_ENROLMENT_REQUIRED` on everything except signing out, the second step and setting it up, and the web app takes them to a setup page, so turning it on never removes the way in. The requirement is enforced on the server on every request. A session that passed the second step, a passkey sign-in or a single sign-on session carries on, and nobody is signed out when you turn it on: they are limited at their next request once the grace has passed.
+
+Saving a requirement cannot lock everyone out:
+
+- it is refused (`409 MFA_REQUIRED_FOR_ACTOR`) unless **you** have used a second step in this session;
+- a requirement that names the administrator role is refused until at least one local administrator (verified, not banned, with a password) has set it up;
+- removing a requirement is always allowed.
+
+Every change is recorded as `settings.auth.update` with the roles.
+
+### When somebody is locked out
+
+Another administrator can choose **Reset two-step verification** on the person's page (**People → Users**): it removes their authenticator, recovery codes and passkeys, ends their sessions and emails them (when email delivery is set up). It is not offered for your own account. See [People](/docs/administration/people#resetting-two-step-verification).
+
+An administrator who cannot sign in uses the command line on the server:
+
+```sh
+docker compose exec api node dist/scripts/reset-mfa.js someone@example.edu
+```
+
+This does the same for one person and is recorded as `user.mfa_reset_cli`. It prints no secret and decrypts nothing, so it works whatever `AUTH_SECRET` is. From a checkout it is `pnpm --filter @oci/api admin:reset-mfa someone@example.edu`.
+
+- `--unlock` only clears the lock after too many wrong codes (ten in a row lock the second step for 15 minutes, and somebody who knows the password could otherwise keep it locked): `reset-mfa.js someone@example.edu --unlock`.
+- `--all --yes` is for a changed `AUTH_SECRET` (below). It removes every authenticator and every set of recovery codes, turns the second step off and ends every session.
+
+The break-glass administrator is never locked out by the requirement itself: a limited person can always set it up or sign out, and saving a requirement is refused unless the administrator saving it has passed the second step and, for the administrator role, a local administrator has set it up.
+
+### `AUTH_SECRET`, the server clock and `APP_URL`
+
+- **`AUTH_SECRET` now also encrypts the authenticators.** Each authenticator's key and each set of recovery codes are stored encrypted with `AUTH_SECRET`, not `ENCRYPTION_KEY`, and [rotating `ENCRYPTION_KEY`](/docs/self-hosting/security#rotating-encryption_key) does not re-encrypt them. Before v0.14, changing `AUTH_SECRET` only signed people out. Now it makes every authenticator and set of recovery codes unreadable: people who have one cannot pass the second step. Passkeys are not affected. Recover with `reset-mfa.js --all --yes`; people then sign in with their password and set it up again, and a role that requires two-step verification limits them until they do. A database backup carries the encrypted values, and only the matching `AUTH_SECRET` opens them, so back the secret up with the database.
+- **`APP_URL` is bound to passkeys.** A passkey belongs to the host of `APP_URL`. Moving the instance to another address orphans its passkeys (the password and authenticator still work). Set the final address before people register passkeys.
+- **The server clock must be right.** Authenticator codes depend on the time, and a code is accepted from one 30-second step before to one after the current one. Run time synchronisation (NTP) on every replica: a clock more than about 30 seconds out refuses correct codes.
+
+TOTP codes can be phished in real time; passkeys cannot. Encourage passkeys where devices support them.
+
+### What is recorded
+
+Challenges (`auth.signin.local.challenged`, which is not a sign-in), verifications (`auth.mfa.verify.success` and `auth.mfa.verify.failure`, with the method), enabling and disabling (`auth.mfa.enabled`, `auth.mfa.disabled`), new recovery codes (`auth.mfa.recovery_codes.regenerated`), a recovery code used (`auth.mfa.recovery_code.used`, with how many are left), passkeys (`auth.passkey.added`, `auth.passkey.renamed`, `auth.passkey.removed`, `auth.passkey.signin.success` and `auth.passkey.signin.failure`), and resets (`user.mfa.reset`, `user.mfa_reset_cli`). Never a code, a key or a recovery code. The person is emailed about each change when email delivery is set up. Metrics are on [Observability and webhooks](/docs/administration/observability-and-webhooks#metrics).
 
 ## Single sign-on
 
@@ -121,4 +181,4 @@ docker compose exec api node dist/scripts/promote-admin.js someone@example.edu
 
 ## Audit
 
-Sign-in, sign-up, sign-out, password reset and change, verification and single sign-on are recorded, including failures and attempts for accounts that do not exist. Provider changes (`sso.create`, `sso.update`, `sso.delete`) and sign-in policy changes are kept regardless of audit retention.
+Sign-in, sign-up, sign-out, password reset and change, verification and single sign-on are recorded, including failures and attempts for accounts that do not exist. Provider changes (`sso.create`, `sso.update`, `sso.delete`) and sign-in policy changes are kept regardless of audit retention. Second-step events are listed under [Two-step verification](#what-is-recorded).
