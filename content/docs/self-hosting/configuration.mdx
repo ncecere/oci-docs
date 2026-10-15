@@ -12,12 +12,12 @@ The API checks its environment at start and refuses to run, listing every proble
 | Variable | What it is |
 |---|---|
 | `DATABASE_URL` | PostgreSQL connection string, such as `postgres://oci:…@postgres:5432/oci`, for the application pool. PostgreSQL itself, a session-mode pooler or, from v0.11, a transaction-mode pooler such as PgBouncer; with a transaction-mode pooler, set `CONTROL_DATABASE_URL` too ([Database connections](#database-connections)). `sslmode` is honoured. |
-| `AUTH_SECRET` | Signs sessions. At least 32 characters: `openssl rand -base64 48`. Changing it signs everyone out. |
+| `AUTH_SECRET` | Signs sessions, and from v0.14 also encrypts the authenticator secrets and recovery codes of people who use [two-step verification](/docs/administration/identity#two-step-verification). At least 32 characters: `openssl rand -base64 48`. Changing it signs everyone out and makes every authenticator unreadable (recover with `reset-mfa.js --all --yes`; see [Security](/docs/self-hosting/security#secrets)). |
 | `ENCRYPTION_KEY` | Encrypts provider keys, SMTP and S3 credentials, connector secrets and tokens, and webhook secrets at rest. At least 32 characters, different from `AUTH_SECRET`. **Replacing it without putting the old value in `ENCRYPTION_KEYS_PREVIOUS` makes every stored credential unreadable**; see [Rotating `ENCRYPTION_KEY`](/docs/self-hosting/security#rotating-encryption_key). |
-| `APP_URL` | The public address people use, such as `https://chat.example.edu`. Used for sign-in callbacks, connector OAuth and links in email. Must match your reverse proxy's origin. |
+| `APP_URL` | The public address people use, such as `https://chat.example.edu`. Used for sign-in callbacks, connector OAuth and links in email. Must match your reverse proxy's origin. From v0.14 its host is also what passkeys are bound to: set the final address before people register passkeys, because moving to another address orphans them. |
 
 <Callout type="warn" title="Back up the two secrets">
-  Losing `ENCRYPTION_KEY` means re-entering every provider key and credential and asking everyone to reconnect their connectors. A restored database needs the same `ENCRYPTION_KEY` and `AUTH_SECRET`, or, after a key rotation, the old key in `ENCRYPTION_KEYS_PREVIOUS`.
+  Losing `ENCRYPTION_KEY` means re-entering every provider key and credential and asking everyone to reconnect their connectors. A restored database needs the same `ENCRYPTION_KEY` and `AUTH_SECRET`, or, after a key rotation, the old key in `ENCRYPTION_KEYS_PREVIOUS`. From v0.14 `AUTH_SECRET` also opens the authenticators in the database, so a changed or lost `AUTH_SECRET` means everyone who uses an authenticator app must set it up again.
 </Callout>
 
 ## Server
@@ -154,7 +154,7 @@ The web image (Caddy) reads a few variables of its own; the API reads none of th
 |---|---|---|
 | `POSTGRES_PASSWORD` | required | Password for the bundled PostgreSQL; used to build `DATABASE_URL`. |
 | `OCI_PORT` | `8080` | Host port for the web container. |
-| `OCI_API_IMAGE`, `OCI_WEB_IMAGE` | local builds | Released images to run, such as `ghcr.io/ncecere/open-chat-interface/api:v0.13.1`. Pin both to one release and start with `--no-build`. |
+| `OCI_API_IMAGE`, `OCI_WEB_IMAGE` | local builds | Released images to run, such as `ghcr.io/ncecere/open-chat-interface/api:v0.14.0`. Pin both to one release and start with `--no-build`. |
 | `OCI_API_ROLE` | `all` | The `api` service's `OCI_ROLE`. Set `web` when the optional `worker` service runs the background jobs. |
 | `MINIO_USER`, `MINIO_PASSWORD` | `oci`, `oci_dev_password` | The optional MinIO container (`--profile s3`). Change them if you use it. |
 

@@ -45,7 +45,8 @@ Each catalogue entry maps a name people see to a provider's model.
 | **Input price** and **Output price** | US dollars per million tokens. Needed for cost budgets; leave blank for an unpriced model, which counts as zero cost. |
 | **Capabilities** | See below. |
 | **Reasoning efforts** | For a model with effort control: which of Low, Medium and High it offers. |
-| **Visible to roles** | Which roles see it. This is how an expensive model is kept to the people who need it. |
+| **Visible to roles** | Which roles see it. This is how an expensive model is kept to the people who need it. A [group](/docs/administration/groups#models) can also be granted the model, which makes it visible to the group's members whatever their role; the groups granted it are shown here, read-only. A group never hides a model from a role that can see it. |
+| **Approved for** | The [data classes](/docs/administration/data-classification) this model may receive (v0.14). A new model is approved for **nothing**: "No class: this model cannot receive labelled content". An unlabelled conversation is not affected. Changes are saved with the model and recorded as `model.data_classes.update`. It is a statement about the provider behind the model that OCI cannot verify: approve a model only for classes your agreement with its provider covers. |
 | **Context window** and **Max output** | How many tokens the model accepts, and the most one reply may use. See [Context and output size](#context-and-output-size). |
 | **Enabled in catalog** | Whether it is offered at all. |
 
@@ -137,6 +138,8 @@ A capable, costly model that only researchers should use:
 </Steps>
 
 The last step is the one people skip. Visibility decides who *can* use a model; a budget decides how much. [Roles & access](/docs/administration/roles-and-access) shows how many models each role sees and which budgets apply to it.
+
+Since v0.14, instead of mapping a group to a role, you can grant the model to a [group](/docs/administration/groups) of people you add by hand; the group's members see it whatever their role.
 
 ## Audit
 

@@ -172,6 +172,64 @@ Images can be rolled back by setting `OCI_API_IMAGE` and `OCI_WEB_IMAGE` to the 
 
 ## Per-version notes
 
+### To v0.14.0
+
+From v0.13.0 or v0.13.1, with no downtime, in the order above: back up, run the preflight (the verdict for a v0.13 database is ROLLING), `migrate`, replace the replicas one at a time, then `migrate --post`. A single instance with `RUN_MIGRATIONS=true` does all of it on its own; the Helm chart does it with hooks (chart `0.14.0`). See [v0.14.0](/docs/releases/v0-14-0).
+
+**Pre-deploy migrations** (six, all additive: new tables and nullable columns, nothing rewritten, and a v0.13 replica ignores all of it, so a rolling upgrade works):
+
+| Migration | What it adds |
+|---|---|
+| `0050` and `0051` | Two-step verification: the `two_factor` and `passkey` tables, the `user.two_factor_enabled` flag and `session.auth_method`. |
+| `0052_data_classification` | The tables for data classes, approvals and labels, `connector.data_classes_reviewed_at`, and triggers that keep a conversation's labels when it leaves a project, when a project or a connector is deleted, and when it is forked or edited. It takes a brief lock on `thread`, `project` and `connector`, within the lock timeout and retries. |
+| `0053_groups` | The `group`, `group_member`, `quota_policy_group` and `model_group_access` tables. Every foreign key cascades, so a v0.13 replica that deletes a person, a model or a budget is never blocked by rows it cannot see. |
+| `0054_project_shares` | The `project_share` table, with cascading keys. |
+| `0055_user_locale` | The nullable column `user_preference.locale`. |
+
+**Post-deploy steps:** none new. **Background migration:** `migrate --post` schedules `0.14.thread-connector-use`. It reads stored messages in batches of 2,000, with a short pause between them, and records which connectors each conversation used before v0.14 (including tool runs by a v0.13 replica during the upgrade). It respects the usual throttle, can be paused and resumed on **System health → Background work**, and nothing waits for it: until it finishes, a classification decision also reads the conversation's own messages.
+
+**Order of steps**
+
+<Steps>
+<Step>Back up, and run the [preflight](#check) from the v0.14.0 image.</Step>
+<Step>Run `migrate` (migrations `0050` to `0055`), then replace the API and worker replicas one at a time, then the web containers.</Step>
+<Step>Check sign-in, a conversation, search and a file download on each replica.</Step>
+<Step>Once **every** replica runs v0.14.0, run `migrate --post`. It schedules the background migration.</Step>
+<Step>Only now turn on the three things below.</Step>
+</Steps>
+
+<Callout type="warn" title="Do not turn these on until every replica runs v0.14.0">
+  A v0.13 replica does not enforce or know them.
+
+  1. **Two-step verification.** Do not enrol, and do not require it for a role. A person who enrolled on a v0.14 replica signs in with the password alone on a v0.13 one, and a requirement is not applied there. See [Two-step verification](/docs/administration/identity#two-step-verification).
+  2. **Data classification Warn and Block.** A v0.13 replica does not check labels and does not record which connectors a conversation used. The setting is refused until `migrate --post` has scheduled the background migration. See [Data classification](/docs/administration/data-classification#upgrading-and-the-mixed-version-window).
+  3. **Groups, group grants and project shares.** Changing a group's grants, creating a share and transferring a project answer 409 "An upgrade is still in progress" while any live replica reports an earlier release. The guard reads the replicas' heartbeats, so it needs Redis (which more than one replica needs anyway). See [Groups](/docs/administration/groups#creating-groups-during-an-upgrade).
+
+  **Delete no accounts during the upgrade window.** A v0.13 replica deleting an editor's account would also delete the files they added to other people's projects, and the guard cannot see account deletions.
+</Callout>
+
+While a v0.13 replica still serves, a person a project is shared with gets 404 for it (flapping behind the balancer if replicas are mixed), their conversation in a shared project is hidden from the sidebar's project tree but stays in History and search, and a group budget is not enforced there (a budget fails open) while a model granted only through a group is not offered. After the last v0.13 replica is gone the guard clears on its own: a replica that stops is removed from the list at once, and one that vanished is forgotten after a minute. A job, `projects.reconcile-access`, runs every minute on the replicas that run background jobs as a safety net for access that ended.
+
+**`AUTH_SECRET` and `APP_URL` matter more.**
+
+- **`AUTH_SECRET` now also encrypts authenticator secrets and recovery codes.** Before v0.14, changing it only signed people out. Now it makes every authenticator unreadable, so people who have one cannot pass the second step. Recover with `reset-mfa.js --all --yes` (see [When somebody is locked out](/docs/administration/identity#when-somebody-is-locked-out)). Keep it with your other deployment secrets, and in the backups' secret list: a restored database needs the matching `AUTH_SECRET` to read the authenticators. It is not part of [`ENCRYPTION_KEY` rotation](/docs/self-hosting/security#rotating-encryption_key).
+- **`APP_URL`'s host is bound to passkeys.** A passkey belongs to the host of `APP_URL`; moving the instance to another address orphans its passkeys (the password and authenticator still work). Set the final address before people register them.
+- **The server clock must be right.** Authenticator codes are accepted from one 30-second step before to one after the current one, so run time synchronisation on every replica.
+
+**The web container.** The bundled Caddy configuration (`docker/Caddyfile`, which the Helm chart's web pods run too, so the chart needs no other change) now adds `manifest-src 'self'` to the Content-Security-Policy and sends `Cache-Control: no-cache` for every page and icon, not only `/index.html`. If you run your own proxy or replace the web container, see [The installable app](/docs/self-hosting/reverse-proxy#the-installable-app) and [The headers OCI sends](/docs/self-hosting/reverse-proxy#the-headers-oci-sends).
+
+**Nothing else to do.** Interface languages default to English only (an administrator enables Spanish or Arabic under [Branding](/docs/administration/branding#language)), the classification mode defaults to Off, no role requires two-step verification, and the app manifest is served from the first v0.14 replica. No new environment variable is required.
+
+**Rolling back** to v0.13 is safe: it ignores the new tables and columns, and the triggers keep classification labels consistent. Two-step verification is then not asked for (enrolments are kept for when you upgrade again), classification is not enforced, and shared projects are not visible (people lose sight of projects shared with them until you upgrade again). A mode you set stays in the database and applies again on v0.14. Before or just after the rollback, run this once to take other people's conversations out of projects v0.13 would not let them open. They stay conversations and nothing is deleted; v0.13 would otherwise keep them but hide them from the sidebar's project tree:
+
+```sql
+UPDATE thread SET project_id = NULL
+WHERE project_id IS NOT NULL
+  AND user_id <> (SELECT p.user_id FROM project p WHERE p.id = thread.project_id);
+```
+
+Files that editors added to other people's projects stay in those projects under their uploaders' names, counted against them. v0.13 shows an owner only the files they uploaded themselves, so those files are not listed to the owner while v0.13 serves, and they are deleted if the uploader's account is deleted. Remove the share in v0.14 before rolling back: that hands the files to the owner, as it does when an editor leaves a project.
+
 ### To v0.13.1
 
 From v0.13.0 or v0.12.x, with no downtime, in the order above. See [v0.13.1](/docs/releases/v0-13-1). From v0.12.x it brings everything in [To v0.13.0](#to-v0130), and the preflight now reads the schema as 0.12.0 and the verdict as ROLLING (v0.13.0's wrongly said WINDOW). From v0.13.0 there is nothing to migrate: replace the replicas.

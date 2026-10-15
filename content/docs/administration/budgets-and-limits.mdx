@@ -15,7 +15,7 @@ People see their remaining budget and storage as a percentage, never as figures 
 
 ## Usage budgets
 
-**Models → Usage budgets** (`/admin/quotas`). A budget (a quota policy) caps consumption and applies to one or more roles. A role can carry several and every one is enforced; each person gets the full amount on their own.
+**Models → Usage budgets** (`/admin/quotas`). A budget (a quota policy) caps consumption and applies to one or more roles. A role can carry several and every one is enforced; each person gets the full amount on their own. From v0.14 a budget can also be attached to a [group](/docs/administration/groups#budgets), which holds its members to it in addition to their role's budgets: every budget is enforced, the most restrictive applies, and nothing is added up (a group budget never raises a role budget). Groups are attached from the group, not from this page, which shows them as read-only chips.
 
 <Screenshot slot="admin-usage-budgets" />
 
@@ -49,7 +49,7 @@ A department wants staff using a costly model without an open-ended bill:
 
 ### Per-person overrides
 
-Give one person more without changing the policy, from **Limits** beside them in [the user list](/docs/administration/people) or **Adjust limits** on their page, with an optional expiry and reason.
+Give one person more without changing the policy, from **Limits** beside them in [the user list](/docs/administration/people) or **Adjust limits** on their page, with an optional expiry and reason. An override can adjust a budget the person has through their role or through a [group](/docs/administration/groups#budgets), and nothing else.
 
 ### How enforcement works
 

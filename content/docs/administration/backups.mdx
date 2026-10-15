@@ -76,7 +76,7 @@ Then copied files are swept: copies under `objects/` that no kept backup lists a
 
 ## Restoring
 
-Restoring is a deliberate, manual operator step: the database with `pg_restore`, then the files with the `restore-backup-files` script in the API image, which streams each copy back to its storage key and checks it. See [Backups and restore](/docs/self-hosting/backups-and-restore#restoring-an-automated-backup), and practise it on a scratch environment: that is the only proof a backup works.
+Restoring is a deliberate, manual operator step: the database with `pg_restore`, then the files with the `restore-backup-files` script in the API image, which streams each copy back to its storage key and checks it. Restore with the same `ENCRYPTION_KEY` and `AUTH_SECRET`: from v0.14 `AUTH_SECRET` also opens the authenticators of people who use [two-step verification](/docs/administration/identity#two-step-verification). See [Backups and restore](/docs/self-hosting/backups-and-restore#restoring-an-automated-backup), and practise it on a scratch environment: that is the only proof a backup works.
 
 ## Audit and metrics
 

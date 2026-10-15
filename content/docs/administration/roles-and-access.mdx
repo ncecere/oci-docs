@@ -17,7 +17,9 @@ For each role:
 - **Rate limits** and **Storage allowance**: editable here; see [Budgets and limits](/docs/administration/budgets-and-limits#rate-limits).
 - **Usage budgets**: the budgets assigned to the role, read-only, with a link to change them.
 
-Below the role tabs, **Instance-wide** holds limits that apply regardless of role: [sign-in attempts per minute](/docs/administration/budgets-and-limits#sign-in-attempts) (per client address and per account), and the budget and tokens held while a reply is written.
+Custom roles are not available: the four roles are fixed (custom roles are tracked as issue #434 in the project's repository). To give some people a budget or a model that their role does not, use a [group](/docs/administration/groups). Below the role tabs, a read-only **Groups** section lists each group with its members and managers, the budgets it carries and the extra models it grants, with a link to **People → Groups** to change them. Groups only add to a role and never take access away, and the per-role model count above counts what the role alone sees.
+
+Below the groups, **Instance-wide** holds limits that apply regardless of role: [sign-in attempts per minute](/docs/administration/budgets-and-limits#sign-in-attempts) (per client address and per account), and the budget and tokens held while a reply is written.
 
 ## Features and reasoning levels
 
@@ -84,7 +86,7 @@ Saving a field overrides the environment for that field only.
 
 ## Projects and governance
 
-Projects reuse governed features. Project files are attachments: uploading needs attachments allowed for the role and the instance, uses the upload rate limit and counts against the storage allowance. Removing a file or deleting a project deletes its files at once, except for a person on [legal hold](/docs/administration/compliance#legal-hold), for whom both are refused. Switching projects off for a role keeps existing projects and files (still counted) but refuses every project request and stops their instructions and files being used. Creating and changing projects is personal content and is not written to the audit log; deleting a project or a project file is, as a [deletion event](/docs/administration/compliance#deletion-events).
+Projects reuse governed features. Project files are attachments: uploading needs attachments allowed for the role and the instance, uses the upload rate limit and counts against the storage allowance. Removing a file or deleting a project deletes its files at once, except for a person on [legal hold](/docs/administration/compliance#legal-hold), for whom both are refused. Switching projects off for a role keeps existing projects and files (still counted) but refuses every project request and stops their instructions and files being used. Creating and changing projects is personal content and is not written to the audit log; deleting a project or a project file is, as a [deletion event](/docs/administration/compliance#deletion-events). An owner can also label a project with [data classes](/docs/administration/data-classification#labelling-projects), which is audited (`project.data_classes.update`), and [share it](/docs/administration/groups#shared-projects) with people and groups, which is audited too (`project.share.*`). Sharing needs only the **Projects** switch.
 
 ## Auditors
 
